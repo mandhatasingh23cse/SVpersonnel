@@ -1,0 +1,94 @@
+<section class="page-hero">
+  <div class="shell page-hero-content">
+    <p class="eyebrow">Settings</p>
+    <h1>Partner Settings &amp; Support</h1>
+    <p>View your support inquiries, check admin responses, or manage account termination.</p>
+  </div>
+</section>
+
+<section class="section shell dashboard-shell">
+  <%- include("partials/notice") %>
+
+  <div style="display: grid; grid-template-columns: 1fr; gap: 3rem; max-width: 900px; margin: 0 auto;">
+    
+
+
+    <!-- Support Inquiries Section -->
+    <article class="glass-panel" style="padding: 2.5rem; border-radius: var(--radius-lg);">
+      <p class="card-kicker">Support History</p>
+      <h2 style="margin-bottom: 0.5rem;">Your Contact Inquiries</h2>
+      <p style="color: var(--text-muted); margin-bottom: 2rem; font-size: 0.95rem;">
+        These are the support requests you have sent using your registered email: <strong><%= sessionUser.email %></strong>.
+      </p>
+
+      <% if (messages && messages.length > 0) { %>
+        <div style="display: grid; gap: 1.5rem;">
+          <% messages.forEach(function(msg) { %>
+            <div class="glass-inset" style="padding: 1.5rem; border: 1px solid var(--line); border-radius: var(--radius-md); background: rgba(255, 255, 255, 0.02);">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
+                <div>
+                  <span class="mini-badge" style="margin-bottom: 0.5rem;"><%= msg.subject || "No Subject" %></span>
+                  <div style="font-size: 0.85rem; color: var(--text-soft);">
+                    Sent on <%= new Date(msg.created_at).toLocaleDateString(undefined, { dateStyle: 'medium' }) %>
+                  </div>
+                </div>
+                <span class="info-pill <%= msg.status === 'resolved' ? 'status-badge-confirmed' : 'status-badge-pending' %>" style="min-height: 28px; font-size: 0.8rem; text-transform: uppercase;">
+                  <%= msg.status || 'pending' %>
+                </span>
+              </div>
+
+              <p style="margin: 0 0 1rem 0; font-size: 0.95rem; line-height: 1.6; white-space: pre-line; color: var(--text-muted);">
+                <%= msg.message %>
+              </p>
+
+              <% if (msg.admin_reply) { %>
+                <div style="margin-top: 1rem; padding: 1.25rem; border-radius: var(--radius-sm); background: rgba(99, 102, 241, 0.08); border-left: 3px solid var(--accent);">
+                  <div style="font-size: 0.8rem; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">
+                    Admin Resolution
+                  </div>
+                  <p style="margin: 0 0 0.5rem 0; font-size: 0.95rem; line-height: 1.6; color: var(--text); white-space: pre-line;">
+                    <%= msg.admin_reply %>
+                  </p>
+                  <% if (msg.replied_at) { %>
+                    <div style="font-size: 0.8rem; color: var(--text-soft);">
+                      Resolved on <%= new Date(msg.replied_at).toLocaleDateString(undefined, { dateStyle: 'medium' }) %>
+                    </div>
+                  <% } %>
+                </div>
+              <% } else { %>
+                <div style="font-size: 0.9rem; color: var(--text-soft); font-style: italic; margin-top: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                  <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--info);"></span>
+                  Awaiting review by the support team.
+                </div>
+              <% } %>
+            </div>
+          <% }) %>
+        </div>
+      <% } else { %>
+        <div style="text-align: center; padding: 3rem 1.5rem; border: 1px dashed var(--line); border-radius: var(--radius-md);">
+          <p style="color: var(--text-muted); margin-bottom: 1.5rem;">You haven't submitted any support requests yet.</p>
+          <a href="/contactus" class="button button-secondary">Contact Support</a>
+        </div>
+      <% } %>
+    </article>
+
+    <!-- Delete Profile Danger Zone -->
+    <article class="glass-panel dashboard-danger" style="padding: 2.5rem; border-radius: var(--radius-lg);">
+      <div class="dashboard-danger-copy">
+        <p class="card-kicker" style="color: var(--error);">Danger zone</p>
+        <h2>Delete professional profile</h2>
+        <p>Delete this professional account permanently. All mapped services, reviews, and booking records will be permanently removed. This action cannot be undone.</p>
+      </div>
+
+      <form method="POST" action="/professional/delete-profile" class="danger-form" style="margin-top: 1.5rem;">
+        <label class="danger-confirm" style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; cursor: pointer;">
+          <input type="checkbox" name="confirmDelete" value="yes" required style="width: auto;">
+          <span style="font-size: 0.95rem; color: var(--text-muted);">I understand that deleting this professional profile is permanent.</span>
+        </label>
+        <button type="submit" class="button button-danger">Delete profile permanently</button>
+      </form>
+    </article>
+  </div>
+</section>
+
+
