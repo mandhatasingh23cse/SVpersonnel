@@ -3,7 +3,7 @@ services:
     name: gigconnect
     runtime: node
     buildCommand: npm install
-    startCommand: npm start
+    startCommand: node app.js
     envVars:
       - key: NODE_ENV
         value: production
