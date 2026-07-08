@@ -1,0 +1,97 @@
+<section class="page-hero">
+  <div class="shell page-hero-content">
+    <p class="eyebrow">Partner Portal</p>
+    <h1>Manage your professional profile.</h1>
+    <p>Update your details, select the services you offer, manage security, or delete your profile.</p>
+  </div>
+</section>
+
+<section class="section shell dashboard-shell">
+  <%- include("partials/notice") %>
+
+  <div style="display: grid; grid-template-columns: 1fr; gap: 3rem; max-width: 800px; margin: 0 auto;">
+    <!-- Profile Information Form -->
+    <article class="glass-panel" style="padding: 2.5rem; border-radius: var(--radius-lg);">
+      <p class="card-kicker">Professional Profile</p>
+      <h2 style="margin-bottom: 1.5rem;">Edit Professional Details</h2>
+
+      <form method="POST" action="/professional/profile" class="auth-form" enctype="multipart/form-data">
+        <div class="form-row">
+          <label class="field-group">
+            <span>Full name</span>
+            <input type="text" name="fullname" value="<%= profile.name %>" required>
+          </label>
+
+          <label class="field-group">
+            <span>Email Address</span>
+            <input type="email" value="<%= profile.email %>" disabled style="background: rgba(0, 0, 0, 0.05); cursor: not-allowed;">
+          </label>
+        </div>
+
+        <div class="form-row">
+          <label class="field-group">
+            <span>City</span>
+            <input type="text" name="city" value="<%= profile.city %>" required>
+          </label>
+
+          <label class="field-group">
+            <span>Service area / sector</span>
+            <input type="text" name="area" value="<%= profile.area %>" required>
+          </label>
+        </div>
+
+        <div class="form-row">
+          <label class="field-group">
+            <span>Years of experience</span>
+            <input type="number" name="experience" value="<%= profile.experience %>" min="0" max="60" required>
+          </label>
+        </div>
+
+        <label class="field-group">
+          <span>Profile photo (Choose from Gallery)</span>
+          <input type="file" id="photo" name="photo" accept="image/*">
+          <% if (profile.photo && profile.photo !== '/assets/gigconnect.logo.png') { %>
+            <small style="color: var(--text-muted); display: block; margin-top: 0.5rem;">Current Photo: <a href="<%= profile.photo %>" target="_blank" style="color: var(--accent); font-weight: 600;">View Image</a></small>
+          <% } %>
+        </label>
+
+        <label class="field-group">
+          <span>Short professional biography</span>
+          <textarea name="description" rows="4" placeholder="Tell clients about your expertise, tools, and background..."><%= profile.description %></textarea>
+        </label>
+
+        <!-- Service Mappings / Offerings -->
+        <div style="margin: 2rem 0 1.5rem 0; border-top: 1px solid var(--line); padding-top: 1.5rem;">
+          <h3 style="font-size: 1.25rem; margin-bottom: 0.75rem;">Services Offered</h3>
+          <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.25rem;">Select all categories of work you are qualified to perform:</p>
+          
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+            <% services.forEach(function(service) { %>
+              <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer; padding: 0.5rem; border-radius: var(--radius-sm); background: rgba(255, 255, 255, 0.3); border: 1px solid var(--line);">
+                <input type="checkbox" name="serviceIds" value="<%= service.id %>" <%= mappedServiceIds.includes(service.id) ? 'checked' : '' %> style="width: auto;">
+                <span style="font-size: 0.95rem; font-weight: 500;"><%= service.name %></span>
+              </label>
+            <% }) %>
+          </div>
+        </div>
+
+        <button type="submit" class="button button-primary" style="margin-top: 1rem;">Save &amp; Update Profile</button>
+      </form>
+    </article>
+
+    <!-- Change Password Form -->
+    <article class="glass-panel" style="padding: 2.5rem; border-radius: var(--radius-lg);">
+      <p class="card-kicker">Security</p>
+      <h2 style="margin-bottom: 1.5rem;">Change Password</h2>
+
+      <form method="POST" action="/professional/change-password" class="auth-form">
+        <label class="field-group">
+          <span>New Password</span>
+          <input type="password" name="newPassword" placeholder="Minimum 6 characters" required>
+        </label>
+
+        <button type="submit" class="button button-secondary" style="margin-top: 1rem;">Update Password</button>
+      </form>
+    </article>
+  </div>
+</section>

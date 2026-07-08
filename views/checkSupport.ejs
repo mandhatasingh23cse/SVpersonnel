@@ -1,0 +1,90 @@
+<section class="page-hero">
+  <div class="shell page-hero-content">
+    <p class="eyebrow">Support Status</p>
+    <h1>Check Message Status</h1>
+    <p>If you contacted us without logging in, enter your email address below to track your request and view administrative replies.</p>
+  </div>
+</section>
+
+<section class="section shell">
+  <div style="max-width: 800px; margin: 0 auto; display: grid; gap: 2rem;">
+    
+    <!-- Search Form -->
+    <article class="glass-panel" style="padding: 2.5rem; border-radius: var(--radius-lg);" data-reveal>
+      <p class="card-kicker">Track Inquiry</p>
+      <h2 style="margin-bottom: 1.5rem;">Enter your email</h2>
+      
+      <% if (errorMsg) { %>
+        <div class="form-notice form-notice-error">
+          <%= errorMsg %>
+        </div>
+      <% } %>
+
+      <form method="GET" action="/contact/status" class="auth-form" style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end;">
+        <label class="field-group" style="flex: 1; min-width: 260px; margin: 0;">
+          <span>Email Address</span>
+          <input type="email" name="email" value="<%= email %>" placeholder="e.g. guest@example.com" required style="height: 56px;">
+        </label>
+        <button type="submit" class="button button-primary" style="height: 56px;">Check Status</button>
+      </form>
+    </article>
+
+    <!-- Results Section -->
+    <% if (searched) { %>
+      <article class="glass-panel" style="padding: 2.5rem; border-radius: var(--radius-lg);" data-reveal>
+        <p class="card-kicker">Results</p>
+        <h2 style="margin-bottom: 1.5rem;">Inquiries for <%= email %></h2>
+
+        <% if (messages && messages.length > 0) { %>
+          <div style="display: grid; gap: 1.5rem;">
+            <% messages.forEach(function(msg) { %>
+              <div class="glass-inset" style="padding: 1.5rem; border: 1px solid var(--line); border-radius: var(--radius-md); background: rgba(255, 255, 255, 0.02);">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
+                  <div>
+                    <span class="mini-badge" style="margin-bottom: 0.5rem;"><%= msg.subject || "No Subject" %></span>
+                    <div style="font-size: 0.85rem; color: var(--text-soft);">
+                      Sent on <%= new Date(msg.created_at).toLocaleDateString(undefined, { dateStyle: 'medium' }) %>
+                    </div>
+                  </div>
+                  <span class="info-pill <%= msg.status === 'resolved' ? 'status-badge-confirmed' : 'status-badge-pending' %>" style="min-height: 28px; font-size: 0.8rem; text-transform: uppercase;">
+                    <%= msg.status || 'pending' %>
+                  </span>
+                </div>
+
+                <p style="margin: 0 0 1rem 0; font-size: 0.95rem; line-height: 1.6; white-space: pre-line; color: var(--text-muted);">
+                  <%= msg.message %>
+                </p>
+
+                <% if (msg.admin_reply) { %>
+                  <div style="margin-top: 1rem; padding: 1.25rem; border-radius: var(--radius-sm); background: rgba(99, 102, 241, 0.08); border-left: 3px solid var(--accent);">
+                    <div style="font-size: 0.8rem; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">
+                      Admin Resolution
+                    </div>
+                    <p style="margin: 0 0 0.5rem 0; font-size: 0.95rem; line-height: 1.6; color: var(--text); white-space: pre-line;">
+                      <%= msg.admin_reply %>
+                    </p>
+                    <% if (msg.replied_at) { %>
+                      <div style="font-size: 0.8rem; color: var(--text-soft);">
+                        Resolved on <%= new Date(msg.replied_at).toLocaleDateString(undefined, { dateStyle: 'medium' }) %>
+                      </div>
+                    <% } %>
+                  </div>
+                <% } else { %>
+                  <div style="font-size: 0.9rem; color: var(--text-soft); font-style: italic; margin-top: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--info);"></span>
+                    Awaiting review by the support team.
+                  </div>
+                <% } %>
+              </div>
+            <% }) %>
+          </div>
+        <% } else { %>
+          <div style="text-align: center; padding: 2.5rem 1.5rem; border: 1px dashed var(--line); border-radius: var(--radius-md);">
+            <p style="color: var(--text-muted); margin: 0;">No inquiries found for this email address. Please make sure the email is correct.</p>
+          </div>
+        <% } %>
+      </article>
+    <% } %>
+
+  </div>
+</section>

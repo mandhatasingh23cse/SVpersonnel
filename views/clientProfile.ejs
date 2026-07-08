@@ -1,0 +1,62 @@
+<section class="page-hero">
+  <div class="shell page-hero-content">
+    <p class="eyebrow">My Account</p>
+    <h1>Manage your client profile.</h1>
+    <p>Update your personal information, manage security settings, or delete your account.</p>
+  </div>
+</section>
+
+<section class="section shell dashboard-shell">
+  <%- include("partials/notice") %>
+
+  <div style="display: grid; grid-template-columns: 1fr; gap: 3rem; max-width: 800px; margin: 0 auto;">
+    <!-- Profile Information Form -->
+    <article class="glass-panel" style="padding: 2.5rem; border-radius: var(--radius-lg);">
+      <p class="card-kicker">Personal Details</p>
+      <h2 style="margin-bottom: 1.5rem;">Edit Profile Information</h2>
+
+      <form method="POST" action="/client/profile" class="auth-form">
+        <div class="form-row">
+          <label class="field-group">
+            <span>Full name</span>
+            <input type="text" name="fullname" value="<%= profile.name %>" required>
+          </label>
+
+          <label class="field-group">
+            <span>Email Address (Account Username)</span>
+            <input type="email" value="<%= profile.email %>" disabled style="background: rgba(0, 0, 0, 0.05); cursor: not-allowed;">
+          </label>
+        </div>
+
+        <div class="form-row">
+          <label class="field-group">
+            <span>Phone number</span>
+            <input type="tel" name="phone" value="<%= (profile.phone && profile.phone.startsWith('G_')) ? '' : profile.phone %>" placeholder="Enter your phone number" required>
+          </label>
+
+          <label class="field-group">
+            <span>City</span>
+            <input type="text" name="city" value="<%= profile.city %>" required>
+          </label>
+        </div>
+
+        <button type="submit" class="button button-primary" style="margin-top: 1rem;">Save &amp; Update Profile</button>
+      </form>
+    </article>
+
+    <!-- Change Password Form -->
+    <article class="glass-panel" style="padding: 2.5rem; border-radius: var(--radius-lg);">
+      <p class="card-kicker">Security</p>
+      <h2 style="margin-bottom: 1.5rem;">Change Password</h2>
+
+      <form method="POST" action="/client/change-password" class="auth-form">
+        <label class="field-group">
+          <span>New Password</span>
+          <input type="password" name="newPassword" placeholder="Minimum 6 characters" required>
+        </label>
+
+        <button type="submit" class="button button-secondary" style="margin-top: 1rem;">Update Password</button>
+      </form>
+    </article>
+  </div>
+</section>

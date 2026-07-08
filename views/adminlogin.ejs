@@ -1,0 +1,30 @@
+<section class="section shell auth-layout">
+  <div class="glass-panel auth-story" data-reveal>
+    <p class="eyebrow" style="color: var(--color-ink-light);">Super Admin Access</p>
+    <h1>GigConnect Administration Portal</h1>
+    <p>Sign in with your administrative credentials to answer support inquiries, verify professional partnerships, and monitor site activity.</p>
+  </div>
+
+  <div class="glass-panel auth-form-card" data-reveal>
+    <p class="card-kicker">Admin Login</p>
+    <h2>Access control panel.</h2>
+
+    <%- include("partials/notice") %>
+
+    <form class="auth-form" action="/admin/login" method="POST">
+      <label class="field-group">
+        <span>Admin email address</span>
+        <input type="email" id="email" name="email" value="<%= formData.email %>" required>
+      </label>
+
+      <label class="field-group">
+        <span>Password</span>
+        <input type="password" id="password" name="password" required>
+      </label>
+
+      <button type="submit" class="button button-primary button-block">Sign in to Dashboard</button>
+    </form>
+
+    <p class="auth-switch"><a href="/">&larr; Back to homepage</a></p>
+  </div>
+</section>
