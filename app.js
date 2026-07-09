@@ -2381,6 +2381,11 @@ app.post(
   }
 );
 
+// --- UPTIME / KEEP-ALIVE ROUTE ---
+app.get("/ping", (req, res) => {
+  res.status(200).send("OK");
+});
+
 async function startServer() {
   const state = await initializeSupabase();
 
@@ -2392,6 +2397,20 @@ async function startServer() {
 
   app.listen(PORT, () => {
     console.log(`Server running at http://localhost:${PORT}`);
+
+    // Self-ping every 10 minutes (600,000 ms) to prevent Render free tier from going to sleep
+    if (process.env.NODE_ENV === "production" || process.env.RENDER || process.env.KEEP_ALIVE === "true") {
+      const pingUrl = process.env.APP_URL || "https://svpersonnel.in/ping";
+      console.log(`[KeepAlive] Starting self-ping scheduler targeting: ${pingUrl}`);
+      setInterval(async () => {
+        try {
+          const res = await fetch(pingUrl);
+          console.log(`[KeepAlive] Pinged ${pingUrl} - Status: ${res.status}`);
+        } catch (err) {
+          console.warn(`[KeepAlive] Ping failed: ${err.message}`);
+        }
+      }, 10 * 60 * 1000);
+    }
   });
 }
 
