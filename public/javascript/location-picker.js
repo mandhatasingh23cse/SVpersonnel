@@ -102,33 +102,54 @@ function initLocationPicker() {
   // Re-check periodically for dynamic inputs
   setInterval(attachTargets, 2000);
 
-  function selectLocation(cityName, fullAddress = "") {
+  function selectLocation(cityName, fullAddress = "", placeDetails = null) {
     if (targetInput) {
       targetInput.value = cityName;
       targetInput.dispatchEvent(new Event("input", { bubbles: true }));
       targetInput.dispatchEvent(new Event("change", { bubbles: true }));
     }
+
+    // Auto-fill area or address fields if present on the same form/page
+    if (placeDetails) {
+      const addr = placeDetails.address || {};
+      const exactArea = addr.suburb || addr.neighbourhood || addr.residential || addr.road || addr.village || addr.quarter || addr.subdistrict || "";
+      const fullFormatted = placeDetails.display_name || fullAddress || "";
+
+      const areaInput = document.querySelector('input[name="area"], input#area, input[name="addressArea"], input#addressArea');
+      if (areaInput && !areaInput.value.trim() && exactArea) {
+        areaInput.value = exactArea;
+        areaInput.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+
+      const streetInput = document.querySelector('input[name="street"], input#street, input[name="serviceAddress"], textarea[name="serviceAddress"], input[name="address"]');
+      if (streetInput && !streetInput.value.trim() && fullFormatted) {
+        streetInput.value = fullFormatted;
+        streetInput.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+    }
+
     closeModal();
   }
 
-  // Use Current Location
+  // Use Current Location with high precision GPS & zoom=18 reverse geocoding
   currentBtn.addEventListener("click", () => {
     if (!navigator.geolocation) {
       alert("Geolocation is not supported by your browser.");
       return;
     }
-    currentBtn.innerHTML = `<span style="font-size: 1.1rem;">⌛</span><span>Fetching coordinates & locality...</span>`;
+    currentBtn.innerHTML = `<span style="font-size: 1.1rem;">⌛</span><span>Fetching precise GPS coordinates...</span>`;
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const lat = pos.coords.latitude;
         const lon = pos.coords.longitude;
         try {
-          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`);
+          // zoom=18 requests street/building level precision from Nominatim OpenStreetMap
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`);
           const data = await res.json();
           const addr = data.address || {};
-          const city = addr.city || addr.town || addr.state_district || addr.county || addr.state || "Current Location";
+          const city = addr.city || addr.state_district || addr.town || addr.county || addr.state || "Current Location";
           currentBtn.innerHTML = `<span style="font-size: 1.1rem;">🎯</span><span>Use current location</span>`;
-          selectLocation(city, data.display_name);
+          selectLocation(city, data.display_name, data);
         } catch (err) {
           currentBtn.innerHTML = `<span style="font-size: 1.1rem;">🎯</span><span>Use current location</span>`;
           selectLocation("Gurugram", "Haryana, India");
@@ -136,9 +157,9 @@ function initLocationPicker() {
       },
       (err) => {
         currentBtn.innerHTML = `<span style="font-size: 1.1rem;">🎯</span><span>Use current location</span>`;
-        alert("Unable to retrieve GPS location. Please choose from the list or type your city.");
+        alert("Unable to retrieve high-precision GPS location. Please make sure location access is allowed in your browser settings, or select/type your city.");
       },
-      { timeout: 10000 }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
   });
 

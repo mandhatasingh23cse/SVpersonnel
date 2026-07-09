@@ -62,12 +62,29 @@
             <strong><%= formatTimeSlot(booking.preferredTimeSlot) %></strong>
           </div>
           <div class="dashboard-detail">
-            <span class="dashboard-label">Budget</span>
+            <span class="dashboard-label">Fixed Day Price</span>
             <strong><%= formatCurrency(booking.budgetInr) %></strong>
           </div>
           <div class="dashboard-detail dashboard-detail-wide">
-            <span class="dashboard-label">Location</span>
-            <strong><%= booking.addressArea %></strong>
+            <span class="dashboard-label">Complete Doorstep Address</span>
+            <% 
+              let dirUrlClient = null;
+              if (booking.details && booking.details.includes("[Coordinates:")) {
+                const matchC = booking.details.match(/\[Coordinates:\s*([^,]+),\s*([^\]]+)\]/);
+                if (matchC) {
+                  dirUrlClient = `https://www.google.com/maps/dir/?api=1&destination=${matchC[1]},${matchC[2]}`;
+                }
+              }
+              if (!dirUrlClient) {
+                dirUrlClient = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(booking.addressArea)}`;
+              }
+            %>
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 1rem; flex-wrap: wrap;">
+              <strong><%= booking.addressArea %></strong>
+              <a href="<%= dirUrlClient %>" target="_blank" rel="noopener noreferrer" style="font-size: 0.85rem; font-weight: 700; color: #38bdf8; text-decoration: none; display: flex; align-items: center; gap: 0.25rem; background: rgba(56, 189, 248, 0.15); padding: 0.5rem 0.85rem; border-radius: var(--radius-sm); border: 1px solid #38bdf8;">
+                📍 View on Google Maps Navigation
+              </a>
+            </div>
           </div>
           <div class="dashboard-detail dashboard-detail-wide">
             <span class="dashboard-label">Professional area</span>
@@ -117,8 +134,8 @@
 
         <% if (booking.status === 'confirmed' && workStartedAt && !workCompletedAt) { %>
           <div style="margin: 1.25rem 0; padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--accent-soft); background: rgba(124, 58, 237, 0.04); text-align: center;">
-            <span style="font-weight: 700; color: var(--accent); display: block; margin-bottom: 0.25rem;">⚡ Service In Progress</span>
-            <span id="timer-<%= booking.id %>" data-start-time="<%= workStartedAt %>" data-hourly-rate="<%= booking.budgetInr || 500 %>" style="font-family: monospace; font-size: 1.1rem; font-weight: bold; color: var(--text);">00:00:00 (Accrued: ₹0)</span>
+            <span style="font-weight: 700; color: var(--accent); display: block; margin-bottom: 0.25rem;">⚡ Service In Progress (Day Rate Fixed)</span>
+            <span id="timer-<%= booking.id %>" data-start-time="<%= workStartedAt %>" data-fixed-rate="<%= booking.budgetInr || 500 %>" style="font-family: monospace; font-size: 1.1rem; font-weight: bold; color: var(--text);">00:00:00 (Fixed Charge: ₹<%= booking.budgetInr || 500 %>)</span>
           </div>
         <% } %>
 
@@ -285,7 +302,7 @@
       function updateTimers() {
         timerElements.forEach(el => {
           const startTimeStr = el.dataset.startTime;
-          const hourlyRate = Number(el.dataset.hourlyRate || 500);
+          const fixedRate = Number(el.dataset.fixedRate || 500);
           if (!startTimeStr) return;
 
           const start = new Date(startTimeStr).getTime();
@@ -302,16 +319,7 @@
             String(seconds).padStart(2, '0')
           ].join(':');
 
-          const elapsedHours = diffMs / 3600000;
-          let accrued = hourlyRate;
-          if (elapsedHours > 1) {
-            accrued = Math.round(elapsedHours * hourlyRate);
-          } else {
-            const elapsedMinutes = diffMs / 60000;
-            accrued = Math.max(Math.round(hourlyRate / 2), Math.round((elapsedMinutes / 60) * hourlyRate));
-          }
-
-          el.textContent = `${timeStr} (Accrued: ₹${accrued})`;
+          el.textContent = `${timeStr} (Fixed Day Charge: ₹${fixedRate})`;
         });
       }
 

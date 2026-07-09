@@ -88,34 +88,44 @@
         </label>
 
         <label class="field-group">
-          <span>Time slot</span>
-          <input type="text" name="preferredTimeSlot" value="<%= formData.preferredTimeSlot %>" placeholder="10:00 AM - 12:00 PM" required>
+          <span>🕒 Select Preferred Work Time (Clock)</span>
+          <input type="time" name="preferredTimeSlot" id="preferredTimeSlotInput" value="<%= formData.preferredTimeSlot || '10:00' %>" required style="font-size: 1rem; padding: 0.75rem; cursor: pointer;">
+          <div style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.35rem;">
+            <button type="button" class="time-pill-btn" onclick="document.getElementById('preferredTimeSlotInput').value='09:00'" style="background: rgba(255,255,255,0.05); border: 1px solid var(--line); border-radius: 4px; padding: 3px 8px; font-size: 0.75rem; color: var(--text-soft); cursor: pointer;">09:00 AM</button>
+            <button type="button" class="time-pill-btn" onclick="document.getElementById('preferredTimeSlotInput').value='11:00'" style="background: rgba(255,255,255,0.05); border: 1px solid var(--line); border-radius: 4px; padding: 3px 8px; font-size: 0.75rem; color: var(--text-soft); cursor: pointer;">11:00 AM</button>
+            <button type="button" class="time-pill-btn" onclick="document.getElementById('preferredTimeSlotInput').value='14:00'" style="background: rgba(255,255,255,0.05); border: 1px solid var(--line); border-radius: 4px; padding: 3px 8px; font-size: 0.75rem; color: var(--text-soft); cursor: pointer;">02:00 PM</button>
+            <button type="button" class="time-pill-btn" onclick="document.getElementById('preferredTimeSlotInput').value='17:00'" style="background: rgba(255,255,255,0.05); border: 1px solid var(--line); border-radius: 4px; padding: 3px 8px; font-size: 0.75rem; color: var(--text-soft); cursor: pointer;">05:00 PM</button>
+          </div>
         </label>
       </div>
 
-      <div class="form-row">
-        <label class="field-group" style="position: relative; flex: 1;">
-          <span style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-            <span>Area / address</span>
-            <button type="button" id="btn-fetch-location" style="background: none; border: none; color: var(--accent); cursor: pointer; font-size: 0.8rem; font-weight: 700; display: flex; align-items: center; gap: 0.25rem; padding: 0;">
-              📍 Use Current Location
-            </button>
-          </span>
-          <div style="position: relative; width: 100%;">
-            <input type="text" id="addressAreaInput" name="addressArea" value="<%= formData.addressArea %>" placeholder="Type to search (e.g. Kaptanganj, Kushinagar)" autocomplete="off" required style="width: 100%;">
-            <div id="address-suggestions" style="position: absolute; top: 100%; left: 0; right: 0; background: #0f172a; border: 1px solid var(--line); border-radius: var(--radius-sm); max-height: 200px; overflow-y: auto; z-index: 100; display: none; box-shadow: var(--shadow-lg);"></div>
-          </div>
-          <span style="font-size: 0.75rem; color: var(--text-soft); margin-top: 0.25rem; display: block;">
-            💡 Type your city/area to search, or use the auto-locator. You can also edit it manually.
-          </span>
-          <input type="hidden" id="latitudeInput" name="latitude" value="">
-          <input type="hidden" id="longitudeInput" name="longitude" value="">
-        </label>
+      <!-- Flipkart / Amazon style Complete Service Address -->
+      <div style="margin: 1.5rem 0; padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--line); background: rgba(255, 255, 255, 0.015);">
+        <h4 style="margin: 0 0 0.5rem 0; font-size: 1.05rem; display: flex; justify-content: space-between; align-items: center;">
+          <span>📍 Complete Service Address (Like Flipkart / Amazon)</span>
+          <button type="button" id="btn-fetch-location" style="background: none; border: none; color: var(--accent); cursor: pointer; font-size: 0.8rem; font-weight: 700; display: flex; align-items: center; gap: 0.25rem; padding: 0;">
+            🎯 Use GPS Location
+          </button>
+        </h4>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Please provide your exact doorstep address so the professional can easily reach you via Google Maps navigation.</p>
 
-        <label class="field-group">
-          <span>Budget in rupees</span>
-          <input type="number" name="budget" value="<%= formData.budget %>" min="100" max="100000" required>
-        </label>
+        <div class="form-row" style="margin-bottom: 1rem;">
+          <label class="field-group" style="position: relative; flex: 1;">
+            <span>City & Locality / Area</span>
+            <input type="text" id="addressAreaInput" name="addressArea" value="<%= formData.addressArea %>" placeholder="Type to search (e.g. Kaptanganj, Kushinagar or Sector 14, Gurugram)" autocomplete="off" required style="width: 100%;">
+            <div id="address-suggestions" style="position: absolute; top: 100%; left: 0; right: 0; background: #0f172a; border: 1px solid var(--line); border-radius: var(--radius-sm); max-height: 200px; overflow-y: auto; z-index: 100; display: none; box-shadow: var(--shadow-lg);"></div>
+          </label>
+        </div>
+
+        <div class="form-row">
+          <label class="field-group" style="width: 100%;">
+            <span>House No., Building Name, Exact Street & Landmark</span>
+            <textarea name="serviceAddress" id="serviceAddressInput" rows="2" placeholder="e.g. Flat 402, Shivam Apartments, Near Durga Mandir, MG Road" required style="width: 100%;"><%= formData.serviceAddress || '' %></textarea>
+          </label>
+        </div>
+
+        <input type="hidden" id="latitudeInput" name="latitude" value="">
+        <input type="hidden" id="longitudeInput" name="longitude" value="">
       </div>
 
       <!-- Payment Method Selection -->
