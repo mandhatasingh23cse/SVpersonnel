@@ -917,7 +917,6 @@ app.post(
     body("phone").trim().isLength({ min: 10, max: 20 }).withMessage("Please enter a valid phone number."),
     body("primary-skill").trim().isLength({ min: 2, max: 120 }).withMessage("Please choose your primary service."),
     body("city").trim().isLength({ min: 2, max: 120 }).withMessage("Please enter your city."),
-    body("area").trim().isLength({ min: 2, max: 120 }).withMessage("Please enter your service area."),
     body("experience").isInt({ min: 0, max: 60 }).withMessage("Please enter valid years of experience."),
     body("password")
       .trim()
@@ -943,7 +942,7 @@ app.post(
       primarySkill: sanitizeText(primaryInput),
       secondarySkills: normalizeSkills(secondaryInput),
       city: sanitizeText(req.body.city),
-      area: sanitizeText(req.body.area),
+      area: sanitizeText(req.body.area || req.body.city || "Main"),
       experience: sanitizeText(req.body.experience),
       photo: photoPath,
       description: sanitizeText(req.body.description)
@@ -1280,8 +1279,8 @@ app.post(
   upload.single("photo"),
   [
     body("fullname").trim().isLength({ min: 2, max: 120 }).withMessage("Please enter your full name."),
+    body("phone").trim().isLength({ min: 10, max: 20 }).withMessage("Please enter a valid phone number."),
     body("city").trim().isLength({ min: 2, max: 120 }).withMessage("Please enter your city."),
-    body("area").trim().isLength({ min: 2, max: 120 }).withMessage("Please enter your service area."),
     body("experience").isInt({ min: 0, max: 60 }).withMessage("Please enter valid years of experience.")
   ],
   async (req, res) => {
@@ -1305,8 +1304,9 @@ app.post(
     try {
       const profileData = {
         fullName: sanitizeText(req.body.fullname),
+        phone: sanitizeText(req.body.phone),
         city: sanitizeText(req.body.city),
-        area: sanitizeText(req.body.area),
+        area: sanitizeText(req.body.area || req.body.city || "Main"),
         experience: Number(req.body.experience) || 0,
         description: sanitizeText(req.body.description || "")
       };
@@ -1331,6 +1331,7 @@ app.post(
       // Update session details
       req.session.user.name = profileData.fullName;
       req.session.user.city = profileData.city;
+      if (profileData.phone) req.session.user.phone = profileData.phone;
 
       req.session.professionalProfileNotice = createFormNotice("success", "Profile updated successfully!");
     } catch (error) {
