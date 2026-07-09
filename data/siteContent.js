@@ -56,7 +56,7 @@ module.exports = {
     socialLinks: [
       { href: "#", label: "Facebook", icon: "/assets/facebook.png" },
       { href: "#", label: "LinkedIn", icon: "/assets/linked in.png" },
-      { href: "#", label: "Instagram", icon: "/assets/insta logo.png" }
+      { href: "https://www.instagram.com/svpersonnel_official?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==", label: "Instagram", icon: "/assets/insta logo.png" }
     ]
   },
   home: {

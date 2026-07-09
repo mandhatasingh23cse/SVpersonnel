@@ -30,7 +30,7 @@
 
         <div class="footer-socials">
           <% footerContent.socialLinks.forEach(function (social) { %>
-            <a href="<%= social.href %>" aria-label="<%= social.label %>">
+            <a href="<%= social.href %>" aria-label="<%= social.label %>" <%= social.href.startsWith("http") ? 'target="_blank" rel="noopener noreferrer"' : '' %>>
               <img src="<%= social.icon %>" alt="<%= social.label %>">
             </a>
           <% }) %>

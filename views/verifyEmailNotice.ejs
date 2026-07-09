@@ -1,0 +1,33 @@
+<section class="section shell auth-layout" style="display: flex; align-items: center; justify-content: center; min-height: 75vh;">
+  <div class="glass-panel auth-form-card" style="max-width: 520px; text-align: center; padding: 3.5rem 2.5rem; width: 100%; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.3);">
+    <div style="font-size: 3.5rem; margin-bottom: 1.5rem; display: inline-block; padding: 1.2rem; background: rgba(14, 165, 233, 0.15); border-radius: 50%; border: 1px solid rgba(14, 165, 233, 0.4);">
+      ✉️
+    </div>
+    
+    <h1 style="font-size: 1.85rem; margin-bottom: 1rem; color: #ffffff; font-weight: 700;">Check Your Email</h1>
+    
+    <p style="color: var(--color-ink-light); font-size: 1.05rem; line-height: 1.6; margin-bottom: 1.5rem;">
+      We have sent an account verification link from <strong style="color: #38bdf8;">Supabase</strong> to:<br>
+      <span style="display: inline-block; margin-top: 0.5rem; padding: 0.4rem 1rem; background: rgba(255,255,255,0.08); border-radius: 8px; color: #ffffff; font-weight: 600;"><%= email || "your email address" %></span>
+    </p>
+
+    <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 1.25rem; text-align: left; margin-bottom: 2rem; font-size: 0.9rem; color: #cbd5e1;">
+      <p style="margin: 0 0 0.5rem 0; display: flex; align-items: center; gap: 0.5rem;">
+        <span style="color: #38bdf8;">ℹ️</span> <strong>Why do I need to verify?</strong>
+      </p>
+      <p style="margin: 0; line-height: 1.5;">
+        To protect your account and ensure secure communications between service providers and clients, you must verify your email address before logging in or accessing your dashboard.
+      </p>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 1rem;">
+      <a href="<%= role === 'professional' ? '/professionallogin' : '/clientlogin' %>" class="button button-primary" style="width: 100%; justify-content: center; padding: 1rem; font-size: 1rem; font-weight: 600;">
+        Go to Login Screen
+      </a>
+      
+      <p style="font-size: 0.85rem; color: var(--color-ink-light); margin: 0;">
+        Didn't receive the email? Check your spam folder or try logging in again to re-request confirmation.
+      </p>
+    </div>
+  </div>
+</section>

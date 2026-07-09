@@ -166,6 +166,13 @@ function normalizeSkills(skills) {
   return [];
 }
 
+function getRequestOrigin(req) {
+  if (process.env.APP_URL) return process.env.APP_URL.replace(/\/$/, "");
+  const proto = req.headers["x-forwarded-proto"] || req.protocol || "http";
+  const host = req.headers["x-forwarded-host"] || req.get("host") || "localhost:3000";
+  return `${proto}://${host}`.replace(/\/$/, "");
+}
+
 function formatCurrency(value = 0) {
   return new Intl.NumberFormat("en-IN", {
     style: "currency",
@@ -779,13 +786,18 @@ app.post(
     }
 
     try {
+      const originUrl = getRequestOrigin(req);
       const user = await createClientAccount({
         fullName: formData.fullname,
         email: formData.email,
         phone: formData.phone,
         city: formData.city,
         password: req.body.password
-      });
+      }, originUrl);
+
+      if (user.emailVerificationRequired) {
+        return res.redirect(`/auth/verify-email-notice?email=${encodeURIComponent(user.email)}&role=client`);
+      }
 
       req.session.user = user;
       return res.redirect("/client/dashboard");
@@ -963,6 +975,7 @@ app.post(
     }
 
     try {
+      const originUrl = getRequestOrigin(req);
       const user = await createProfessionalAccount({
         fullName: formData.name,
         email: formData.email,
@@ -974,7 +987,11 @@ app.post(
         description: formData.description || undefined,
         password: req.body.password,
         serviceIds
-      });
+      }, originUrl);
+
+      if (user.emailVerificationRequired) {
+        return res.redirect(`/auth/verify-email-notice?email=${encodeURIComponent(user.email)}&role=professional`);
+      }
 
       req.session.user = user;
       return res.redirect("/professional/dashboard");
@@ -1598,7 +1615,8 @@ app.get("/auth/google", async (req, res) => {
   }
 
   try {
-    const redirectUrl = await getOAuthSignInUrl(role);
+    const originUrl = getRequestOrigin(req);
+    const redirectUrl = await getOAuthSignInUrl(role, originUrl);
     return res.redirect(redirectUrl);
   } catch (error) {
     req.session.loginNotice = createFormNotice("error", `Google Auth failed: ${error.message}`);
@@ -1640,6 +1658,17 @@ app.get("/auth/callback", async (req, res) => {
     req.session.loginNotice = createFormNotice("error", `Authentication failed: ${error.message}`);
     return res.redirect(role === "client" ? "/clientlogin" : "/professionallogin");
   }
+});
+
+app.get("/auth/verify-email-notice", (req, res) => {
+  const email = req.query.email || "";
+  const role = req.query.role || "client";
+  res.render("verifyEmailNotice", {
+    title: "Verify Your Email | SV Personnels",
+    pageClass: "page-login",
+    email,
+    role
+  });
 });
 
 app.get("/book-service/:professionalId", requireRole("client"), async (req, res) => {
