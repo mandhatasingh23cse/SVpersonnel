@@ -49,14 +49,19 @@
 
         <label class="field-group">
           <span>Primary skill</span>
-          <select id="primary-skill" name="primary-skill" required>
+          <select id="primary-skill" name="primary-skill" required style="cursor: pointer;">
             <option value="">Select a platform service</option>
             <% platformServices.forEach(function (service) { %>
               <option value="<%= service.name %>" <%= registerFormData.primarySkill === service.name ? "selected" : "" %>>
                 <%= service.name %>
               </option>
             <% }) %>
+            <option value="Other" <%= registerFormData.primarySkill === "Other" ? "selected" : "" %>>+ Other (Add Custom Skill)</option>
           </select>
+          <div id="primary-skill-custom-box" class="custom-skill-box <%= registerFormData.primarySkill === 'Other' ? 'active' : '' %>">
+            <input type="text" id="primary-skill-custom" name="primary-skill-custom" placeholder="Type your custom primary skill (e.g. Catering Chef)..." class="skills-search-input" style="margin-top: 8px;">
+            <small class="field-hint" style="color: #a78bfa; font-weight: 600;">✨ Type your skill above and it will be added to platform options.</small>
+          </div>
           <small class="field-hint">Choose the main service you want clients to find you for.</small>
         </label>
       </div>
@@ -64,14 +69,19 @@
       <div class="form-row">
         <label class="field-group">
           <span>Additional skills</span>
-          <select id="secondary-skills" name="secondary-skills">
+          <select id="secondary-skills" name="secondary-skills" style="cursor: pointer;">
             <option value="">Select an additional service</option>
             <% platformServices.forEach(function (service) { %>
               <option value="<%= service.name %>" <%= selectedSecondarySkill === service.name ? "selected" : "" %>>
                 <%= service.name %>
               </option>
             <% }) %>
+            <option value="Other" <%= selectedSecondarySkill === "Other" ? "selected" : "" %>>+ Other (Add Custom Skill)</option>
           </select>
+          <div id="secondary-skills-custom-box" class="custom-skill-box <%= selectedSecondarySkill === 'Other' ? 'active' : '' %>">
+            <input type="text" id="secondary-skills-custom" name="secondary-skills-custom" placeholder="Type your custom additional skill..." class="skills-search-input" style="margin-top: 8px;">
+            <small class="field-hint" style="color: #a78bfa; font-weight: 600;">✨ Type your skill above and it will be added to platform options.</small>
+          </div>
           <small class="field-hint">Optional. Choose one extra platform category you also serve.</small>
         </label>
 
