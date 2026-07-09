@@ -632,6 +632,21 @@ app.get("/terms", (req, res) =>
   })
 );
 
+app.get("/payment-policy", (req, res) =>
+  res.render("paymentPolicy", {
+    title: "Payment Policy | SV Personnels",
+    pageClass: "page-terms"
+  })
+);
+
+app.get("/refund-policy", (req, res) =>
+  res.render("refundPolicy", {
+    title: "Refund & Cancellation Policy | SV Personnels",
+    pageClass: "page-terms"
+  })
+);
+
+
 app.get("/findHelpNow", (req, res) => {
   if (req.session.user && req.session.user.role === "professional") {
     req.session.professionalDashboardNotice = createFormNotice(
