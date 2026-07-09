@@ -36,6 +36,7 @@ const {
   getClientDashboardData,
   getProfessionalDashboardData,
   getServiceOptions,
+  addCustomServiceOption,
   authenticateAdmin,
   getAdminDashboardData,
   verifyProfessional,
@@ -147,7 +148,7 @@ function sanitizeText(value = "") {
   return sanitizeHtml(String(value).trim(), {
     allowedTags: [],
     allowedAttributes: {}
-  });
+  }).replace(/&amp;/g, "&").replace(/&#39;/g, "'").replace(/&quot;/g, '"');
 }
 
 function normalizeSkills(skills) {
@@ -411,17 +412,23 @@ function requireRole(role) {
 }
 
 async function resolveServiceIdsFromInput(primarySkill, secondarySkills) {
-  if (!isDatabaseReady()) return [];
-
   const skills = normalizeSkills([primarySkill, secondarySkills].filter(Boolean));
   if (!skills.length) return [];
+
+  if (!isDatabaseReady()) {
+    return skills.map((_, idx) => idx + 1);
+  }
 
   const serviceOptions = await getServiceOptions();
   const lowerSkills = skills.map((skill) => skill.toLowerCase());
   const matchedIds = [];
 
-  for (const skill of lowerSkills) {
-    const matchedService = serviceOptions.find((service) => {
+  for (let i = 0; i < skills.length; i++) {
+    const rawSkill = skills[i];
+    const skill = lowerSkills[i];
+    if (skill === "other" || !rawSkill) continue;
+
+    let matchedService = serviceOptions.find((service) => {
       const serviceName = service.name.toLowerCase();
       const serviceSlug = String(service.slug || "").toLowerCase();
 
@@ -433,6 +440,11 @@ async function resolveServiceIdsFromInput(primarySkill, secondarySkills) {
         (serviceSlug && (serviceSlug.includes(skill) || skill.includes(serviceSlug)))
       );
     });
+
+    if (!matchedService) {
+      console.log(`[Skills] Creating new custom service option for: "${rawSkill}"`);
+      matchedService = await addCustomServiceOption(rawSkill);
+    }
 
     if (matchedService && !matchedIds.includes(matchedService.id)) {
       matchedIds.push(matchedService.id);
@@ -910,12 +922,14 @@ app.post(
   async (req, res) => {
     const errors = validationResult(req);
     const photoPath = req.file ? `/uploads/${req.file.filename}` : "/assets/gigconnect.logo.png";
+    const primaryInput = req.body["primary-skill"] === "Other" ? (req.body["primary-skill-custom"] || "Other") : req.body["primary-skill"];
+    const secondaryInput = req.body["secondary-skills"] === "Other" ? (req.body["secondary-skills-custom"] || "Other") : req.body["secondary-skills"];
     const formData = {
       name: sanitizeText(req.body.fullname),
       email: sanitizeText(req.body.email),
       phone: sanitizeText(req.body.phone),
-      primarySkill: sanitizeText(req.body["primary-skill"]),
-      secondarySkills: normalizeSkills(req.body["secondary-skills"]),
+      primarySkill: sanitizeText(primaryInput),
+      secondarySkills: normalizeSkills(secondaryInput),
       city: sanitizeText(req.body.city),
       area: sanitizeText(req.body.area),
       experience: sanitizeText(req.body.experience),
@@ -1288,7 +1302,13 @@ app.post(
 
       // Update service mappings
       const rawServiceIds = req.body.serviceIds;
-      const serviceIds = rawServiceIds ? (Array.isArray(rawServiceIds) ? rawServiceIds : [rawServiceIds]) : [];
+      const serviceIds = rawServiceIds ? (Array.isArray(rawServiceIds) ? rawServiceIds.map(Number) : [Number(rawServiceIds)]) : [];
+      if (req.body.customSkillName && req.body.customSkillName.trim().length > 0) {
+        const customService = await addCustomServiceOption(req.body.customSkillName.trim());
+        if (customService && customService.id && !serviceIds.includes(Number(customService.id))) {
+          serviceIds.push(Number(customService.id));
+        }
+      }
       await updateProfessionalServices(req.session.user.id, serviceIds);
 
       // Update session details

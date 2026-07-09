@@ -37,6 +37,18 @@
   /* Card backgrounds - notably lighter than body for clear contrast */
   --bg-card: rgba(22, 32, 58, 0.85);
   --bg-card-hover: rgba(28, 40, 72, 0.95);
+  /* Global compatibility variables to fix visibility across all auth and inner pages */
+  --color-ink: #ffffff;
+  --color-ink-light: #d1d5db;
+  --color-brand: #8b5cf6;
+  --color-brand-strong: #7c3aed;
+  --font-display: 'Outfit', sans-serif;
+  --radius-large: 24px;
+  --radius-medium: 14px;
+  --radius-small: 10px;
+  --color-border: rgba(255, 255, 255, 0.18);
+  --glass-bg: rgba(22, 32, 58, 0.9);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.18);
 }
 
 
@@ -361,15 +373,17 @@ button:disabled {
 }
 
 .button-secondary {
-  color: var(--text);
-  border-color: var(--line-strong);
-  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.12);
+  font-weight: 600;
 }
 
 .button-secondary:hover,
 .button-secondary:focus-visible {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.22);
+  border-color: #ffffff;
+  color: #ffffff;
 }
 
 .button-danger {
@@ -424,6 +438,216 @@ select {
     calc(100% - 18px) calc(50% - 2px);
   background-size: 6px 6px, 6px 6px;
   background-repeat: no-repeat;
+}
+
+select option {
+  background-color: #0f172a;
+  color: #ffffff;
+  padding: 12px;
+}
+
+/* --- SEARCHABLE SKILLS SELECT & CUSTOM WRITE-IN --- */
+.skills-search-wrapper {
+  position: relative;
+  width: 100%;
+}
+.skills-search-input {
+  width: 100%;
+  height: 56px;
+  padding: 0 44px 0 16px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  background: rgba(15, 20, 28, 0.7);
+  color: #ffffff;
+  font-size: 1rem;
+  cursor: pointer;
+}
+.skills-dropdown-list {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 100%;
+  max-height: 280px;
+  overflow-y: auto;
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-md);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8);
+  z-index: 1000;
+  display: none;
+}
+.skills-dropdown-list.active {
+  display: block;
+}
+.skills-dropdown-item {
+  padding: 12px 16px;
+  color: #ffffff;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.skills-dropdown-item:hover {
+  background: rgba(139, 92, 246, 0.25);
+  color: #ffffff;
+}
+.skills-dropdown-item.other-option {
+  color: #a78bfa;
+  font-weight: 700;
+  background: rgba(139, 92, 246, 0.1);
+}
+.custom-skill-box {
+  margin-top: 10px;
+  display: none;
+}
+.custom-skill-box.active {
+  display: block;
+}
+
+/* --- CITY / LOCATION RECOMMENDATION MODAL (EXACT LIKE SCREENSHOT 4) --- */
+.loc-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.loc-modal-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+.loc-modal-card {
+  width: 100%;
+  max-width: 520px;
+  background: #ffffff;
+  color: #1e293b;
+  border-radius: 20px;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes modalSlideUp {
+  from { transform: translateY(30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.loc-modal-header {
+  padding: 16px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.loc-search-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+.loc-btn-back,
+.loc-btn-clear {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  color: #64748b;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.loc-search-input {
+  flex: 1;
+  border: none !important;
+  background: transparent !important;
+  color: #0f172a !important;
+  font-size: 1rem !important;
+  font-weight: 500;
+  height: auto !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+.loc-search-input:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+.loc-current-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+  color: #7c3aed;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: background 0.2s ease;
+}
+.loc-current-row:hover {
+  background: #f8fafc;
+}
+.loc-recs-list {
+  max-height: 340px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+.loc-rec-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 20px;
+  border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.loc-rec-item:hover {
+  background: #f8fafc;
+}
+.loc-rec-icon {
+  color: #64748b;
+  font-size: 1.1rem;
+  margin-top: 2px;
+}
+.loc-rec-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.loc-rec-title {
+  color: #0f172a;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+.loc-rec-sub {
+  color: #64748b;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+.loc-modal-footer {
+  padding: 10px;
+  text-align: center;
+  background: #f8fafc;
+  border-top: 1px solid #f1f5f9;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+.loc-google-logo {
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: -0.3px;
 }
 
 input::placeholder,

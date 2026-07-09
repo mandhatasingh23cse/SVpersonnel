@@ -67,11 +67,20 @@
           
           <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
             <% services.forEach(function(service) { %>
-              <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer; padding: 0.5rem; border-radius: var(--radius-sm); background: rgba(255, 255, 255, 0.3); border: 1px solid var(--line);">
-                <input type="checkbox" name="serviceIds" value="<%= service.id %>" <%= mappedServiceIds.includes(service.id) ? 'checked' : '' %> style="width: auto;">
-                <span style="font-size: 0.95rem; font-weight: 500;"><%= service.name %></span>
+              <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer; padding: 0.65rem 0.85rem; border-radius: var(--radius-sm); background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff; transition: all 0.2s ease;">
+                <input type="checkbox" name="serviceIds" value="<%= service.id %>" <%= mappedServiceIds.includes(service.id) ? 'checked' : '' %> style="width: 18px; height: 18px; accent-color: var(--accent);">
+                <span style="font-size: 0.95rem; font-weight: 600; color: #ffffff;"><%= service.name %></span>
               </label>
             <% }) %>
+          </div>
+
+          <!-- Add Custom Skill Option -->
+          <div style="margin-top: 1.5rem; padding: 1rem 1.25rem; border-radius: var(--radius-sm); background: rgba(139, 92, 246, 0.1); border: 1px dashed var(--accent);">
+            <label for="customSkillName" style="display: block; font-weight: 600; color: #a78bfa; margin-bottom: 0.5rem; font-size: 0.95rem;">
+              + Other (Add a Custom Skill / Service not listed above)
+            </label>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">If your skill is missing from the list, type it below. It will be automatically added and mapped to your profile when you click Save.</p>
+            <input type="text" id="customSkillName" name="customSkillName" placeholder="e.g. Catering Chef, Solar Panel Installation..." style="max-width: 400px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.3); color: #ffffff;">
           </div>
         </div>
 
