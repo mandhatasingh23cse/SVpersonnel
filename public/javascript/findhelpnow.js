@@ -268,7 +268,7 @@ document.addEventListener("DOMContentLoaded", () => {
       resultsGrid.innerHTML = `
         <div class="empty-state">
           <h3>Something went wrong while loading the marketplace.</h3>
-          <p>Please try again or contact the GigConnect team if the issue continues.</p>
+          <p>Please try again or contact the SV Personnels team if the issue continues.</p>
           <div class="empty-actions">
             <a href="/contactus" class="button button-primary">Contact support</a>
           </div>

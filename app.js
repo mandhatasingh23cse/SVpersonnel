@@ -465,7 +465,7 @@ async function getRegistrationServiceOptions() {
 
 function renderContactPage(res, overrides = {}) {
   return res.render("contactus", {
-    title: "Contact GigConnect",
+    title: "Contact SV Personnels",
     pageClass: "page-contact",
     contactContent: siteContent.contact,
     formData: {
@@ -482,7 +482,7 @@ function renderContactPage(res, overrides = {}) {
 
 function renderSignupPage(res, overrides = {}) {
   return res.render("signup", {
-    title: "Create your client account | GigConnect",
+    title: "Create your client account | SV Personnels",
     pageClass: "page-signup",
     authContent: siteContent.auth.client,
     bridgeNote: getAuthBridgeNote(),
@@ -499,7 +499,7 @@ function renderSignupPage(res, overrides = {}) {
 
 function renderClientLoginPage(req, res, overrides = {}) {
   return res.render("clientlogin", {
-    title: "Client login | GigConnect",
+    title: "Client login | SV Personnels",
     pageClass: "page-login",
     authContent: siteContent.auth.clientLogin,
     bridgeNote: getAuthBridgeNote(),
@@ -513,7 +513,7 @@ function renderClientLoginPage(req, res, overrides = {}) {
 
 function renderProfessionalLoginPage(req, res, overrides = {}) {
   return res.render("professionallogin", {
-    title: "Professional login | GigConnect",
+    title: "Professional login | SV Personnels",
     pageClass: "page-login",
     authContent: siteContent.auth.proLogin,
     bridgeNote: getAuthBridgeNote(),
@@ -529,7 +529,7 @@ async function renderRegisterPage(res, overrides = {}) {
   const platformServices = await getRegistrationServiceOptions();
 
   return res.render("register", {
-    title: "Register as a professional | GigConnect",
+    title: "Register as a professional | SV Personnels",
     pageClass: "page-register",
     authContent: siteContent.auth.professional,
     bridgeNote: getAuthBridgeNote(),
@@ -554,7 +554,7 @@ async function renderRegisterPage(res, overrides = {}) {
 
 function renderBookingPage(res, overrides = {}) {
   return res.render("bookService", {
-    title: "Book a professional | GigConnect",
+    title: "Book a professional | SV Personnels",
     pageClass: "page-booking",
     professional: null,
     serviceOptions: [],
@@ -590,7 +590,7 @@ app.get("/", async (req, res) => {
   const { homeContent, featuredWorkers } = await buildHomePageContent();
 
   res.render("index", {
-    title: "GigConnect | Find local professionals in Gurugram",
+    title: "SV Personnels | Govt. Authorized Professional Job & Hiring Provider across India",
     pageClass: "page-home",
     homeContent,
     featuredWorkers
@@ -599,7 +599,7 @@ app.get("/", async (req, res) => {
 
 app.get("/howitworks", (req, res) =>
   res.render("howitworks", {
-    title: "How GigConnect works",
+    title: "How SV Personnels works",
     pageClass: "page-how-it-works",
     howItWorksContent: siteContent.howItWorks,
     homeSteps: siteContent.home.steps
@@ -608,7 +608,7 @@ app.get("/howitworks", (req, res) =>
 
 app.get("/terms", (req, res) =>
   res.render("terms", {
-    title: "Terms & Conditions | GigConnect",
+    title: "Terms & Conditions | SV Personnels",
     pageClass: "page-terms"
   })
 );
@@ -622,7 +622,7 @@ app.get("/findHelpNow", (req, res) => {
     return res.redirect("/professional/dashboard");
   }
   return res.render("findHelpNow", {
-    title: "Find trusted professionals | GigConnect",
+    title: "Find trusted professionals | SV Personnels",
     pageClass: "page-discover",
     discoverContent: siteContent.discover,
     searchDefaults: createSearchDefaults(req.query),
@@ -652,7 +652,7 @@ app.get("/contact/status", async (req, res) => {
   }
 
   res.render("checkSupport", {
-    title: "Check Message Status | GigConnect",
+    title: "Check Message Status | SV Personnels",
     pageClass: "page-support-status",
     email,
     messages,
@@ -716,7 +716,7 @@ app.post(
     return renderContactPage(res, {
       formNotice: createFormNotice(
         "success",
-        "Thanks for reaching out. Your message has been saved in the GigConnect support inbox."
+        "Thanks for reaching out. Your message has been saved in the SV Personnels support inbox."
       )
     });
   }
@@ -791,7 +791,7 @@ app.get("/professionallogin", (req, res) => res.redirect("/login"));
 
 app.get("/login", (req, res) => {
   res.render("login", {
-    title: "Log in | GigConnect",
+    title: "Log in | SV Personnels",
     pageClass: "page-login",
     bridgeNote: null,
     formNotice: consumeSessionNotice(req, "loginNotice"),
@@ -811,7 +811,7 @@ app.post(
 
     if (!errors.isEmpty()) {
       return res.status(422).render("login", {
-        title: "Log in | GigConnect",
+        title: "Log in | SV Personnels",
         pageClass: "page-login",
         bridgeNote: null,
         formNotice: createFormNotice("error", errors.array()[0].msg),
@@ -821,7 +821,7 @@ app.post(
 
     if (!isDatabaseReady()) {
       return res.status(503).render("login", {
-        title: "Log in | GigConnect",
+        title: "Log in | SV Personnels",
         pageClass: "page-login",
         bridgeNote: null,
         formNotice: createFormNotice("error", "Supabase is not connected yet, so login is unavailable."),
@@ -843,7 +843,7 @@ app.post(
 
         if (cancelCount >= 10) {
           return res.status(403).render("login", {
-            title: "Account Blocked | GigConnect",
+            title: "Account Blocked | SV Personnels",
             pageClass: "page-login",
             bridgeNote: null,
             formNotice: createFormNotice("error", "Your account has been permanently blocked due to exceeding 10 cancellations."),
@@ -863,7 +863,7 @@ app.post(
       }
     } catch (error) {
       return res.status(401).render("login", {
-        title: "Log in | GigConnect",
+        title: "Log in | SV Personnels",
         pageClass: "page-login",
         bridgeNote: null,
         formNotice: createFormNotice("error", error.message || "Incorrect credentials."),
@@ -875,7 +875,7 @@ app.post(
 
 app.get("/register", (req, res) => {
   res.render("registerSelect", {
-    title: "Join GigConnect",
+    title: "Join SV Personnels",
     pageClass: "page-register"
   });
 });
@@ -991,7 +991,7 @@ app.get("/client/dashboard", requireRole("client"), async (req, res) => {
       req.session.destroy();
       res.clearCookie("connect.sid");
       return res.status(403).render("login", {
-        title: "Account Blocked | GigConnect",
+        title: "Account Blocked | SV Personnels",
         pageClass: "page-login",
         bridgeNote: null,
         formNotice: createFormNotice("error", "Your account has been permanently blocked due to exceeding 10 cancellations."),
@@ -1004,7 +1004,7 @@ app.get("/client/dashboard", requireRole("client"), async (req, res) => {
 
   const dashboardData = await getClientDashboardData(req.session.user.id);
   return res.render("clientDashboard", {
-    title: "Client dashboard | GigConnect",
+    title: "Client dashboard | SV Personnels",
     pageClass: "page-dashboard",
     dashboardData,
     formNotice: consumeSessionNotice(req, "clientDashboardNotice")
@@ -1103,7 +1103,7 @@ app.get("/client/settings", requireRole("client"), async (req, res) => {
   try {
     const messages = await getContactMessagesByEmail(req.session.user.email);
     return res.render("clientSettings", {
-      title: "Settings | GigConnect",
+      title: "Settings | SV Personnels",
       pageClass: "page-settings",
       messages,
       formNotice: consumeSessionNotice(req, "clientSettingsNotice")
@@ -1122,7 +1122,7 @@ app.get("/client/profile", requireRole("client"), async (req, res) => {
   try {
     const profile = await getClientProfile(req.session.user.id);
     return res.render("clientProfile", {
-      title: "My Profile | GigConnect",
+      title: "My Profile | SV Personnels",
       pageClass: "page-profile",
       profile,
       formNotice: consumeSessionNotice(req, "clientProfileNotice")
@@ -1211,7 +1211,7 @@ app.get("/professional/dashboard", requireRole("professional"), async (req, res)
 
   const dashboardData = await getProfessionalDashboardData(req.session.user.id);
   return res.render("professionalDashboard", {
-    title: "Professional dashboard | GigConnect",
+    title: "Professional dashboard | SV Personnels",
     pageClass: "page-dashboard",
     dashboardData,
     formNotice: consumeSessionNotice(req, "professionalDashboardNotice")
@@ -1230,7 +1230,7 @@ app.get("/professional/profile", requireRole("professional"), async (req, res) =
     const mappedServiceIds = mappedServices.map((s) => s.id);
 
     return res.render("professionalProfile", {
-      title: "My Profile | GigConnect",
+      title: "My Profile | SV Personnels",
       pageClass: "page-profile",
       profile: dashboardData.profile,
       services,
@@ -1372,7 +1372,7 @@ app.get("/professional/settings", requireRole("professional"), async (req, res) 
   try {
     const messages = await getContactMessagesByEmail(req.session.user.email);
     return res.render("professionalSettings", {
-      title: "Settings | GigConnect",
+      title: "Settings | SV Personnels",
       pageClass: "page-settings",
       messages,
       formNotice: consumeSessionNotice(req, "professionalSettingsNotice")
@@ -1501,7 +1501,7 @@ app.get("/logout", (req, res) => {
 
 function renderResetPasswordPage(res, overrides = {}) {
   return res.render("forgotPassword", {
-    title: "Reset Password | GigConnect",
+    title: "Reset Password | SV Personnels",
     pageClass: "page-login",
     formData: { email: "", phone: "" },
     formNotice: null,
@@ -1594,7 +1594,7 @@ app.get("/auth/callback", async (req, res) => {
 
   if (!code && !accessToken) {
     return res.render("authCallbackParser", {
-      title: "Verifying Authentication | GigConnect",
+      title: "Verifying Authentication | SV Personnels",
       pageClass: "page-login",
       role
     });
@@ -2136,7 +2136,7 @@ app.post("/client/bookings/:bookingId/pay", requireRole("client"), async (req, r
 
     if (updateError) throw updateError;
 
-    req.session.clientDashboardNotice = createFormNotice("success", "Payment successful! Thank you for using GigConnect.");
+    req.session.clientDashboardNotice = createFormNotice("success", "Payment successful! Thank you for using SV Personnels.");
   } catch (err) {
     req.session.clientDashboardNotice = createFormNotice("error", `Payment failed: ${err.message}`);
   }
@@ -2200,7 +2200,7 @@ app.get("/admin/dashboard", requireRole("admin"), async (req, res) => {
   try {
     const dashboardData = await getAdminDashboardData();
     return res.render("adminDashboard", {
-      title: "Super Admin Dashboard | GigConnect",
+      title: "Super Admin Dashboard | SV Personnels",
       pageClass: "page-dashboard",
       dashboardData,
       formNotice: consumeSessionNotice(req, "adminDashboardNotice")
@@ -2208,7 +2208,7 @@ app.get("/admin/dashboard", requireRole("admin"), async (req, res) => {
   } catch (error) {
     req.session.adminDashboardNotice = createFormNotice("error", `Dashboard load error: ${error.message}`);
     return res.render("adminDashboard", {
-      title: "Super Admin Dashboard | GigConnect",
+      title: "Super Admin Dashboard | SV Personnels",
       pageClass: "page-dashboard",
       dashboardData: {
         metrics: { totalClients: 0, totalProfessionals: 0, totalBookings: 0, pendingSupport: 0 },
@@ -2321,7 +2321,7 @@ app.get("/admin/profile", requireRole("admin"), async (req, res) => {
   try {
     const profile = await getAdminProfile(req.session.user.id);
     return res.render("adminProfile", {
-      title: "Admin Profile | GigConnect",
+      title: "Admin Profile | SV Personnels",
       pageClass: "page-profile",
       profile,
       formNotice: consumeSessionNotice(req, "adminProfileNotice")

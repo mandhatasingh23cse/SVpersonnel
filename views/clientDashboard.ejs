@@ -216,7 +216,7 @@
           <h4 style="color: var(--error); margin: 0 0 0.5rem 0;">Cancellation Fee: ₹99</h4>
           <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">As this booking is already confirmed, a cancellation fee of ₹99 is applicable. Please scan the QR code to pay and complete the cancellation:</p>
           <div style="background: white; padding: 8px; display: inline-block; border-radius: var(--radius-sm); margin-bottom: 0.75rem;">
-            <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=upi://pay?pa=gigconnect@sbi%26pn=GigConnect%26am=99%26tn=Cancellation%2620Fee" alt="UPI QR Code" style="display: block; width: 120px; height: 120px;">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=upi://pay?pa=gigconnect@sbi%26pn=SV%20Personnels%26am=99%26tn=Cancellation%2620Fee" alt="UPI QR Code" style="display: block; width: 120px; height: 120px;">
           </div>
           <p style="font-size: 0.8rem; color: var(--text-soft); margin: 0;">UPI ID: <strong style="color: var(--text);">gigconnect@sbi</strong></p>
         </div>
@@ -332,7 +332,7 @@
             key: "rzp_test_dummykey", // test key
             amount: amount * 100, // in paisa
             currency: "INR",
-            name: "GigConnect",
+            name: "SV Personnels",
             description: "Service Charge Payment",
             image: "/assets/gigconnect.logo.png",
             handler: function (response) {

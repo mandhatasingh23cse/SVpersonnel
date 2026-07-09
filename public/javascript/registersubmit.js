@@ -74,7 +74,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (response.status === 201) {
         form.reset();
         showMessage(
-          "Profile created successfully. You are now ready to appear in GigConnect search results.",
+          "Profile created successfully. You are now ready to appear in SV Personnels search results.",
           "success"
         );
         return;

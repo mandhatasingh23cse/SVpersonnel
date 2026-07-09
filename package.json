@@ -1,7 +1,7 @@
 {
-  "name": "gigconnect_fullstack",
+  "name": "svpersonnels_fullstack",
   "version": "1.0.0",
-  "description": "",
+  "description": "SV Personnels - Govt. Authorized Professional Job & Hiring Provider across India",
   "main": "app.js",
   "scripts": {
     "start": "node app.js",

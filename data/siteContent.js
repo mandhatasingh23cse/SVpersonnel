@@ -1,25 +1,25 @@
 const navigation = [
-  { href: "/findHelpNow", label: "Find help" },
+  { href: "/findHelpNow", label: "Find manpower" },
   { href: "/howitworks", label: "How it works" },
   { href: "/contactus", label: "Contact" }
 ];
 
 const services = [
-  { name: "Plumbing", icon: "/assets/plumbing.png", description: "Leaks, fittings, bathroom repairs" },
-  { name: "Electricians", icon: "/assets/electrician.png", description: "Repairs, wiring, installations" },
-  { name: "Drivers", icon: "/assets/driver.png", description: "Daily travel and on-demand rides" },
-  { name: "Home cleaning", icon: "/assets/home cleaning.png", description: "Deep cleaning and upkeep" },
-  { name: "Delivery", icon: "/assets/delivery.png", description: "Local errands and same-day drops" },
-  { name: "IT support", icon: "/assets/Screenshot 2025-09-23 151227.png", description: "Wi-Fi, laptop, CCTV, printer help" },
-  { name: "Laundry", icon: "/assets/laundry.png", description: "Pickup, wash care, ironing" },
-  { name: "Fitness", icon: "/assets/fitness.png", description: "Personal training and home sessions" }
+  { name: "Guard & Security", icon: "/assets/driver.png", description: "Trained security personnel, guards, and bouncers" },
+  { name: "Hospital Staff", icon: "/assets/home cleaning.png", description: "Nurses, ward boys, attendants, medical support" },
+  { name: "Hotel Staff", icon: "/assets/cooking.png", description: "Chefs, waiters, housekeeping, front desk" },
+  { name: "Outsourcing & Office", icon: "/assets/it support.png", description: "Office assistants, data entry, corporate staffing" },
+  { name: "Pandit Ji", icon: "/assets/connect.png", description: "Experienced Hindu priests for puja, havan, sanskars" },
+  { name: "Interior Designing", icon: "/assets/fitness.png", description: "Complete house & office interior design and execution" },
+  { name: "Plumbing", icon: "/assets/plumbing.png", description: "Leak repairs, bathroom fittings, pipe maintenance" },
+  { name: "Electricians", icon: "/assets/electrician.png", description: "Wiring, power backup, residential & industrial repairs" }
 ];
 
 module.exports = {
   brand: {
-    name: "GigConnect",
-    city: "Gurugram",
-    tagline: "Verified local professionals across Gurugram.",
+    name: "SV Personnels",
+    city: "All India",
+    tagline: "Govt. Authorized Professional Job & Hiring Provider across India. समस्या आपकी, समाधान हमारा ❤️",
     phone: "+91 9807209005",
     email: "personnelsv@gmail.com"
   },
@@ -30,7 +30,7 @@ module.exports = {
         heading: "Explore",
         links: [
           { href: "/", label: "Home" },
-          { href: "/findHelpNow", label: "Find professionals" },
+          { href: "/findHelpNow", label: "Find manpower" },
           { href: "/howitworks", label: "How it works" },
           { href: "/terms", label: "Terms & Conditions" }
         ]
@@ -45,9 +45,9 @@ module.exports = {
         ]
       },
       {
-        heading: "Professionals",
+        heading: "Manpower & Jobs",
         links: [
-          { href: "/register", label: "Join GigConnect" },
+          { href: "/register", label: "Join SV Personnels" },
           { href: "/contactus", label: "Partner with us" },
           { href: "/contactus", label: "Support" }
         ]
@@ -61,136 +61,136 @@ module.exports = {
   },
   home: {
     hero: {
-      eyebrow: "Trusted local services",
-      title: "Find trusted local help without the guesswork.",
+      eyebrow: "Govt. Authorized Job Provider & Hiring Agency",
+      title: "All-in-one manpower solutions across India — Pandit ji to Plumber, Home to Office.",
       description:
-        "Search by service and area, compare verified workers quickly, and reach the right person with confidence.",
-      searchPlaceholder: "Search electrician, plumber, driver...",
-      locationPlaceholder: "Enter location or sector",
-      quickSearches: ["Electrician", "Plumber", "Driver", "Home cleaning"],
-      trustPills: ["Verified profiles", "Direct contact", "Local matching", "Clear ratings"],
+        "We are Govt. authorized professional job providers & hiring specialists. Outsourcing, Guard-Security, Hospital Staff, Hotel Staff, Interior Designing & all manpower segments. समस्या आपकी समाधान हमारा ❤️",
+      searchPlaceholder: "Search Security Guard, Hospital Staff, Plumber, Pandit ji...",
+      locationPlaceholder: "Enter your city or state (All India)",
+      quickSearches: ["Security Guard", "Hospital Staff", "Hotel Staff", "Outsourcing", "Pandit ji", "Plumber"],
+      trustPills: ["Govt. Authorized", "All India Verified", "Direct Hiring", "Outsourcing Specialists"],
       stats: [
-        { value: "180+", label: "Active professionals" },
-        { value: "4.8/5", label: "Average rating" },
-        { value: "Same day", label: "Urgent support" }
+        { value: "All India", label: "Verified Network" },
+        { value: "Govt. Auth", label: "Job & Hiring Provider" },
+        { value: "100%", label: "Trusted Manpower" }
       ]
     },
     services,
     capabilities: [
       {
-        title: "Fast discovery",
-        description: "Search by service, name, or area and reach relevant professionals faster."
+        title: "All India Manpower Coverage",
+        description: "From household workers like plumbers and cooks to corporate outsourcing, hospital staff, and security."
       },
       {
-        title: "Trust-first profiles",
-        description: "Experience, ratings, verification, and distance are visible before you contact anyone."
+        title: "Govt. Authorized & Verified",
+        description: "Every professional and agency staff member undergoes background verification for safety and trust."
       },
       {
-        title: "Better for professionals",
-        description: "Cleaner onboarding and stronger profiles help workers earn trust faster."
+        title: "समस्या आपकी, समाधान हमारा ❤️",
+        description: "Whether you need urgent home repairs, hotel staff, or turnkey interior designing, we deliver reliable solutions."
       }
     ],
     steps: [
-      { step: "01", title: "Search", description: "Start with a service or location." },
-      { step: "02", title: "Compare", description: "Review profiles, ratings, and experience." },
-      { step: "03", title: "Contact", description: "Reach the right professional directly." }
+      { step: "01", title: "Search Requirement", description: "Select from our vast segments of manpower or search by skill." },
+      { step: "02", title: "Verify Profiles", description: "Review ratings, experience, and verification status across India." },
+      { step: "03", title: "Hire & Collaborate", description: "Connect with verified personnel or request tailored outsourcing." }
     ],
     personas: [
       {
-        badge: "For clients",
-        title: "Find trusted help quickly",
-        description: "A simpler way to book local professionals for urgent and everyday needs.",
+        badge: "For Employers & Clients",
+        title: "Hire trusted manpower across India",
+        description: "A complete solution for hospitals, hotels, corporate offices, and households needing verified staff.",
         bullets: [
-          "Search by category or area",
-          "Compare trust and experience",
-          "Contact directly without friction"
+          "Govt. authorized hiring agency",
+          "Guard, hospital, and hotel staffing",
+          "Dedicated support & fast placement"
         ]
       },
       {
-        badge: "For professionals",
-        title: "Present your work better",
-        description: "A cleaner profile and onboarding flow that helps clients trust you faster.",
+        badge: "For Job Seekers & Professionals",
+        title: "Join India's trusted job network",
+        description: "Are you a skilled professional or seeking job opportunities? Register with us to get verified and hired.",
         bullets: [
-          "Clear skill presentation",
-          "Better first impression",
-          "Local demand visibility"
+          "Direct access to genuine employers",
+          "Clear profile presentation",
+          "Pan-India job opportunities"
         ]
       }
     ],
     testimonials: [
       {
-        name: "Priya S",
-        role: "Resident, DLF Phase 4",
-        quote: "I found a reliable technician quickly, and the profile made the decision easy.",
+        name: "Rajesh Sharma",
+        role: "Hospitality Manager, Delhi NCR",
+        quote: "SV Personnels provided us with verified hotel staff and guards on urgent notice. Highly professional service!",
+        image: "/assets/rajesh 2ndpage.png"
+      },
+      {
+        name: "Sunita Verma",
+        role: "Hospital Administrator, Lucknow",
+        quote: "We rely on SV Personnels for hospital attendants and nursing staff. Their verification process gives us complete peace of mind.",
         image: "/assets/Priya S.png"
       },
       {
-        name: "Ravi Kumar",
-        role: "Electrician partner",
-        quote: "Clients understand my profile faster and I get better quality calls.",
-        image: "/assets/Ravi kumar.png"
-      },
-      {
-        name: "Neha Yadav",
-        role: "Homeowner, Gurugram",
-        quote: "Search feels clean, trust signals are clear, and the whole experience feels polished.",
-        image: "/assets/atif 2ndpage.png"
+        name: "Anil Kumar",
+        role: "Security Supervisor, Mumbai",
+        quote: "Joining SV Personnels helped me get placed as a head security guard at a top corporate office.",
+        image: "/assets/suresh 2ndpage.png"
       }
     ]
   },
   discover: {
-    eyebrow: "Find professionals",
-    title: "Search nearby professionals.",
-    description: "Use service, name, or location search, then compare workers clearly.",
-    quickFilters: ["Electrician", "Plumber", "Driver", "Home cleaning", "IT support", "Laundry"]
+    eyebrow: "Find Manpower",
+    title: "Search verified professionals all over India.",
+    description: "Search by skill, segment, or city across India. Compare ratings and experience transparently.",
+    quickFilters: ["Guard-Security", "Hospital Staff", "Hotel Staff", "Outsourcing", "Pandit Ji", "Plumber"]
   },
   howItWorks: {
     eyebrow: "How it works",
-    title: "Simple steps for hiring and getting hired.",
-    description: "GigConnect keeps search, trust, and contact simple for both sides.",
+    title: "Simple steps for hiring manpower and getting hired across India.",
+    description: "SV Personnels bridges the gap between verified job seekers and employers across every sector.",
     outcomes: [
-      { title: "Search quickly", description: "Start with a category, name, or location." },
-      { title: "Compare clearly", description: "Review ratings, experience, and verification." },
-      { title: "Move faster", description: "Reach out directly and get work started sooner." }
+      { title: "Pan-India Reach", description: "Connect with verified professionals in any city across India." },
+      { title: "Govt. Authorized Trust", description: "Work with a certified recruitment and outsourcing leader." },
+      { title: "All Segments Covered", description: "From spiritual needs (Pandit ji) to technical trades and interior design." }
     ]
   },
   contact: {
-    eyebrow: "Contact",
-    title: "Talk to the GigConnect team.",
-    description: "Reach out for support, partnerships, or onboarding help.",
+    eyebrow: "Contact Us",
+    title: "Talk to the SV Personnels team.",
+    description: "Reach out for corporate outsourcing, guard security contracts, hotel staffing, or individual queries.",
     promises: [
-      { title: "Support", description: "Questions about using the platform or service quality." },
-      { title: "Partnerships", description: "Opportunities with communities, offices, and local networks." },
-      { title: "Onboarding help", description: "Assistance for professionals joining the marketplace." }
+      { title: "Corporate Staffing", description: "Tailored outsourcing for offices, hospitals, and hotels." },
+      { title: "Guard & Security", description: "Deployment of trained security guards across commercial or residential sites." },
+      { title: "Job Seekers Support", description: "Assistance for workers and professionals onboarding to the portal." }
     ]
   },
   auth: {
     client: {
-      title: "Create your account",
-      description: "Create a client account to track bookings, compare services, and hire with less friction.",
+      title: "Create your employer / client account",
+      description: "Create an account to hire verified manpower, manage staffing requests, and track bookings.",
       benefits: [
-        "Track live booking requests",
-        "Keep trusted professionals in one place",
-        "Stay ready for urgent needs"
+        "Request urgent staff placement",
+        "Keep verified workers & agencies in one dashboard",
+        "Pan-India support and tracking"
       ]
     },
     clientLogin: {
-      title: "Welcome back",
-      description: "Log in to manage your bookings and continue where you left off."
+      title: "Welcome back to SV Personnels",
+      description: "Log in to manage your bookings and staffing requests."
     },
     proLogin: {
-      title: "Professional login",
-      description: "Manage your profile, review booking requests, and stay ready for local demand."
+      title: "Partner / Job Seeker login",
+      description: "Log in to update your skills, review hiring requests, and connect with employers."
     },
     professional: {
-      title: "Join the GigConnect network",
-      description: "Create a strong professional profile with your skills, experience, and service area.",
+      title: "Join the SV Personnels network",
+      description: "Register your profile as a service professional or job seeker to get discovered by employers across India.",
       benefits: [
-        "Show your core skills clearly",
-        "Highlight your pricing and experience",
-        "Receive local booking requests"
+        "Showcase your skills & experience",
+        "Get Govt. authorized verification badge",
+        "Receive direct hiring and booking requests"
       ]
     },
-    note: "Use the seeded demo accounts or create a fresh account to test the full Supabase-backed flow."
+    note: "Create an account to access verified professionals and job opportunities all over India."
   }
 };
