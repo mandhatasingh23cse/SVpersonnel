@@ -632,6 +632,21 @@ app.get("/terms", (req, res) =>
   })
 );
 
+app.get("/payment-policy", (req, res) =>
+  res.render("paymentPolicy", {
+    title: "Payment Policy | SV Personnels",
+    pageClass: "page-terms"
+  })
+);
+
+app.get("/refund-policy", (req, res) =>
+  res.render("refundPolicy", {
+    title: "Refund & Cancellation Policy | SV Personnels",
+    pageClass: "page-terms"
+  })
+);
+
+
 app.get("/findHelpNow", (req, res) => {
   if (req.session.user && req.session.user.role === "professional") {
     req.session.professionalDashboardNotice = createFormNotice(
@@ -917,7 +932,6 @@ app.post(
     body("phone").trim().isLength({ min: 10, max: 20 }).withMessage("Please enter a valid phone number."),
     body("primary-skill").trim().isLength({ min: 2, max: 120 }).withMessage("Please choose your primary service."),
     body("city").trim().isLength({ min: 2, max: 120 }).withMessage("Please enter your city."),
-    body("area").trim().isLength({ min: 2, max: 120 }).withMessage("Please enter your service area."),
     body("experience").isInt({ min: 0, max: 60 }).withMessage("Please enter valid years of experience."),
     body("password")
       .trim()
@@ -943,7 +957,7 @@ app.post(
       primarySkill: sanitizeText(primaryInput),
       secondarySkills: normalizeSkills(secondaryInput),
       city: sanitizeText(req.body.city),
-      area: sanitizeText(req.body.area),
+      area: sanitizeText(req.body.area || req.body.city || "Main"),
       experience: sanitizeText(req.body.experience),
       photo: photoPath,
       description: sanitizeText(req.body.description)
@@ -1280,8 +1294,8 @@ app.post(
   upload.single("photo"),
   [
     body("fullname").trim().isLength({ min: 2, max: 120 }).withMessage("Please enter your full name."),
+    body("phone").trim().isLength({ min: 10, max: 20 }).withMessage("Please enter a valid phone number."),
     body("city").trim().isLength({ min: 2, max: 120 }).withMessage("Please enter your city."),
-    body("area").trim().isLength({ min: 2, max: 120 }).withMessage("Please enter your service area."),
     body("experience").isInt({ min: 0, max: 60 }).withMessage("Please enter valid years of experience.")
   ],
   async (req, res) => {
@@ -1305,8 +1319,9 @@ app.post(
     try {
       const profileData = {
         fullName: sanitizeText(req.body.fullname),
+        phone: sanitizeText(req.body.phone),
         city: sanitizeText(req.body.city),
-        area: sanitizeText(req.body.area),
+        area: sanitizeText(req.body.area || req.body.city || "Main"),
         experience: Number(req.body.experience) || 0,
         description: sanitizeText(req.body.description || "")
       };
@@ -1331,6 +1346,7 @@ app.post(
       // Update session details
       req.session.user.name = profileData.fullName;
       req.session.user.city = profileData.city;
+      if (profileData.phone) req.session.user.phone = profileData.phone;
 
       req.session.professionalProfileNotice = createFormNotice("success", "Profile updated successfully!");
     } catch (error) {
@@ -1720,9 +1736,9 @@ app.post(
     body("email").trim().isEmail().withMessage("Please enter a valid email address."),
     body("phone").trim().isLength({ min: 10, max: 20 }).withMessage("Please enter a valid phone number."),
     body("preferredDate").isISO8601().withMessage("Please select a valid preferred date."),
-    body("preferredTimeSlot").trim().isLength({ min: 3, max: 80 }).withMessage("Please choose a time slot."),
-    body("addressArea").trim().isLength({ min: 3, max: 180 }).withMessage("Please enter your area or address."),
-    body("budget").isInt({ min: 100, max: 100000 }).withMessage("Please enter a valid budget in rupees."),
+    body("preferredTimeSlot").trim().isLength({ min: 1, max: 80 }).withMessage("Please choose a time slot."),
+    body("addressArea").trim().isLength({ min: 3, max: 180 }).withMessage("Please enter your area or city."),
+    body("serviceAddress").optional().trim(),
     body("serviceId").isInt({ min: 1 }).withMessage("Please select a service.")
   ],
   async (req, res) => {
@@ -1739,7 +1755,7 @@ app.post(
           preferredDate: sanitizeText(req.body.preferredDate),
           preferredTimeSlot: sanitizeText(req.body.preferredTimeSlot),
           addressArea: sanitizeText(req.body.addressArea),
-          budget: sanitizeText(req.body.budget),
+          serviceAddress: sanitizeText(req.body.serviceAddress || ""),
           serviceId: sanitizeText(req.body.serviceId),
           details: sanitizeText(req.body.details)
         }
@@ -1755,7 +1771,7 @@ app.post(
       preferredDate: sanitizeText(req.body.preferredDate),
       preferredTimeSlot: sanitizeText(req.body.preferredTimeSlot),
       addressArea: sanitizeText(req.body.addressArea),
-      budget: sanitizeText(req.body.budget),
+      serviceAddress: sanitizeText(req.body.serviceAddress || ""),
       serviceId: sanitizeText(req.body.serviceId),
       details: sanitizeText(req.body.details)
     };
@@ -1787,12 +1803,20 @@ app.post(
       });
     }
 
+    const selectedServiceObj = serviceOptions.find(s => String(s.id) === String(formData.serviceId));
+    const budgetAmount = selectedServiceObj ? Number(selectedServiceObj.customRateInr || selectedServiceObj.priceInr || 500) : 500;
+
     const otp = Math.floor(100000 + Math.random() * 900000); // 6-digit OTP
     const paymentMethod = req.body.paymentMethod === "online" ? "Online Payment (UPI/Card)" : "Pay After Service (COD)";
     let formattedDetails = `${formData.details || ""}\n\n[Start OTP: ${otp}]\n[Payment Method: ${paymentMethod}]`.trim();
+    if (formData.serviceAddress) {
+      formattedDetails += `\n[Complete Address: ${formData.serviceAddress}]`;
+    }
     if (req.body.latitude && req.body.longitude) {
       formattedDetails += `\n[Coordinates: ${req.body.latitude},${req.body.longitude}]`;
     }
+
+    const fullCombinedAddress = formData.serviceAddress ? `${formData.addressArea} (${formData.serviceAddress})` : formData.addressArea;
 
     const bookingCode = await createBooking({
       clientId: req.session.user && req.session.user.role === "client" ? req.session.user.id : null,
@@ -1803,8 +1827,8 @@ app.post(
       serviceId: Number(formData.serviceId),
       preferredDate: formData.preferredDate,
       preferredTimeSlot: formData.preferredTimeSlot,
-      addressArea: formData.addressArea,
-      budgetInr: Number(formData.budget),
+      addressArea: fullCombinedAddress,
+      budgetInr: budgetAmount,
       details: formattedDetails
     });
 
@@ -2113,23 +2137,10 @@ app.post("/professional/bookings/:bookingId/complete-work", requireRole("profess
 
     const start = new Date(workStartedAt).getTime();
     const end = Date.now();
-    const elapsedMs = end - start;
-    const elapsedHours = elapsedMs / 3600000;
     
-    // For demo purposes: if elapsed time is less than 1 hour, calculate a pro-rated charge based on minutes (min 1 min),
-    // otherwise charge based on hours.
-    const hourlyRate = booking.budget_inr || 500;
-    let totalPayment = hourlyRate; // minimum 1 hour payment
-    
-    if (elapsedHours > 1) {
-      totalPayment = Math.round(elapsedHours * hourlyRate);
-    } else {
-      // Pro-rate by minutes for demo visibility if it's under an hour, minimum 50% of hourly rate
-      const elapsedMinutes = elapsedMs / 60000;
-      if (elapsedMinutes > 1) {
-        totalPayment = Math.max(Math.round((hourlyRate / 2)), Math.round((elapsedMinutes / 60) * hourlyRate));
-      }
-    }
+    // Fixed daily service price: exactly the amount agreed upon for the entire day until work is marked complete
+    const fixedDailyRate = booking.budget_inr || 500;
+    const totalPayment = fixedDailyRate;
 
     const completedTimestamp = new Date(end).toISOString();
     const updatedDetails = `${details}\n[Work Completed At: ${completedTimestamp}]\n[Total Payment: ${totalPayment}]`.trim();

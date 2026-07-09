@@ -32,7 +32,9 @@ module.exports = {
           { href: "/", label: "Home" },
           { href: "/findHelpNow", label: "Find manpower" },
           { href: "/howitworks", label: "How it works" },
-          { href: "/terms", label: "Terms & Conditions" }
+          { href: "/terms", label: "Terms & Conditions" },
+          { href: "/payment-policy", label: "Payment Policy" },
+          { href: "/refund-policy", label: "Refund Policy" }
         ]
       },
       {
