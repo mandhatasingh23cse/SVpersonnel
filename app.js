@@ -8,6 +8,7 @@ const FileStore = require("./lib/fileSessionStore")(session);
 const expressLayouts = require("express-ejs-layouts");
 const { body, param, validationResult } = require("express-validator");
 const sanitizeHtml = require("sanitize-html");
+const crypto = require("crypto");
 
 const siteContent = require("./data/siteContent");
 const seedData = require("./data/mysqlSeed");
@@ -55,8 +56,21 @@ const {
   getProfessionalProfile,
   updateServicePrice,
   authenticateUnified,
-  getContactMessagesByEmail
 } = require("./lib/supabaseStore");
+
+const {
+  getAllWorkRequirements,
+  getWorkRequirementById,
+  getWorkRequirementsForProfessional,
+  getWorkRequirementsByClient,
+  createWorkRequirement,
+} = require("./lib/workRequirementsStore");
+
+const {
+  getAddressesByClient,
+  addClientAddress,
+  deleteClientAddress
+} = require("./lib/clientAddressStore");
 
 const multer = require("multer");
 const fsSync = require("fs");
@@ -122,6 +136,11 @@ app.use(
   })
 );
 app.use(express.static(path.join(__dirname, "public")));
+app.use("/uploads", express.static(path.join(__dirname, "public", "uploads")));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/uploads", (req, res) => {
+  res.redirect("/assets/gigconnect.logo.png");
+});
 
 app.locals.currentYear = new Date().getFullYear();
 app.locals.formatCurrency = formatCurrency;
@@ -130,6 +149,11 @@ app.locals.formatStatusLabel = formatStatusLabel;
 app.locals.formatTimeSlot = formatTimeSlot;
 
 app.use((req, res, next) => {
+  if (req.path.includes("/dashboard") || req.path.includes("/admin") || req.path.includes("/profile")) {
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+  }
   res.locals.brand = siteContent.brand;
   res.locals.navigation = siteContent.navigation;
   res.locals.footerContent = siteContent.footer;
@@ -261,7 +285,11 @@ function cloneHomeContent() {
       stats: [...siteContent.home.hero.stats]
     },
     services: [...siteContent.home.services],
-    testimonials: [...siteContent.home.testimonials]
+    testimonials: [...siteContent.home.testimonials],
+    ottCategories: siteContent.home.ottCategories ? siteContent.home.ottCategories.map(cat => ({
+      ...cat,
+      items: [...cat.items]
+    })) : []
   };
 }
 
@@ -347,7 +375,8 @@ async function getWorkers({ queryText = "", cityQ = "", sortKey = "relevance", v
     const matchesCity =
       !city ||
       worker.city.toLowerCase().includes(city) ||
-      worker.area.toLowerCase().includes(city);
+      worker.area.toLowerCase().includes(city) ||
+      (worker.pincode && String(worker.pincode).toLowerCase().includes(city));
     const matchesVerified = !verifiedOnly || worker.isVerified;
 
     return matchesQuery && matchesCity && matchesVerified;
@@ -577,6 +606,7 @@ function renderBookingPage(res, overrides = {}) {
     pageClass: "page-booking",
     professional: null,
     serviceOptions: [],
+    clientAddresses: [],
     formNotice: null,
     formData: {
       fullName: "",
@@ -625,6 +655,167 @@ app.get("/howitworks", (req, res) =>
   })
 );
 
+app.get("/work", async (req, res) => {
+  const content = siteContent;
+  const allJobs = await getAllWorkRequirements();
+  const user = req.session.user;
+  let displayedJobs = allJobs;
+
+  if (user && user.role === "professional") {
+    displayedJobs = await getWorkRequirementsForProfessional(user);
+  } else if (user && user.role === "client") {
+    displayedJobs = allJobs;
+  }
+
+  const formNotice = req.session.workNotice || null;
+  delete req.session.workNotice;
+
+  res.render("work", {
+    title: "Work & Job Requirements | SV Personnels",
+    pageClass: "page-work",
+    bridgeNote: null,
+    ottCategories: content.home.ottCategories || [],
+    displayedJobs,
+    allJobs,
+    user,
+    formNotice
+  });
+});
+
+app.post("/work/post", async (req, res) => {
+  try {
+    const user = req.session.user;
+    if (!user || user.role !== "client") {
+      req.session.loginNotice = createFormNotice("error", "Please login as a client first to upload work requirements.");
+      return res.redirect("/clientlogin");
+    }
+
+    const isPassActive = user.workPassActive && (!user.workPassExpiresAt || new Date(user.workPassExpiresAt) > new Date());
+    if (!isPassActive) {
+      req.session.workNotice = createFormNotice("error", "🔒 You must have an active Monthly Work Pass (₹150 / 30 days) to upload job requirements. Please activate your pass above!");
+      return res.redirect("/work");
+    }
+
+    const { category, subCategory, location, budget, jobType, description } = req.body;
+    
+    await createWorkRequirement({
+      clientId: user.id,
+      clientName: user.name,
+      clientContact: user.phone || user.email || "",
+      category: category || "General",
+      subCategory: subCategory || "",
+      location: location || "All India",
+      budget: Number(budget) || 0,
+      jobType: jobType || "Full Time",
+      description: description || ""
+    });
+
+    const displayCat = subCategory ? `${category} (${subCategory})` : category;
+    req.session.workNotice = createFormNotice("success", `Work requirement posted successfully! Professionals under '${displayCat}' have been notified.`);
+    return res.redirect("/work");
+  } catch (error) {
+    req.session.workNotice = createFormNotice("error", `Failed to post work requirement: ${error.message}`);
+    return res.redirect("/work");
+  }
+});
+
+// PayU 30-Day Monthly Work Pass (₹150)
+app.get("/work/pass/buy", async (req, res) => {
+  const user = req.session.user;
+  if (!user || user.role !== "client") {
+    req.session.loginNotice = createFormNotice("error", "Please login as a client first to buy a Work Pass.");
+    return res.redirect("/clientlogin");
+  }
+
+  const key = process.env.PAYU_MERCHANT_KEY || "gtKFFx";
+  const salt = process.env.PAYU_MERCHANT_SALT || "eCwWELxi";
+  const txnid = "WP_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
+  const amount = 150;
+  const productinfo = "30-Day Client Work Pass (Unlimited Work Posts)";
+  const firstname = user.name || "Verified Client";
+  const email = user.email || "client@svpersonnels.in";
+  const phone = user.phone || "9999999999";
+  const originUrl = getRequestOrigin(req);
+  const surl = originUrl + "/work/pass/success";
+  const furl = originUrl + "/work/pass/failure";
+
+  const hashString = `${key}|${txnid}|${amount}|${productinfo}|${firstname}|${email}|||||||||||${salt}`;
+  const hash = crypto.createHash("sha512").update(hashString).digest("hex");
+
+  req.session.workPassPending = { txnid, userId: user.id, amount };
+
+  return res.render("payuCheckout", {
+    title: "Buy Monthly Work Pass (₹150 via PayU) | SV Personnels",
+    pageClass: "page-payu",
+    key,
+    txnid,
+    amount,
+    productinfo,
+    firstname,
+    email,
+    phone,
+    surl,
+    furl,
+    hash,
+    professional: { name: "SV Personnels Work Pass", photo: "/assets/gigconnect.logo.png" }
+  });
+});
+
+app.post("/work/pass/success", async (req, res) => {
+  const user = req.session.user;
+  if (user) {
+    user.workPassActive = true;
+    user.workPassExpiresAt = new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString();
+    try {
+      if (isDatabaseReady()) {
+        const { getSupabaseClient } = require("./lib/supabase");
+        const supabase = getSupabaseClient();
+        if (supabase) {
+          await supabase.from("clients").update({
+            work_pass_active: true,
+            work_pass_expires_at: user.workPassExpiresAt
+          }).eq("id", user.id);
+        }
+      }
+    } catch (err) {
+      console.warn("Could not save work pass to DB:", err.message);
+    }
+  }
+  req.session.workNotice = createFormNotice("success", "🎉 30-Day Work Pass activated successfully! You can now upload unlimited work requirements.");
+  return res.redirect("/work");
+});
+
+app.post("/work/pass/failure", async (req, res) => {
+  req.session.workNotice = createFormNotice("error", "Work Pass payment failed or was cancelled. Please try again.");
+  return res.redirect("/work");
+});
+
+app.post("/work/apply/:id", async (req, res) => {
+  try {
+    const user = req.session.user;
+    if (!user || user.role !== "professional") {
+      req.session.workNotice = createFormNotice("error", "Please log in as a professional to apply or negotiate on work requirements.");
+      return res.redirect("/work");
+    }
+
+    const { proposedRate, message } = req.body;
+    await applyOrNegotiateWorkRequirement(req.params.id, {
+      professionalId: user.id,
+      professionalName: user.name,
+      professionalPhone: user.phone || "",
+      professionalEmail: user.email || "",
+      proposedRate: Number(proposedRate) || 0,
+      message: message || ""
+    });
+
+    req.session.workNotice = createFormNotice("success", "Your rate proposal and application have been sent directly to the client!");
+    return res.redirect("/work");
+  } catch (error) {
+    req.session.workNotice = createFormNotice("error", `Failed to submit application: ${error.message}`);
+    return res.redirect("/work");
+  }
+});
+
 app.get("/terms", (req, res) =>
   res.render("terms", {
     title: "Terms & Conditions | SV Personnels",
@@ -659,6 +850,7 @@ app.get("/findHelpNow", (req, res) => {
     title: "Find trusted professionals | SV Personnels",
     pageClass: "page-discover",
     discoverContent: siteContent.discover,
+    ottCategories: siteContent.home.ottCategories,
     searchDefaults: createSearchDefaults(req.query),
     scripts: ["/javascript/findhelpnow.js"]
   });
@@ -919,6 +1111,11 @@ app.get("/register", (req, res) => {
   });
 });
 
+app.get(["/register/client", "/client/register"], (req, res) => renderSignupPage(res));
+app.get(["/register/partner", "/partner/register"], async (req, res) => {
+  await renderRegisterPage(res);
+});
+
 app.get("/register/professional", async (req, res) => {
   await renderRegisterPage(res);
 });
@@ -930,9 +1127,9 @@ app.post(
     body("fullname").trim().isLength({ min: 2, max: 120 }).withMessage("Please enter your full name."),
     body("email").trim().isEmail().withMessage("Please enter a valid email address."),
     body("phone").trim().isLength({ min: 10, max: 20 }).withMessage("Please enter a valid phone number."),
-    body("primary-skill").trim().isLength({ min: 2, max: 120 }).withMessage("Please choose your primary service."),
-    body("city").trim().isLength({ min: 2, max: 120 }).withMessage("Please enter your city."),
-    body("experience").isInt({ min: 0, max: 60 }).withMessage("Please enter valid years of experience."),
+    body("primary-skill").optional({ checkFalsy: true }).trim().isLength({ min: 2, max: 120 }),
+    body("city").optional({ checkFalsy: true }).trim().isLength({ min: 2, max: 120 }),
+    body("experience").optional({ checkFalsy: true }),
     body("password")
       .trim()
       .isLength({ min: 8 }).withMessage("Password should be at least 8 characters.")
@@ -948,19 +1145,20 @@ app.post(
   async (req, res) => {
     const errors = validationResult(req);
     const photoPath = req.file ? `/uploads/${req.file.filename}` : "/assets/gigconnect.logo.png";
-    const primaryInput = req.body["primary-skill"] === "Other" ? (req.body["primary-skill-custom"] || "Other") : req.body["primary-skill"];
-    const secondaryInput = req.body["secondary-skills"] === "Other" ? (req.body["secondary-skills-custom"] || "Other") : req.body["secondary-skills"];
+    const primaryInput = req.body["primary-skill"] || "Guard & Security";
+    const secondaryInput = req.body["secondary-skills"] || "";
     const formData = {
       name: sanitizeText(req.body.fullname),
       email: sanitizeText(req.body.email),
       phone: sanitizeText(req.body.phone),
       primarySkill: sanitizeText(primaryInput),
       secondarySkills: normalizeSkills(secondaryInput),
-      city: sanitizeText(req.body.city),
+      city: sanitizeText(req.body.city || "All India"),
       area: sanitizeText(req.body.area || req.body.city || "Main"),
-      experience: sanitizeText(req.body.experience),
+      pincode: sanitizeText(req.body.pincode || ""),
+      experience: sanitizeText(req.body.experience || "0"),
       photo: photoPath,
-      description: sanitizeText(req.body.description)
+      description: sanitizeText(req.body.description || "Professional Profile")
     };
 
     if (!errors.isEmpty()) {
@@ -980,12 +1178,9 @@ app.post(
       });
     }
 
-    const serviceIds = await resolveServiceIdsFromInput(formData.primarySkill, formData.secondarySkills);
+    let serviceIds = await resolveServiceIdsFromInput(formData.primarySkill, formData.secondarySkills);
     if (!serviceIds.length) {
-      return await renderRegisterPage(res.status(422), {
-        formNotice: createFormNotice("error", "Please enter a skill that matches one of the platform service categories."),
-        registerFormData: formData
-      });
+      serviceIds = [1];
     }
 
     try {
@@ -996,7 +1191,8 @@ app.post(
         phone: formData.phone,
         city: formData.city,
         area: formData.area,
-        experience: Number(formData.experience),
+        pincode: formData.pincode,
+        experience: Number(formData.experience) || 0,
         photoUrl: formData.photo || undefined,
         description: formData.description || undefined,
         password: req.body.password,
@@ -1008,7 +1204,7 @@ app.post(
       }
 
       req.session.user = user;
-      return res.redirect("/professional/dashboard");
+      return res.redirect("/professional/onboarding");
     } catch (error) {
       return await renderRegisterPage(res.status(error.statusCode || 500), {
         formNotice: createFormNotice("error", error.message || "Could not create the professional profile right now."),
@@ -1017,6 +1213,71 @@ app.post(
     }
   }
 );
+
+app.get("/professional/onboarding", requireRole("professional"), async (req, res) => {
+  const content = siteContent;
+  res.render("professionalOnboarding", {
+    title: "Complete Your Professional Onboarding | SV Personnels",
+    pageClass: "page-onboarding",
+    bridgeNote: null,
+    ottCategories: content.home.ottCategories || [],
+    user: req.session.user
+  });
+});
+
+app.post("/professional/onboarding", requireRole("professional"), async (req, res) => {
+  try {
+    const user = req.session.user;
+    const { city, jobType, charges, skills, pincode, area } = req.body;
+    const selectedSkills = skills ? (Array.isArray(skills) ? skills : [skills]) : [];
+    const formattedCity = sanitizeText(city || "All India");
+    const formattedJobType = sanitizeText(jobType || "Both / Flexible");
+    const formattedCharges = Number(charges) || 0;
+
+    let bioAppend = `\n[Work Type: ${formattedJobType}] [Price Negotiable by Client: YES]`;
+    if (selectedSkills.length > 0) {
+      bioAppend += ` [Skills: ${selectedSkills.join(", ")}]`;
+    }
+    const wmTag = formattedJobType.includes("Both") || (formattedJobType.includes("Full") && formattedJobType.includes("Part")) ? "Part Time,Full Time" : (formattedJobType.includes("Full") ? "Full Time" : "Part Time");
+    bioAppend += ` [workModes:${wmTag}] [partTimeRate:${formattedCharges}] [fullTimeRate:${formattedCharges * 25}]`;
+
+    await updateProfessionalProfile(user.id, {
+      fullName: user.name,
+      city: formattedCity,
+      area: sanitizeText(area || formattedCity || "Main"),
+      pincode: sanitizeText(pincode || ""),
+      experience: user.experience || 0,
+      description: (user.bio || "") + bioAppend
+    });
+    if (pincode) user.pincode = sanitizeText(pincode);
+    if (area) user.area = sanitizeText(area);
+
+    // Try to resolve exact service IDs or custom services from selected skills
+    const serviceIds = [];
+    for (const skillName of selectedSkills) {
+      const resolved = await resolveServiceIdsFromInput(skillName, []);
+      if (resolved && resolved.length > 0) {
+        resolved.forEach(id => { if (!serviceIds.includes(id)) serviceIds.push(id); });
+      } else {
+        const customService = await addCustomServiceOption(skillName.trim());
+        if (customService && customService.id && !serviceIds.includes(Number(customService.id))) {
+          serviceIds.push(Number(customService.id));
+        }
+      }
+    }
+    if (serviceIds.length > 0) {
+      await updateProfessionalServices(user.id, serviceIds, formattedCharges);
+    }
+
+    req.session.user.city = formattedCity;
+    req.session.professionalProfileNotice = createFormNotice("success", "Onboarding completed successfully! Your skills and negotiable pricing are now live.");
+    return res.redirect("/professional/dashboard");
+  } catch (error) {
+    console.error("Onboarding error:", error);
+    return res.redirect("/professional/dashboard");
+  }
+});
+
 
 app.get("/client/dashboard", requireRole("client"), async (req, res) => {
   if (!isDatabaseReady()) {
@@ -1166,16 +1427,38 @@ app.get("/client/profile", requireRole("client"), async (req, res) => {
 
   try {
     const profile = await getClientProfile(req.session.user.id);
+    const clientAddresses = await getAddressesByClient(req.session.user.id || req.session.user.email);
     return res.render("clientProfile", {
       title: "My Profile | SV Personnels",
       pageClass: "page-profile",
       profile,
+      clientAddresses,
       formNotice: consumeSessionNotice(req, "clientProfileNotice")
     });
   } catch (error) {
     req.session.clientDashboardNotice = createFormNotice("error", `Profile load error: ${error.message}`);
     return res.redirect("/client/dashboard");
   }
+});
+
+app.post("/client/addresses/add", requireRole("client"), async (req, res) => {
+  try {
+    await addClientAddress(req.session.user.id || req.session.user.email, req.body);
+    req.session.clientProfileNotice = createFormNotice("success", "Address saved successfully!");
+  } catch (error) {
+    req.session.clientProfileNotice = createFormNotice("error", `Failed to save address: ${error.message}`);
+  }
+  return res.redirect("/client/profile");
+});
+
+app.post("/client/addresses/delete/:id", requireRole("client"), async (req, res) => {
+  try {
+    await deleteClientAddress(req.params.id, req.session.user.id || req.session.user.email);
+    req.session.clientProfileNotice = createFormNotice("success", "Address deleted.");
+  } catch (error) {
+    req.session.clientProfileNotice = createFormNotice("error", `Failed to delete address: ${error.message}`);
+  }
+  return res.redirect("/client/profile");
 });
 
 app.post(
@@ -1280,6 +1563,8 @@ app.get("/professional/profile", requireRole("professional"), async (req, res) =
       profile: dashboardData.profile,
       services,
       mappedServiceIds,
+      mappedServices,
+      ottCategories: siteContent.home.ottCategories || [],
       formNotice: consumeSessionNotice(req, "professionalProfileNotice")
     });
   } catch (error) {
@@ -1317,22 +1602,17 @@ app.post(
     }
 
     try {
-      const profileData = {
-        fullName: sanitizeText(req.body.fullname),
-        phone: sanitizeText(req.body.phone),
-        city: sanitizeText(req.body.city),
-        area: sanitizeText(req.body.area || req.body.city || "Main"),
-        experience: Number(req.body.experience) || 0,
-        description: sanitizeText(req.body.description || "")
-      };
+      let selectedWorkModes = req.body.workModes;
+      if (!selectedWorkModes) selectedWorkModes = ["Part Time", "Full Time"];
+      if (!Array.isArray(selectedWorkModes)) selectedWorkModes = [selectedWorkModes];
+      const wmString = selectedWorkModes.join(",");
 
-      if (req.file) {
-        profileData.photoUrl = `/uploads/${req.file.filename}`;
-      }
+      const partTimeRateVal = Number(req.body.partTimeRate) || Number(req.session.user.hourlyRateInr) || 500;
+      const fullTimeRateVal = Number(req.body.fullTimeRate) || 25000;
 
-      await updateProfessionalProfile(req.session.user.id, profileData);
+      const rawSub = req.body.subcategorySkills;
+      const subcategorySkills = rawSub ? (Array.isArray(rawSub) ? rawSub : [rawSub]) : [];
 
-      // Update service mappings
       const rawServiceIds = req.body.serviceIds;
       const serviceIds = rawServiceIds ? (Array.isArray(rawServiceIds) ? rawServiceIds.map(Number) : [Number(rawServiceIds)]) : [];
       if (req.body.customSkillName && req.body.customSkillName.trim().length > 0) {
@@ -1341,14 +1621,78 @@ app.post(
           serviceIds.push(Number(customService.id));
         }
       }
-      await updateProfessionalServices(req.session.user.id, serviceIds);
 
-      // Update session details
+      const customRatesMap = {};
+      serviceIds.forEach(id => {
+        const pt = req.body[`customRate_${id}`];
+        if (pt && !isNaN(pt) && Number(pt) > 0) customRatesMap[`pt_${id}`] = Number(pt);
+        else customRatesMap[`pt_${id}`] = partTimeRateVal;
+
+        const ft = req.body[`customFullRate_${id}`];
+        if (ft && !isNaN(ft) && Number(ft) > 0) customRatesMap[`ft_${id}`] = Number(ft);
+        else customRatesMap[`ft_${id}`] = fullTimeRateVal;
+
+        customRatesMap[id] = customRatesMap[`pt_${id}`];
+      });
+
+      subcategorySkills.forEach(subName => {
+        const safeKey = encodeURIComponent(subName);
+        const pt = req.body[`customSubRate_${safeKey}`];
+        if (pt && !isNaN(pt) && Number(pt) > 0) customRatesMap[`sub_pt_${subName}`] = Number(pt);
+        else customRatesMap[`sub_pt_${subName}`] = partTimeRateVal;
+
+        const ft = req.body[`customSubFullRate_${safeKey}`];
+        if (ft && !isNaN(ft) && Number(ft) > 0) customRatesMap[`sub_ft_${subName}`] = Number(ft);
+        else customRatesMap[`sub_ft_${subName}`] = fullTimeRateVal;
+      });
+
+      let cleanDesc = sanitizeText(req.body.description || "");
+      cleanDesc = cleanDesc
+        .replace(/\[workModes?:[^\]]+\]/gi, "")
+        .replace(/\[Work Type:[^\]]+\]/gi, "")
+        .replace(/\[partTimeRate:[^\]]+\]/gi, "")
+        .replace(/\[fullTimeRate:[^\]]+\]/gi, "")
+        .replace(/\[subcategories:[^\]]+\]/gi, "")
+        .replace(/\[customRates:[^\]]+\]/gi, "")
+        .replace(/\[aadhaarPanUrl:[^\]]+\]/gi, "")
+        .replace(/\[livePhotoUrl:[^\]]+\]/gi, "")
+        .trim();
+
+      const panUrl = req.session.user.aadhaarPanUrl || "";
+      const photoUrl = req.session.user.livePhotoUrl || "";
+      let verificationTags = "";
+      if (panUrl) verificationTags += ` [aadhaarPanUrl:${panUrl}]`;
+      if (photoUrl) verificationTags += ` [livePhotoUrl:${photoUrl}]`;
+
+      const newBio = `${cleanDesc}\n[workModes:${wmString}] [partTimeRate:${partTimeRateVal}] [fullTimeRate:${fullTimeRateVal}] [subcategories:${JSON.stringify(subcategorySkills)}] [customRates:${JSON.stringify(customRatesMap)}]${verificationTags}`;
+
+      const profileData = {
+        fullName: sanitizeText(req.body.fullname),
+        phone: sanitizeText(req.body.phone),
+        city: sanitizeText(req.body.city),
+        area: sanitizeText(req.body.area || req.body.city || "Main"),
+        pincode: sanitizeText(req.body.pincode || ""),
+        experience: Number(req.body.experience) || 0,
+        description: newBio,
+        hourlyRateInr: partTimeRateVal
+      };
+
+      if (req.file) {
+        profileData.photoUrl = `/uploads/${req.file.filename}`;
+      }
+
+      await updateProfessionalProfile(req.session.user.id, profileData);
+      await updateProfessionalServices(req.session.user.id, serviceIds, customRatesMap);
+
       req.session.user.name = profileData.fullName;
       req.session.user.city = profileData.city;
       if (profileData.phone) req.session.user.phone = profileData.phone;
+      req.session.user.hourlyRateInr = partTimeRateVal;
+      req.session.user.workModes = selectedWorkModes;
+      req.session.user.customRates = customRatesMap;
+      req.session.user.subcategorySkills = subcategorySkills;
 
-      req.session.professionalProfileNotice = createFormNotice("success", "Profile updated successfully!");
+      req.session.professionalProfileNotice = createFormNotice("success", "Profile & custom pricing updated successfully!");
     } catch (error) {
       req.session.professionalProfileNotice = createFormNotice("error", `Failed to update profile: ${error.message}`);
     }
@@ -1469,17 +1813,36 @@ app.post(
       const livePhotoUrl = `/uploads/${liveFile.filename}`;
 
       const dbClient = getClient();
-      const { error } = await dbClient
-        .from("professionals")
-        .update({
-          aadhaar_pan_url: idDocumentUrl,
-          live_photo_url: livePhotoUrl
-        })
-        .eq("id", req.session.user.id);
-
-      if (error) {
-        throw error;
+      let updateError = null;
+      try {
+        const { error } = await dbClient
+          .from("professionals")
+          .update({
+            aadhaar_pan_url: idDocumentUrl,
+            live_photo_url: livePhotoUrl
+          })
+          .eq("id", req.session.user.id);
+        if (error) updateError = error;
+      } catch (e) {
+        updateError = e;
       }
+
+      // ALWAYS update bio fallback so verification is 100% saved even if columns don't exist in Supabase
+      const { data: proData } = await dbClient.from("professionals").select("bio").eq("id", req.session.user.id).maybeSingle();
+      let cleanBio = proData && proData.bio ? proData.bio : (req.session.user.bio || "");
+      cleanBio = cleanBio
+        .replace(/\[aadhaarPanUrl:[^\]]+\]/gi, "")
+        .replace(/\[livePhotoUrl:[^\]]+\]/gi, "")
+        .trim();
+      const newBio = `${cleanBio}\n[aadhaarPanUrl:${idDocumentUrl}] [livePhotoUrl:${livePhotoUrl}]`;
+      await dbClient.from("professionals").update({ bio: newBio }).eq("id", req.session.user.id);
+
+      if (updateError && !String(updateError.message || "").includes("42703") && !String(updateError.message || "").toLowerCase().includes("column")) {
+        console.warn("Verification update note:", updateError.message);
+      }
+
+      req.session.user.aadhaarPanUrl = idDocumentUrl;
+      req.session.user.livePhotoUrl = livePhotoUrl;
 
       req.session.professionalDashboardNotice = createFormNotice(
         "success",
@@ -1710,10 +2073,12 @@ app.get("/book-service/:professionalId", requireRole("client"), async (req, res)
 
   const serviceOptions = await getProfessionalServiceOptions(professionalId);
   const user = req.session.user || {};
+  const clientAddresses = await getAddressesByClient(user.id || user.email);
 
   return renderBookingPage(res, {
     professional,
     serviceOptions,
+    clientAddresses,
     formData: {
       fullName: user.name || "",
       email: user.email || "",
@@ -1731,121 +2096,228 @@ app.get("/book-service/:professionalId", requireRole("client"), async (req, res)
 app.post(
   "/book-service/:professionalId",
   requireRole("client"),
-  [
-    body("fullName").trim().isLength({ min: 2, max: 120 }).withMessage("Please enter your full name."),
-    body("email").trim().isEmail().withMessage("Please enter a valid email address."),
-    body("phone").trim().isLength({ min: 10, max: 20 }).withMessage("Please enter a valid phone number."),
-    body("preferredDate").isISO8601().withMessage("Please select a valid preferred date."),
-    body("preferredTimeSlot").trim().isLength({ min: 1, max: 80 }).withMessage("Please choose a time slot."),
-    body("addressArea").trim().isLength({ min: 3, max: 180 }).withMessage("Please enter your area or city."),
-    body("serviceAddress").optional().trim(),
-    body("serviceId").isInt({ min: 1 }).withMessage("Please select a service.")
-  ],
   async (req, res) => {
     const professionalId = Number(req.params.professionalId);
     if (Number.isNaN(professionalId)) {
       return renderBookingPage(res.status(400), {
-        formNotice: createFormNotice("error", "Invalid professional ID format."),
-        professional: null,
-        serviceOptions: [],
-        formData: {
-          fullName: sanitizeText(req.body.fullName),
-          email: sanitizeText(req.body.email),
-          phone: sanitizeText(req.body.phone),
-          preferredDate: sanitizeText(req.body.preferredDate),
-          preferredTimeSlot: sanitizeText(req.body.preferredTimeSlot),
-          addressArea: sanitizeText(req.body.addressArea),
-          serviceAddress: sanitizeText(req.body.serviceAddress || ""),
-          serviceId: sanitizeText(req.body.serviceId),
-          details: sanitizeText(req.body.details)
-        }
+        formNotice: createFormNotice("error", "Invalid professional ID format.")
       });
     }
     const professional = isDatabaseReady() ? await getProfessionalById(professionalId) : null;
-    const serviceOptions = isDatabaseReady() ? await getProfessionalServiceOptions(professionalId) : [];
-    const errors = validationResult(req);
-    const formData = {
-      fullName: sanitizeText(req.body.fullName),
-      email: sanitizeText(req.body.email),
-      phone: sanitizeText(req.body.phone),
-      preferredDate: sanitizeText(req.body.preferredDate),
-      preferredTimeSlot: sanitizeText(req.body.preferredTimeSlot),
-      addressArea: sanitizeText(req.body.addressArea),
-      serviceAddress: sanitizeText(req.body.serviceAddress || ""),
-      serviceId: sanitizeText(req.body.serviceId),
-      details: sanitizeText(req.body.details)
-    };
-
     if (!professional) {
       return renderBookingPage(res.status(404), {
-        formNotice: createFormNotice("error", "That professional could not be found."),
-        professional,
-        serviceOptions,
-        formData
+        formNotice: createFormNotice("error", "That professional could not be found.")
       });
     }
 
-    if (!errors.isEmpty()) {
-      return renderBookingPage(res.status(422), {
-        formNotice: createFormNotice("error", errors.array()[0].msg),
-        professional,
-        serviceOptions,
-        formData
-      });
-    }
+    const user = req.session.user || {};
+    const clientAddresses = await getAddressesByClient(user.id || user.email);
 
-    if (!isDatabaseReady()) {
-      return renderBookingPage(res.status(503), {
-        formNotice: createFormNotice("error", "Supabase is not connected yet, so booking is unavailable."),
-        professional,
-        serviceOptions,
-        formData
-      });
-    }
-
-    const selectedServiceObj = serviceOptions.find(s => String(s.id) === String(formData.serviceId));
-    const budgetAmount = selectedServiceObj ? Number(selectedServiceObj.customRateInr || selectedServiceObj.priceInr || 500) : 500;
-
-    const otp = Math.floor(100000 + Math.random() * 900000); // 6-digit OTP
-    const paymentMethod = req.body.paymentMethod === "online" ? "Online Payment (UPI/Card)" : "Pay After Service (COD)";
-    let formattedDetails = `${formData.details || ""}\n\n[Start OTP: ${otp}]\n[Payment Method: ${paymentMethod}]`.trim();
-    if (formData.serviceAddress) {
-      formattedDetails += `\n[Complete Address: ${formData.serviceAddress}]`;
-    }
-    if (req.body.latitude && req.body.longitude) {
-      formattedDetails += `\n[Coordinates: ${req.body.latitude},${req.body.longitude}]`;
-    }
-
-    const fullCombinedAddress = formData.serviceAddress ? `${formData.addressArea} (${formData.serviceAddress})` : formData.addressArea;
-
-    const bookingCode = await createBooking({
-      clientId: req.session.user && req.session.user.role === "client" ? req.session.user.id : null,
-      guestName: formData.fullName,
-      guestEmail: formData.email,
-      guestPhone: formData.phone,
-      professionalId,
-      serviceId: Number(formData.serviceId),
-      preferredDate: formData.preferredDate,
-      preferredTimeSlot: formData.preferredTimeSlot,
-      addressArea: fullCombinedAddress,
-      budgetInr: budgetAmount,
-      details: formattedDetails
-    });
-
-    return renderBookingPage(res, {
-      professional,
-      serviceOptions,
-      formNotice: createFormNotice(
-        "success",
-        `Booking request ${bookingCode} has been created successfully. The professional can now see it in their dashboard.`
-      ),
-      formData: {
-        ...formData,
-        details: ""
+    let addressArea = req.body.addressArea || "";
+    let serviceAddress = req.body.serviceAddress || "";
+    if (req.body.selectedAddressId && clientAddresses.length > 0) {
+      const foundAddr = clientAddresses.find(a => String(a.id) === String(req.body.selectedAddressId));
+      if (foundAddr) {
+        addressArea = (foundAddr.locality ? foundAddr.locality + ", " : "") + (foundAddr.city || "");
+        serviceAddress = `${foundAddr.address || ""} - Pincode: ${foundAddr.pincode || ""}` + (foundAddr.landmark ? ` (Landmark: ${foundAddr.landmark})` : "");
       }
-    });
+    }
+
+    if (!addressArea && clientAddresses.length === 0) {
+      return renderBookingPage(res.status(422), {
+        professional,
+        clientAddresses,
+        formNotice: createFormNotice("error", "Please select or add a service address first.")
+      });
+    }
+
+    const serviceOptions = isDatabaseReady() ? await getProfessionalServiceOptions(professionalId) : [];
+    const chosenServiceId = req.body.serviceId || (serviceOptions[0] ? serviceOptions[0].id : 1);
+
+    req.session.bookingDraft = {
+      professionalId,
+      fullName: sanitizeText(req.body.fullName || user.name),
+      email: sanitizeText(req.body.email || user.email),
+      phone: sanitizeText(req.body.phone || user.phone),
+      preferredDate: sanitizeText(req.body.preferredDate || new Date().toISOString().split("T")[0]),
+      preferredTimeSlot: sanitizeText(req.body.preferredTimeSlot || "10:00 AM"),
+      addressArea: sanitizeText(addressArea),
+      serviceAddress: sanitizeText(serviceAddress),
+      serviceId: chosenServiceId,
+      jobType: sanitizeText(req.body.jobType || "Part Time"),
+      latitude: sanitizeText(req.body.latitude || ""),
+      longitude: sanitizeText(req.body.longitude || "")
+    };
+
+    return res.redirect(`/book-service/${professionalId}/payment`);
   }
 );
+
+app.get("/book-service/:professionalId/payment", requireRole("client"), async (req, res) => {
+  const professionalId = Number(req.params.professionalId);
+  const draft = req.session.bookingDraft;
+  if (!draft || Number(draft.professionalId) !== professionalId) {
+    return res.redirect(`/book-service/${professionalId}`);
+  }
+
+  const professional = await getProfessionalById(professionalId);
+  if (!professional) {
+    return res.redirect("/findHelpNow");
+  }
+
+  return res.render("bookServicePayment", {
+    title: "Select Payment Method | SV Personnels",
+    pageClass: "page-booking-payment",
+    professional,
+    bookingDraft: draft,
+    formNotice: null
+  });
+});
+
+app.post("/book-service/:professionalId/confirm", requireRole("client"), async (req, res) => {
+  const professionalId = Number(req.params.professionalId);
+  const draft = req.session.bookingDraft;
+  if (!draft || Number(draft.professionalId) !== professionalId) {
+    return res.redirect(`/book-service/${professionalId}`);
+  }
+
+  const professional = await getProfessionalById(professionalId);
+  if (!professional) {
+    return res.redirect("/findHelpNow");
+  }
+
+  const isFullTime = (draft.jobType === "Full Time");
+  const paymentMethodChoice = isFullTime ? "payu" : (req.body.paymentMethod || "cod");
+
+  if (paymentMethodChoice === "payu" || isFullTime) {
+    const key = process.env.PAYU_MERCHANT_KEY || "gtKFFx";
+    const salt = process.env.PAYU_MERCHANT_SALT || "eCwWELxi";
+    const txnid = "SV_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
+    const amount = isFullTime ? 250 : (Number(professional.startingPrice) || 500);
+    const productinfo = isFullTime
+      ? "Full Time Platform Booking Fee (₹250) - " + professional.name
+      : "Booking with " + professional.name;
+    const firstname = draft.fullName || "Verified Client";
+    const email = draft.email || "client@svpersonnels.in";
+    const phone = draft.phone || "9999999999";
+    const originUrl = getRequestOrigin(req);
+    const surl = originUrl + "/book-service/payu/success";
+    const furl = originUrl + "/book-service/payu/failure";
+
+    const hashString = `${key}|${txnid}|${amount}|${productinfo}|${firstname}|${email}|||||||||||${salt}`;
+    const hash = crypto.createHash("sha512").update(hashString).digest("hex");
+
+    req.session.payuPending = {
+      txnid,
+      professionalId,
+      draft,
+      amount,
+      isFullTimeFee: isFullTime
+    };
+
+    return res.render("payuCheckout", {
+      title: "PayU Payment Gateway | SV Personnels",
+      pageClass: "page-payu",
+      key,
+      txnid,
+      amount,
+      productinfo,
+      firstname,
+      email,
+      phone,
+      surl,
+      furl,
+      hash,
+      professional
+    });
+  }
+
+  // Option 1: Direct Post-Service Payment (Cash / UPI to Professional)
+  const otp = Math.floor(100000 + Math.random() * 900000);
+  const paymentMethod = "Direct Post-Service Payment (Cash / UPI directly to Professional)";
+  let formattedDetails = `[Start OTP: ${otp}]\n[Payment Method: ${paymentMethod}]`;
+  if (draft.serviceAddress) {
+    formattedDetails += `\n[Complete Address: ${draft.serviceAddress}]`;
+  }
+  if (draft.latitude && draft.longitude) {
+    formattedDetails += `\n[Coordinates: ${draft.latitude},${draft.longitude}]`;
+  }
+
+  const fullCombinedAddress = draft.serviceAddress ? `${draft.addressArea} (${draft.serviceAddress})` : draft.addressArea;
+
+  const bookingCode = await createBooking({
+    clientId: req.session.user.id,
+    guestName: draft.fullName,
+    guestEmail: draft.email,
+    guestPhone: draft.phone,
+    professionalId,
+    serviceId: Number(draft.serviceId) || 1,
+    preferredDate: draft.preferredDate,
+    preferredTimeSlot: draft.preferredTimeSlot,
+    addressArea: fullCombinedAddress,
+    budgetInr: 0,
+    details: formattedDetails
+  });
+
+  req.session.bookingDraft = null;
+  req.session.dashboardNotice = createFormNotice(
+    "success",
+    `Booking ${bookingCode} confirmed with ${professional.name}! Settle payment directly with your professional upon completion.`
+  );
+  return res.redirect("/client/dashboard");
+});
+
+app.post("/book-service/payu/success", async (req, res) => {
+  const pending = req.session.payuPending;
+  if (!pending || !pending.draft) {
+    return res.redirect("/client/dashboard");
+  }
+
+  const draft = pending.draft;
+  const professionalId = pending.professionalId;
+  const professional = await getProfessionalById(professionalId);
+
+  const otp = Math.floor(100000 + Math.random() * 900000);
+  const paymentMethod = "Online Payment via PayU (Paid Online - TxnID: " + pending.txnid + ")";
+  let formattedDetails = `[Start OTP: ${otp}]\n[Payment Method: ${paymentMethod}]`;
+  if (draft.serviceAddress) {
+    formattedDetails += `\n[Complete Address: ${draft.serviceAddress}]`;
+  }
+
+  const fullCombinedAddress = draft.serviceAddress ? `${draft.addressArea} (${draft.serviceAddress})` : draft.addressArea;
+
+  const bookingCode = await createBooking({
+    clientId: req.session.user ? req.session.user.id : null,
+    guestName: draft.fullName,
+    guestEmail: draft.email,
+    guestPhone: draft.phone,
+    professionalId,
+    serviceId: Number(draft.serviceId) || 1,
+    preferredDate: draft.preferredDate,
+    preferredTimeSlot: draft.preferredTimeSlot,
+    addressArea: fullCombinedAddress,
+    budgetInr: pending.amount || 0,
+    details: formattedDetails
+  });
+
+  req.session.payuPending = null;
+  req.session.bookingDraft = null;
+  req.session.dashboardNotice = createFormNotice(
+    "success",
+    `🎉 Online Payment Successful via PayU (Txn ID: ${pending.txnid})! Booking ${bookingCode} with ${professional ? professional.name : 'professional'} is confirmed.`
+  );
+  return res.redirect("/client/dashboard");
+});
+
+app.post("/book-service/payu/failure", async (req, res) => {
+  const pending = req.session.payuPending;
+  const professionalId = pending ? pending.professionalId : null;
+  if (professionalId) {
+    req.session.formNotice = createFormNotice("error", "Online Payment via PayU failed or was cancelled. Please try again or select Cash/UPI on completion.");
+    return res.redirect(`/book-service/${professionalId}/payment`);
+  }
+  return res.redirect("/findHelpNow");
+});
 
 app.get("/api/workers", async (req, res) => {
   try {
@@ -2161,47 +2633,6 @@ app.post("/professional/bookings/:bookingId/complete-work", requireRole("profess
   }
 
   return res.redirect("/professional/dashboard");
-});
-
-app.post("/client/bookings/:bookingId/pay", requireRole("client"), async (req, res) => {
-  if (!isDatabaseReady()) {
-    req.session.clientDashboardNotice = createFormNotice("error", "Database offline.");
-    return res.redirect("/client/dashboard");
-  }
-
-  const bookingId = Number(req.params.bookingId);
-
-  try {
-    const dbClient = getClient();
-    const { data: booking, error } = await dbClient
-      .from("bookings")
-      .select("id, details, client_id")
-      .eq("id", bookingId)
-      .eq("client_id", req.session.user.id)
-      .maybeSingle();
-
-    if (error) throw error;
-    if (!booking) {
-      req.session.clientDashboardNotice = createFormNotice("error", "Booking not found.");
-      return res.redirect("/client/dashboard");
-    }
-
-    const details = booking.details || "";
-    const updatedDetails = `${details}\n[Payment Status: Paid via Razorpay]`.trim();
-
-    const { error: updateError } = await dbClient
-      .from("bookings")
-      .update({ details: updatedDetails })
-      .eq("id", bookingId);
-
-    if (updateError) throw updateError;
-
-    req.session.clientDashboardNotice = createFormNotice("success", "Payment successful! Thank you for using SV Personnels.");
-  } catch (err) {
-    req.session.clientDashboardNotice = createFormNotice("error", `Payment failed: ${err.message}`);
-  }
-
-  return res.redirect("/client/dashboard");
 });
 
 const workerValidators = [

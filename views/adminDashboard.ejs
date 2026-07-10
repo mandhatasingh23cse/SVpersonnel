@@ -142,23 +142,40 @@
                     <h4 style="font-size: 0.85rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--text);">Identity Verification Documents:</h4>
                     <div style="display: flex; gap: 2rem; align-items: flex-start; flex-wrap: wrap;">
                       <% if (pro.aadhaarPanUrl) { %>
-                        <div style="display: grid; gap: 0.5rem;">
+                        <div style="display: grid; gap: 0.6rem; background: rgba(255,255,255,0.03); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--line-strong);">
                           <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-soft); text-transform: uppercase;">ID Document (Aadhaar/PAN)</span>
-                          <% if (pro.aadhaarPanUrl.toLowerCase().endsWith('.pdf')) { %>
-                            <a href="<%= pro.aadhaarPanUrl %>" target="_blank" class="button button-secondary" style="min-height: 38px; padding: 0 14px; font-size: 0.82rem;">View ID Document (PDF)</a>
+                          <% 
+                            const idUrl = pro.aadhaarPanUrl;
+                            const isPlaceholderId = (idUrl === 'Aadhaar/PAN' || idUrl === 'Live Photo' || (!idUrl.startsWith('/') && !idUrl.startsWith('http') && !idUrl.startsWith('data:')));
+                          %>
+                          <% if (isPlaceholderId) { %>
+                            <span style="font-size: 0.82rem; color: #fb7185; background: rgba(244,63,94,0.1); padding: 6px 10px; border-radius: 6px;">⚠️ Pending actual file upload (Current value: <%= idUrl %>)</span>
+                          <% } else if (idUrl.toLowerCase().endsWith('.pdf')) { %>
+                            <a href="<%= idUrl %>" target="_blank" class="button button-secondary" style="min-height: 38px; padding: 0 14px; font-size: 0.82rem;">📄 View ID Document (PDF)</a>
                           <% } else { %>
-                            <a href="<%= pro.aadhaarPanUrl %>" target="_blank">
-                              <img src="<%= pro.aadhaarPanUrl %>" alt="Aadhaar/PAN" style="max-width: 220px; max-height: 140px; border-radius: var(--radius-sm); border: 1px solid var(--line-strong); object-fit: contain;">
+                            <a href="<%= idUrl %>" target="_blank" style="display: block;">
+                              <img src="<%= idUrl %>" alt="Aadhaar/PAN Document" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" style="max-width: 220px; max-height: 140px; border-radius: var(--radius-sm); border: 1px solid var(--line-strong); object-fit: contain;">
+                              <span style="display: none; font-size: 0.82rem; color: #38bdf8; background: rgba(56,189,248,0.1); padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(56,189,248,0.3);">📄 Click to Open Document File ›</span>
                             </a>
                           <% } %>
                         </div>
                       <% } %>
+
                       <% if (pro.livePhotoUrl) { %>
-                        <div style="display: grid; gap: 0.5rem;">
+                        <div style="display: grid; gap: 0.6rem; background: rgba(255,255,255,0.03); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--line-strong);">
                           <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-soft); text-transform: uppercase;">Live Photo</span>
-                          <a href="<%= pro.livePhotoUrl %>" target="_blank">
-                            <img src="<%= pro.livePhotoUrl %>" alt="Live Photo" style="width: 140px; height: 140px; border-radius: var(--radius-sm); border: 1px solid var(--line-strong); object-fit: cover;">
-                          </a>
+                          <% 
+                            const photoUrl = pro.livePhotoUrl;
+                            const isPlaceholderPhoto = (photoUrl === 'Aadhaar/PAN' || photoUrl === 'Live Photo' || (!photoUrl.startsWith('/') && !photoUrl.startsWith('http') && !photoUrl.startsWith('data:')));
+                          %>
+                          <% if (isPlaceholderPhoto) { %>
+                            <span style="font-size: 0.82rem; color: #fb7185; background: rgba(244,63,94,0.1); padding: 6px 10px; border-radius: 6px;">⚠️ Pending actual file upload (Current value: <%= photoUrl %>)</span>
+                          <% } else { %>
+                            <a href="<%= photoUrl %>" target="_blank" style="display: block;">
+                              <img src="<%= photoUrl %>" alt="Live Photo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" style="width: 140px; height: 140px; border-radius: var(--radius-sm); border: 1px solid var(--line-strong); object-fit: cover;">
+                              <span style="display: none; font-size: 0.82rem; color: #38bdf8; background: rgba(56,189,248,0.1); padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(56,189,248,0.3);">🖼️ Click to Open Live Photo ›</span>
+                            </a>
+                          <% } %>
                         </div>
                       <% } %>
                     </div>
@@ -185,30 +202,6 @@
       <% } %>
     </div>
 
-    <!-- SECTION 3: Department / Service Costs -->
-    <div style="padding: 2rem; border-radius: var(--radius-xl); background: rgba(22, 32, 58, 0.9); border: 1px solid var(--line-strong); backdrop-filter: blur(20px);">
-      <div style="border-bottom: 1px solid var(--line-strong); padding-bottom: 1.25rem; margin-bottom: 2rem;">
-        <h2 style="font-family: 'Outfit', sans-serif; color: var(--text); margin: 0 0 0.25rem;">Department / Service Costs</h2>
-        <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0;">Set the standard price for each platform service category.</p>
-      </div>
-      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.25rem;">
-        <% dashboardData.services.forEach(function (service) { %>
-          <div style="padding: 1.5rem; border-radius: var(--radius-md); background: rgba(15, 23, 42, 0.7); border: 1px solid var(--line-strong); display: flex; flex-direction: column; justify-content: space-between; gap: 1rem;">
-            <div>
-              <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.05rem; color: var(--text); margin: 0 0 0.2rem;"><%= service.name %></h3>
-              <p style="font-size: 0.8rem; color: var(--text-soft); margin: 0;">Slug: <%= service.slug %></p>
-            </div>
-            <form action="/admin/services/<%= service.id %>/price" method="POST" style="display: flex; flex-direction: column; gap: 0.5rem;">
-              <label class="field-group" style="margin-bottom: 0;">
-                <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Base price (INR):</span>
-                <input type="number" name="basePrice" value="<%= service.basePriceInr %>" min="0" max="100000" required>
-              </label>
-              <button type="submit" class="button button-primary" style="font-size: 0.85rem; width: 100%; min-height: 40px;">Update Price</button>
-            </form>
-          </div>
-        <% }) %>
-      </div>
-    </div>
-
+    <!-- Removed Department / Service Costs section since professionals set their own prices -->
   </div>
 </section>

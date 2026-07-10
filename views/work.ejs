@@ -1,0 +1,304 @@
+<section class="section shell" style="padding-top: 2.5rem; padding-bottom: 5rem;">
+  <div class="section-heading text-center" style="margin-bottom: 2.5rem;">
+    <p class="eyebrow" style="color: var(--color-brand); font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Live Job Requirements & Gigs</p>
+    <h1 style="font-size: 2.6rem; color: #fff; margin-bottom: 0.75rem;">Explore Work & Hire Talent</h1>
+    <p style="color: var(--color-ink-light); max-width: 680px; margin: 0 auto; font-size: 1.05rem;">
+      Clients post verified work requirements with baseline budgets. Only professionals from the matching service category are notified and can view or negotiate pricing.
+    </p>
+  </div>
+
+  <% if (formNotice) { %>
+    <div class="notice <%= formNotice.type === 'error' ? 'notice-error' : 'notice-success' %>" style="margin-bottom: 2rem; max-width: 800px; margin-left: auto; margin-right: auto; padding: 1rem 1.5rem; border-radius: 12px;">
+      <p style="margin: 0; font-weight: 600;"><%= formNotice.message %></p>
+    </div>
+  <% } %>
+
+  <!-- Section 1: Post a Work Requirement (For Clients & Employers) -->
+  <div class="glass-panel" style="max-width: 900px; margin: 0 auto 3.5rem; padding: 2rem; border: 1px solid rgba(167, 139, 250, 0.25); background: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(30, 41, 59, 0.7)); border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.4);">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem;">
+      <div>
+        <span style="background: var(--color-brand); color: #000; font-size: 0.75rem; font-weight: 800; padding: 3px 8px; border-radius: 6px; text-transform: uppercase;">Employer Portal</span>
+        <h2 style="color: #fff; font-size: 1.6rem; margin: 0.35rem 0 0;">Post a Work Requirement</h2>
+      </div>
+      <p style="margin: 0; color: var(--color-ink-light); font-size: 0.9rem;">
+        Need staff, guards, workers, or technicians? Fill below & notify matched professionals instantly.
+      </p>
+    </div>
+
+    <% const isPassActive = (user && user.role === "client" && user.workPassActive && (!user.workPassExpiresAt || new Date(user.workPassExpiresAt) > new Date())); %>
+
+    <% if (user && user.role === "client") { %>
+      <% if (isPassActive) { %>
+        <div style="margin-bottom: 1.5rem; padding: 1rem 1.25rem; border-radius: 12px; background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.4); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
+          <div style="display: flex; align-items: center; gap: 0.6rem; color: #86efac; font-size: 0.92rem;">
+            <span style="font-size: 1.3rem;">✅</span>
+            <div>
+              <strong>Active 30-Day Client Work Pass</strong><br>
+              <span style="font-size: 0.82rem; color: #bbf7d0;">You can upload unlimited work requirements & notify matched professionals across India.</span>
+            </div>
+          </div>
+          <span style="font-size: 0.78rem; background: #22c55e; color: #000; font-weight: 800; padding: 4px 10px; border-radius: 6px;">PASS ACTIVE</span>
+        </div>
+      <% } else { %>
+        <div style="margin-bottom: 1.75rem; padding: 1.5rem; border-radius: 16px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(217, 119, 6, 0.1)); border: 2px solid #f59e0b; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1.25rem;">
+          <div style="max-width: 540px;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
+              <span style="background: #f59e0b; color: #000; font-size: 0.72rem; font-weight: 800; padding: 2px 8px; border-radius: 4px;">MANDATORY PASS</span>
+              <strong style="color: #fbbf24; font-size: 1.1rem;">💎 Unlock Unlimited Work Postings (₹150 / Month)</strong>
+            </div>
+            <p style="margin: 0; color: #fde68a; font-size: 0.9rem; line-height: 1.45;">
+              To maintain quality standards and notify verified local professionals instantly, employers need a 30-Day Work Pass (`₹150 only`). Post unlimited jobs and hire candidates directly!
+            </p>
+          </div>
+          <a href="/work/pass/buy" class="button button-primary" style="padding: 0.9rem 1.75rem; font-size: 0.95rem; font-weight: 800; border-radius: 12px; background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; text-decoration: none; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4); display: inline-flex; align-items: center; gap: 0.4rem;">
+            ⚡ Buy 30-Day Pass (₹150 via PayU) ›
+          </a>
+        </div>
+      <% } %>
+    <% } %>
+
+    <form action="/work/post" method="POST" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 1.25rem; width: 100%; max-width: 100%; box-sizing: border-box;">
+      <label class="field-group" style="min-width: 0; max-width: 100%;">
+        <span style="color: #fff; font-weight: 600; font-size: 0.9rem;">Worker Category / Skill Required</span>
+        <select id="work-category-select" name="category" required class="form-input" style="width: 100%; max-width: 100%; padding: 0.75rem 1rem; border-radius: 10px; background: rgba(15, 23, 42, 0.9); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; text-overflow: ellipsis; overflow: hidden;">
+          <% if (ottCategories && ottCategories.length) { %>
+            <% ottCategories.forEach(function(cat) { %>
+              <option value="<%= cat.title %>" data-items="<%= encodeURIComponent(JSON.stringify(cat.items || [])) %>"><%= cat.headerIcon || '🔹' %> <%= cat.title %></option>
+            <% }) %>
+          <% } else { %>
+            <option value="1. Security Services">1. Security Services</option>
+            <option value="2. Housekeeping & Facility Management">2. Housekeeping & Facility Management</option>
+            <option value="3. Office & Corporate Staff">3. Office & Corporate Staff</option>
+            <option value="4. Industrial & Factory Workforce">4. Industrial & Factory Workforce</option>
+          <% } %>
+          <option value="General Workforce" data-items="[]">General Workforce / Other</option>
+        </select>
+      </label>
+
+      <label class="field-group" style="min-width: 0; max-width: 100%;">
+        <span style="color: #fff; font-weight: 600; font-size: 0.9rem;">Select Sub-Category / Specific Role</span>
+        <select id="work-subcategory-select" name="subCategory" class="form-input" style="width: 100%; max-width: 100%; padding: 0.75rem 1rem; border-radius: 10px; background: rgba(15, 23, 42, 0.9); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; text-overflow: ellipsis; overflow: hidden;">
+          <option value="">Any Sub-Category / General Role</option>
+        </select>
+      </label>
+
+      <script>
+        document.addEventListener("DOMContentLoaded", function() {
+          const catSelect = document.getElementById("work-category-select");
+          const subSelect = document.getElementById("work-subcategory-select");
+          if (!catSelect || !subSelect) return;
+
+          function populateSubCategories() {
+            const selectedOpt = catSelect.options[catSelect.selectedIndex];
+            subSelect.innerHTML = '<option value="">Any Sub-Category / General Role</option>';
+            if (!selectedOpt) return;
+            const itemsAttr = selectedOpt.getAttribute("data-items");
+            if (itemsAttr && itemsAttr !== "[]") {
+              try {
+                const items = JSON.parse(decodeURIComponent(itemsAttr));
+                items.forEach(item => {
+                  const opt = document.createElement("option");
+                  opt.value = item.name;
+                  opt.textContent = item.name;
+                  subSelect.appendChild(opt);
+                });
+              } catch (e) {
+                console.warn("Could not parse subcategories:", e);
+              }
+            }
+          }
+
+          catSelect.addEventListener("change", populateSubCategories);
+          populateSubCategories();
+        });
+      </script>
+
+      <label class="field-group" style="min-width: 0; max-width: 100%;">
+        <span style="color: #fff; font-weight: 600; font-size: 0.9rem;">Work Location / City</span>
+        <input type="text" name="location" placeholder="e.g. Gurugram, Delhi, All India" required class="form-input" style="width: 100%; max-width: 100%; box-sizing: border-box; padding: 0.75rem 1rem; border-radius: 10px; background: rgba(15, 23, 42, 0.9); color: #fff; border: 1px solid rgba(255,255,255,0.2);">
+      </label>
+
+      <label class="field-group" style="min-width: 0; max-width: 100%;">
+        <span style="color: #fff; font-weight: 600; font-size: 0.9rem;">Work Type / Shift</span>
+        <select name="jobType" required class="form-input" style="width: 100%; max-width: 100%; box-sizing: border-box; padding: 0.75rem 1rem; border-radius: 10px; background: rgba(15, 23, 42, 0.9); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;">
+          <option value="Full Time">Full Time</option>
+          <option value="Part Time">Part Time</option>
+          <option value="Both / Flexible">Both / Flexible Shift</option>
+        </select>
+      </label>
+
+      <label class="field-group" style="min-width: 0; max-width: 100%;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="color: #fff; font-weight: 600; font-size: 0.9rem;">Your Budget (₹)</span>
+          <span style="color: #a78bfa; font-size: 0.75rem; font-weight: 700;">Negotiable</span>
+        </div>
+        <input type="number" name="budget" min="0" step="100" placeholder="e.g. 600 per day / 18000 month" required class="form-input" style="width: 100%; max-width: 100%; box-sizing: border-box; padding: 0.75rem 1rem; border-radius: 10px; background: rgba(15, 23, 42, 0.9); color: #fff; border: 1px solid rgba(255,255,255,0.2);">
+      </label>
+
+      <% if (!user || user.role !== "client") { %>
+        <div style="grid-column: 1 / -1; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); padding: 1rem; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+          <div style="color: #fca5a5; font-size: 0.9rem;">
+            <strong>⚠️ Client Login Required:</strong> You must login as a Client first to upload work requirements and hire verified professionals.
+          </div>
+          <a href="/clientlogin" class="button button-primary" style="padding: 0.65rem 1.5rem; font-weight: 700; border-radius: 8px; text-decoration: none; background: #ef4444; color: #fff;">
+            Login as Client to Post Work ›
+          </a>
+        </div>
+      <% } %>
+
+      <label class="field-group" style="grid-column: 1 / -1;">
+        <span style="color: #fff; font-weight: 600; font-size: 0.9rem;">Detailed Description & Requirements</span>
+        <textarea name="description" rows="3" placeholder="Describe the responsibilities, required experience, work timings, and exact expectations..." required class="form-input" style="width: 100%; padding: 0.75rem 1rem; border-radius: 10px; background: rgba(15, 23, 42, 0.9); color: #fff; border: 1px solid rgba(255,255,255,0.2);"></textarea>
+      </label>
+
+      <div style="grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-top: 0.5rem;">
+        <span style="font-size: 0.85rem; color: var(--color-ink-light);">
+          🔒 Only professionals specifically categorized under this skill will be notified and granted access.
+        </span>
+        <% if (user && user.role === "client") { %>
+          <% if (isPassActive) { %>
+            <button type="submit" class="button button-primary" style="padding: 0.85rem 2rem; font-weight: 700; border-radius: 10px;">
+              Notify Professionals & Post Work ›
+            </button>
+          <% } else { %>
+            <a href="/work/pass/buy" class="button button-primary" style="padding: 0.85rem 2rem; font-weight: 800; border-radius: 10px; background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem;">
+              ⚡ Buy Work Pass (₹150) to Post Work ›
+            </a>
+          <% } %>
+        <% } else { %>
+          <a href="/clientlogin" class="button button-primary" style="padding: 0.85rem 2rem; font-weight: 700; border-radius: 10px; text-decoration: none; background: #ef4444; color: #fff; display: inline-block;">
+            Login to Post Work ›
+          </a>
+        <% } %>
+      </div>
+    </form>
+  </div>
+
+  <!-- Section 2: Available Work Opportunities -->
+  <div style="max-width: 1100px; margin: 0 auto;">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.75rem;">
+      <div>
+        <h2 style="color: #fff; font-size: 1.8rem; margin: 0;">Available Work & Job Board</h2>
+        <% if (user && user.role === "professional") { %>
+          <p style="color: #a78bfa; font-size: 0.95rem; margin: 0.35rem 0 0; font-weight: 600;">
+            ✨ Filtered exclusively for your category: <span style="color: #fff; background: rgba(167, 139, 250, 0.2); padding: 2px 8px; border-radius: 6px;"><%= user.primarySkill || 'Your Profile Categories' %></span>
+          </p>
+        <% } else if (user && user.role === "client") { %>
+          <p style="color: var(--color-ink-light); font-size: 0.95rem; margin: 0.35rem 0 0;">
+            Viewing all posted requirements. Professionals apply directly with rate proposals below.
+          </p>
+        <% } else { %>
+          <p style="color: var(--color-ink-light); font-size: 0.95rem; margin: 0.35rem 0 0;">
+            Viewing public work listings. <a href="/login" style="color: var(--color-brand); text-decoration: underline;">Log in as a Professional</a> to negotiate pricing and apply.
+          </p>
+        <% } %>
+      </div>
+      <span style="background: rgba(255,255,255,0.08); color: #fff; font-weight: 700; padding: 6px 14px; border-radius: 20px; font-size: 0.88rem; border: 1px solid rgba(255,255,255,0.15);">
+        <%= (displayedJobs || []).length %> Open Requirements
+      </span>
+    </div>
+
+    <% if (!displayedJobs || displayedJobs.length === 0) { %>
+      <div class="glass-panel text-center" style="padding: 3.5rem 2rem; border-radius: 16px; border: 1px dashed rgba(255,255,255,0.15);">
+        <p style="font-size: 2.5rem; margin-bottom: 0.5rem;">📬</p>
+        <h3 style="color: #fff; font-size: 1.3rem; margin-bottom: 0.5rem;">No active work requirements right now for this category</h3>
+        <p style="color: var(--color-ink-light); max-width: 460px; margin: 0 auto;">
+          New jobs and client requirements are posted daily. Check back soon or ensure your onboarding skills are checked so you get instant notifications!
+        </p>
+      </div>
+    <% } else { %>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1.5rem;">
+        <% displayedJobs.forEach(function(job) { %>
+          <div class="glass-panel" style="padding: 1.5rem; border-radius: 16px; border: 1px solid rgba(255,255,255,0.12); display: flex; flex-direction: column; justify-content: space-between; background: rgba(15, 23, 42, 0.6); transition: transform 0.2s, border-color 0.2s;">
+            <div>
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 1rem;">
+                <span style="background: rgba(167, 139, 250, 0.2); color: #a78bfa; font-weight: 700; font-size: 0.82rem; padding: 4px 10px; border-radius: 8px; border: 1px solid rgba(167, 139, 250, 0.3);">
+                  <%= job.category %>
+                </span>
+                <span style="font-size: 0.8rem; color: #38bdf8; background: rgba(56, 189, 248, 0.15); padding: 4px 10px; border-radius: 8px; font-weight: 600;">
+                  ⏰ <%= job.jobType %>
+                </span>
+              </div>
+
+              <h3 style="color: #fff; font-size: 1.25rem; margin: 0 0 0.5rem; line-height: 1.3;">
+                <%= job.clientName %>
+              </h3>
+
+              <div style="display: flex; align-items: center; gap: 1.25rem; font-size: 0.88rem; color: var(--color-ink-light); margin-bottom: 1rem;">
+                <span>📍 <%= job.location %></span>
+                <span>📅 Posted <%= job.createdAt ? new Date(job.createdAt).toLocaleDateString('en-IN') : 'Recently' %></span>
+              </div>
+
+              <div style="background: rgba(0,0,0,0.3); padding: 0.85rem 1rem; border-radius: 10px; margin-bottom: 1.25rem; border-left: 3px solid #10b981;">
+                <div style="display: flex; align-items: baseline; justify-content: space-between;">
+                  <span style="font-size: 0.8rem; color: var(--color-ink-light); text-transform: uppercase; font-weight: 700;">Client Budget</span>
+                  <span style="font-size: 1.3rem; font-weight: 800; color: #10b981;">₹<%= job.budget %></span>
+                </div>
+                <small style="color: #a78bfa; font-size: 0.78rem; display: block; margin-top: 2px;">🤝 Price is negotiable directly with you</small>
+              </div>
+
+              <p style="color: var(--color-ink); font-size: 0.92rem; line-height: 1.5; margin-bottom: 1.5rem; white-space: pre-line;">
+                <%= job.description %>
+              </p>
+            </div>
+
+            <div style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 1rem; margin-top: auto;">
+              <% if (user && user.role === "professional") { %>
+                <details style="background: rgba(255,255,255,0.04); border-radius: 12px; padding: 0.75rem;">
+                  <summary style="cursor: pointer; font-weight: 700; color: #fff; font-size: 0.92rem; list-style: none; display: flex; align-items: center; justify-content: space-between;">
+                    <span>Apply & Negotiate Rate</span>
+                    <span style="color: var(--color-brand);">Apply Now +</span>
+                  </summary>
+                  
+                  <form action="/work/apply/<%= job.id %>" method="POST" style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                    <label style="display: block;">
+                      <span style="font-size: 0.82rem; color: #fff; font-weight: 600;">Your Negotiated Rate (₹)</span>
+                      <input type="number" name="proposedRate" value="<%= job.budget %>" required class="form-input" style="width: 100%; padding: 0.5rem 0.75rem; border-radius: 8px; background: rgba(0,0,0,0.5); color: #fff; border: 1px solid rgba(255,255,255,0.2); margin-top: 3px;">
+                    </label>
+
+                    <label style="display: block;">
+                      <span style="font-size: 0.82rem; color: #fff; font-weight: 600;">Short Proposal Message</span>
+                      <textarea name="message" rows="2" placeholder="Tell client about your experience & availability..." required class="form-input" style="width: 100%; padding: 0.5rem 0.75rem; border-radius: 8px; background: rgba(0,0,0,0.5); color: #fff; border: 1px solid rgba(255,255,255,0.2); margin-top: 3px;"></textarea>
+                    </label>
+
+                    <button type="submit" class="button button-primary button-block" style="padding: 0.65rem; font-size: 0.9rem; font-weight: 700; border-radius: 8px;">
+                      Send Rate & Application ›
+                    </button>
+                  </form>
+                </details>
+              <% } else if (user && user.role === "client") { %>
+                <div style="background: rgba(255,255,255,0.04); border-radius: 12px; padding: 0.85rem;">
+                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span style="font-weight: 700; font-size: 0.9rem; color: #fff;">Applications Received</span>
+                    <span style="background: var(--color-brand); color: #000; font-size: 0.75rem; font-weight: 800; padding: 2px 8px; border-radius: 10px;"><%= (job.applications || []).length %></span>
+                  </div>
+                  <% if ((job.applications || []).length === 0) { %>
+                    <p style="font-size: 0.82rem; color: var(--color-ink-light); margin: 0;">No rate proposals submitted yet.</p>
+                  <% } else { %>
+                    <div style="max-height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.5rem;">
+                      <% (job.applications || []).forEach(function(app) { %>
+                        <div style="background: rgba(0,0,0,0.4); padding: 0.65rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
+                          <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 0.88rem; color: #fff;">
+                            <span><%= app.professionalName %></span>
+                            <span style="color: #10b981;">₹<%= app.proposedRate %></span>
+                          </div>
+                          <small style="color: var(--color-ink-light); font-size: 0.75rem; display: block;"><%= app.professionalPhone || app.professionalEmail %></small>
+                          <p style="margin: 0.3rem 0 0; font-size: 0.8rem; color: #cbd5e1;"><%= app.message %></p>
+                        </div>
+                      <% }) %>
+                    </div>
+                  <% } %>
+                </div>
+              <% } else { %>
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <span style="font-size: 0.85rem; color: var(--color-ink-light);">Only verified category professionals can view full contact & negotiate.</span>
+                  <a href="/login" class="button button-secondary" style="padding: 0.5rem 1.2rem; font-size: 0.85rem;">Login to Apply</a>
+                </div>
+              <% } %>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+  </div>
+</section>

@@ -9,11 +9,16 @@
 <section class="section shell dashboard-shell">
   <%- include("partials/notice") %>
 
+  <%
+    const liveBookings = dashboardData.bookings.filter(b => b.status !== 'completed' && b.status !== 'cancelled');
+    const historyBookings = dashboardData.bookings.filter(b => b.status === 'completed' || b.status === 'cancelled');
+  %>
+
   <div class="dashboard-metrics">
-    <article class="metric-card glass-panel" data-reveal>
+    <article class="metric-card glass-panel" data-reveal style="cursor: pointer;" onclick="toggleHistorySection(true)">
       <strong><%= dashboardData.summary.totalBookings %></strong>
-      <h3>Total requests</h3>
-      <p>All booking requests created from your client account.</p>
+      <h3 style="color: #38bdf8;">Total Requests & History</h3>
+      <p>Click to view all archived, completed & past requests.</p>
     </article>
     <article class="metric-card glass-panel" data-reveal>
       <strong><%= dashboardData.summary.confirmedBookings %></strong>
@@ -27,19 +32,29 @@
     </article>
   </div>
 
+  <div style="margin: 2.5rem 0 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem;">
+    <div>
+      <span style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 0.75rem; font-weight: 800; padding: 3px 10px; border-radius: 6px; text-transform: uppercase;">Active Flow</span>
+      <h2 style="font-size: 1.6rem; margin: 0.35rem 0 0; color: #fff;">🔥 Live & Uncompleted Bookings (<%= liveBookings.length %>)</h2>
+    </div>
+    <button type="button" id="history-toggle-btn" onclick="toggleHistorySection()" style="color: #38bdf8; font-weight: 700; cursor: pointer; font-size: 0.92rem; background: rgba(56, 189, 248, 0.12); padding: 0.6rem 1.2rem; border-radius: 12px; border: 1px solid rgba(56, 189, 248, 0.35); display: inline-flex; align-items: center; gap: 0.4rem;">
+      📜 View Total Requests & History (<%= historyBookings.length %>) ›
+    </button>
+  </div>
+
   <div class="dashboard-list">
-    <% if (!dashboardData.bookings.length) { %>
-      <div class="empty-state">
-        <h3>No bookings yet.</h3>
-        <p>Search professionals and create your first request to start using the live booking flow.</p>
-        <div class="empty-actions">
-          <a href="/findHelpNow" class="button button-primary">Find professionals</a>
+    <% if (!liveBookings.length) { %>
+      <div class="empty-state" style="padding: 3rem 2rem; border: 1px dashed rgba(255,255,255,0.2); border-radius: 20px;">
+        <h3>No live uncompleted bookings right now.</h3>
+        <p>Your completed or cancelled bookings are saved below in the <strong>Total Requests & History</strong> box.</p>
+        <div class="empty-actions" style="margin-top: 1.25rem;">
+          <a href="/findHelpNow" class="button button-primary">Find professionals to Book ›</a>
         </div>
       </div>
     <% } %>
 
-    <% dashboardData.bookings.forEach(function (booking) { %>
-      <article class="dashboard-card glass-panel" data-reveal>
+    <% liveBookings.forEach(function (booking) { %>
+      <article class="dashboard-card glass-panel" data-reveal style="width: 100%; box-sizing: border-box;">
         <div class="dashboard-card-top">
           <div class="dashboard-header-copy">
             <p class="card-kicker">Booking <%= booking.bookingCode %></p>
@@ -105,18 +120,15 @@
           let workStartedAt = null;
           let workCompletedAt = null;
           let totalPayment = null;
-          let isPaid = false;
           if (booking.details) {
             const otpMatch = booking.details.match(/\[Start OTP:\s*(\d+)\]/);
             const startedMatch = booking.details.match(/\[Work Started At:\s*([^\]]+)\]/);
             const completedMatch = booking.details.match(/\[Work Completed At:\s*([^\]]+)\]/);
             const paymentMatch = booking.details.match(/\[Total Payment:\s*(\d+)\]/);
-            const paidMatch = booking.details.match(/\[Payment Status:\s*Paid[^\]]*\]/);
             if (otpMatch) otp = otpMatch[1];
             if (startedMatch) workStartedAt = startedMatch[1];
             if (completedMatch) workCompletedAt = completedMatch[1];
             if (paymentMatch) totalPayment = paymentMatch[1];
-            if (paidMatch) isPaid = true;
           }
         %>
 
@@ -146,11 +158,7 @@
               <strong style="font-size: 1.25rem; color: var(--success);">₹<%= totalPayment %></strong>
             </div>
             
-            <% if (isPaid) { %>
-              <span class="result-badge is-verified" style="padding: 8px 14px; font-size: 0.85rem; font-weight: 700; background: rgba(16, 185, 129, 0.2); border-color: var(--success); color: var(--success);">✅ Paid via Razorpay</span>
-            <% } else { %>
-              <button type="button" class="button button-primary" data-pay-razorpay-btn data-booking-id="<%= booking.id %>" data-amount="<%= totalPayment %>" data-client-name="<%= sessionUser.name %>" data-client-email="<%= sessionUser.email %>" data-client-phone="<%= (sessionUser.phone && sessionUser.phone.startsWith('G_')) ? '' : sessionUser.phone %>" style="min-height: 40px; padding: 0 20px;">Pay with Razorpay</button>
-            <% } %>
+            <span class="result-badge is-verified" style="padding: 8px 14px; font-size: 0.85rem; font-weight: 700; background: rgba(16, 185, 129, 0.15); border-color: var(--success); color: var(--success);">✅ Work Completed (Direct Settlement)</span>
           </div>
         <% } %>
 
@@ -218,6 +226,86 @@
     <% }) %>
   </div>
 
+  <!-- Total Requests & History Box (Hidden by default, shown on click) -->
+  <script>
+    function toggleHistorySection(show) {
+      const sec = document.getElementById('history-section');
+      const btn = document.getElementById('history-toggle-btn');
+      if (!sec) return;
+      const isHidden = sec.style.display === 'none' || sec.style.display === '';
+      if (show !== undefined ? show : isHidden) {
+        sec.style.display = 'block';
+        sec.scrollIntoView({ behavior: 'smooth' });
+        if (btn) btn.innerHTML = '🙈 Hide Total Requests & History (<%= historyBookings.length %>) ›';
+      } else {
+        sec.style.display = 'none';
+        if (btn) btn.innerHTML = '📜 View Total Requests & History (<%= historyBookings.length %>) ›';
+      }
+    }
+  </script>
+  <div id="history-section" style="display: none; margin-top: 3rem; padding-top: 2.5rem; border-top: 2px solid rgba(255, 255, 255, 0.15);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <span style="background: rgba(168, 85, 247, 0.18); color: #d8b4fe; border: 1px solid rgba(168, 85, 247, 0.3); padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase;">Archived Records</span>
+        <h2 style="font-size: 1.8rem; margin: 0.35rem 0 0; color: #fff;">Total Requests & History (<%= historyBookings.length %>)</h2>
+      </div>
+      <p style="color: #94a3b8; font-size: 0.9rem; margin: 0;">Completed & Cancelled requests stored safely.</p>
+    </div>
+
+    <% if (!historyBookings.length) { %>
+      <div class="glass-panel" style="padding: 2.5rem; text-align: center; border-radius: 18px; border: 1px dashed rgba(255,255,255,0.15);">
+        <h3 style="color: #cbd5e1; margin: 0 0 0.5rem;">No past or completed requests yet.</h3>
+        <p style="color: #64748b; font-size: 0.9rem; margin: 0;">When your active bookings finish or get completed, they automatically move into this History section.</p>
+      </div>
+    <% } else { %>
+      <div class="dashboard-list">
+        <% historyBookings.forEach(function (booking) { %>
+          <article class="dashboard-card glass-panel" data-reveal style="width: 100%; box-sizing: border-box; opacity: 0.9;">
+            <div class="dashboard-card-top">
+              <div class="dashboard-header-copy">
+                <p class="card-kicker">Booking <%= booking.bookingCode %></p>
+                <h2><%= booking.professionalName %></h2>
+              </div>
+              <span class="result-badge status-badge-<%= booking.status %>"><%= formatStatusLabel(booking.status) %></span>
+            </div>
+
+            <div class="dashboard-grid">
+              <div class="dashboard-detail">
+                <span class="dashboard-label">Service</span>
+                <strong><%= booking.serviceName %></strong>
+              </div>
+              <div class="dashboard-detail">
+                <span class="dashboard-label">Date</span>
+                <strong><%= formatShortDate(booking.preferredDate) %></strong>
+              </div>
+              <div class="dashboard-detail">
+                <span class="dashboard-label">Time</span>
+                <strong><%= formatTimeSlot(booking.preferredTimeSlot) %></strong>
+              </div>
+              <div class="dashboard-detail">
+                <span class="dashboard-label">Day Price</span>
+                <strong><%= formatCurrency(booking.budgetInr) %></strong>
+              </div>
+            </div>
+
+            <% if (booking.status === 'completed') { %>
+              <div style="margin-top: 1rem; padding: 1rem; border-radius: 12px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+                <span style="color: var(--success); font-weight: 700; font-size: 0.9rem;">✅ Service Completed Successfully</span>
+                <% if (booking.review) { %>
+                  <span style="color: #e2e8f0; font-size: 0.85rem; background: rgba(255,255,255,0.1); padding: 4px 10px; border-radius: 8px;">Your Rating: ⭐ <%= booking.review.rating %> / 5</span>
+                <% } %>
+              </div>
+            <% } else if (booking.status === 'cancelled') { %>
+              <div style="margin-top: 1rem; padding: 1rem; border-radius: 12px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25);">
+                <span style="color: #f87171; font-weight: 700; font-size: 0.9rem;">🚫 Booking Cancelled</span>
+              </div>
+            <% } %>
+          </article>
+        <% }) %>
+      </div>
+    <% } %>
+  </div>
+
   <!-- Cancellation Modal -->
   <div id="cancel-modal-backdrop" class="reviews-modal-backdrop">
     <div class="reviews-modal" style="width: min(500px, 100%);">
@@ -227,16 +315,6 @@
       </div>
       <div class="reviews-modal-body">
         <div id="cancel-warning-text"></div>
-        
-        <!-- Simulated Payment for Cancellation Charge -->
-        <div id="cancel-payment-section" style="display: none; margin-top: 1.5rem; padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--error); background: rgba(239, 68, 68, 0.04); text-align: center;">
-          <h4 style="color: var(--error); margin: 0 0 0.5rem 0;">Cancellation Fee: ₹99</h4>
-          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">As this booking is already confirmed, a cancellation fee of ₹99 is applicable. Please scan the QR code to pay and complete the cancellation:</p>
-          <div style="background: white; padding: 8px; display: inline-block; border-radius: var(--radius-sm); margin-bottom: 0.75rem;">
-            <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=upi://pay?pa=gigconnect@sbi%26pn=SV%20Personnels%26am=99%26tn=Cancellation%2620Fee" alt="UPI QR Code" style="display: block; width: 120px; height: 120px;">
-          </div>
-          <p style="font-size: 0.8rem; color: var(--text-soft); margin: 0;">UPI ID: <strong style="color: var(--text);">gigconnect@sbi</strong></p>
-        </div>
 
         <form id="cancel-booking-form" method="POST" action="" style="margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem;">
           <button type="button" class="button button-secondary" id="cancel-modal-back-btn">Go back</button>
@@ -255,7 +333,6 @@
       const form = document.getElementById("cancel-booking-form");
       const codeSpan = document.getElementById("cancel-booking-code");
       const warningText = document.getElementById("cancel-warning-text");
-      const paymentSection = document.getElementById("cancel-payment-section");
 
       cancelBtnList.forEach(btn => {
         btn.addEventListener("click", () => {
@@ -269,14 +346,12 @@
           if (status === "confirmed") {
             warningText.innerHTML = `
               <p style="color: var(--text); font-weight: 600; margin: 0;">Warning: This booking is already confirmed by the professional.</p>
-              <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.5rem; line-height: 1.5;">Canceling a confirmed booking will incur a <strong>₹99 cancellation charge</strong>. Repeated cancellations (more than 10) will result in your account being permanently blocked.</p>
+              <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.5rem; line-height: 1.5;">Canceling a confirmed booking affects the professional's schedule. Repeated cancellations (more than 10) will result in your account being permanently blocked.</p>
             `;
-            paymentSection.style.display = "block";
           } else {
             warningText.innerHTML = `
               <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.5; margin: 0;">Are you sure you want to cancel this pending request? This action cannot be undone.</p>
             `;
-            paymentSection.style.display = "none";
           }
 
           backdrop.classList.add("is-open");
@@ -292,11 +367,9 @@
     });
   </script>
 
-  <!-- Razorpay Script & Payment handler -->
-  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-      // 1. Live timers
+      // Live timers
       const timerElements = document.querySelectorAll("[id^='timer-']");
 
       function updateTimers() {
@@ -325,46 +398,6 @@
 
       setInterval(updateTimers, 1000);
       updateTimers();
-
-      // 2. Razorpay payment integration
-      const payButtons = document.querySelectorAll("[data-pay-razorpay-btn]");
-      payButtons.forEach(btn => {
-        btn.addEventListener("click", () => {
-          const bookingId = btn.dataset.bookingId;
-          const amount = Number(btn.dataset.amount || 500);
-          const clientName = btn.dataset.clientName || "";
-          const clientEmail = btn.dataset.clientEmail || "";
-          const clientPhone = btn.dataset.clientPhone || "";
-
-          const options = {
-            key: "rzp_test_dummykey", // test key
-            amount: amount * 100, // in paisa
-            currency: "INR",
-            name: "SV Personnels",
-            description: "Service Charge Payment",
-            image: "/assets/gigconnect.logo.png",
-            handler: function (response) {
-              // Simulated success - submit payment POST form
-              const form = document.createElement("form");
-              form.method = "POST";
-              form.action = `/client/bookings/${bookingId}/pay`;
-              document.body.appendChild(form);
-              form.submit();
-            },
-            prefill: {
-              name: clientName,
-              email: clientEmail,
-              contact: clientPhone
-            },
-            theme: {
-              color: "#7c3aed"
-            }
-          };
-
-          const rzp = new Razorpay(options);
-          rzp.open();
-        });
-      });
     });
   </script>
 </section>
