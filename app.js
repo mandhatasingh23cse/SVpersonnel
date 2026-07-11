@@ -56,6 +56,19 @@ const {
   getProfessionalProfile,
   updateServicePrice,
   authenticateUnified,
+
+  createPartnerAccount,
+  authenticatePartner,
+  getPartnerDashboardData,
+  createPartnerManagedProfessional,
+  getWalletBalance,
+  addEarningRecord,
+  requestWithdrawal,
+  getWithdrawals,
+  getEarnings,
+  verifyPartner,
+  getAdminWithdrawals,
+  approveWithdrawal
 } = require("./lib/supabaseStore");
 
 const {
@@ -1525,7 +1538,8 @@ app.get("/professional/jobs", requireRole("professional"), async (req, res) => {
     const mappedServices = await getProfessionalServiceOptions(req.session.user.id);
     const skills = mappedServices.map(s => s.name);
 
-    let jobs = await getOpenWorkRequirements();
+    const allJobs = await getAllWorkRequirements();
+    let jobs = allJobs.filter(j => j.status === "open");
     if (skills.length > 0) {
       jobs = jobs.filter(j => skills.includes(j.category));
     }
