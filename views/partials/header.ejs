@@ -63,6 +63,13 @@
               </a>
             </li>
           <% } %>
+          <% if (sessionUser && sessionUser.role === "partner") { %>
+            <li>
+              <a href="/partner/dashboard" class="<%= currentPath === '/partner/dashboard' ? 'is-active' : '' %>">
+                Dashboard
+              </a>
+            </li>
+          <% } %>
         </ul>
 
         <div class="nav-actions">
@@ -83,6 +90,8 @@
                   <a href="/professional/settings" class="<%= currentPath === '/professional/settings' ? 'is-active' : '' %>">Account Settings</a>
                 <% } else if (sessionUser.role === "admin") { %>
                   <a href="/admin/profile" class="<%= currentPath === '/admin/profile' ? 'is-active' : '' %>">Profile</a>
+                <% } else if (sessionUser.role === "partner") { %>
+                  <a href="/partner/dashboard" class="<%= currentPath === '/partner/dashboard' ? 'is-active' : '' %>">Partner Dashboard</a>
                 <% } %>
                 <a href="/logout" style="color: var(--error); border-top: 1px solid var(--line); margin-top: 6px; padding-top: 8px;">Log out</a>
               <% } %>

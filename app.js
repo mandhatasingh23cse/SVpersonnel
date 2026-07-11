@@ -1088,6 +1088,12 @@ app.post(
 
       if (user.role === "admin") {
         return res.redirect("/admin/dashboard");
+      } else if (user.role === "partner") {
+        if (!user.isVerified && !user.panNumber && !user.id_document_url) {
+          // If the partner has not uploaded documents yet, send them to onboarding
+          return res.redirect("/partner/onboarding");
+        }
+        return res.redirect("/partner/dashboard");
       } else if (user.role === "professional") {
         return res.redirect("/professional/dashboard");
       } else {
@@ -1280,6 +1286,301 @@ app.post("/professional/onboarding", requireRole("professional"), async (req, re
 });
 
 
+// ==========================================
+// SV AGENCY PARTNERS, WALLET & JOB POSTINGS ROUTES
+// ==========================================
+
+app.get(["/register/partner", "/partner/register"], async (req, res) => {
+  return res.render("partnerRegister", {
+    title: "Join as SV Partner | SV Personnels",
+    pageClass: "page-register-partner",
+    formData: { fullname: "", businessName: "", email: "", phone: "", username: "", city: "" },
+    formNotice: consumeSessionNotice(req, "partnerRegisterNotice")
+  });
+});
+
+app.post(
+  "/register/partner",
+  [
+    body("fullname").trim().isLength({ min: 2, max: 120 }).withMessage("Please enter your full name."),
+    body("businessName").trim().isLength({ min: 2, max: 120 }).withMessage("Please enter your business name."),
+    body("email").trim().isEmail().withMessage("Please enter a valid email address."),
+    body("phone").trim().isLength({ min: 10, max: 20 }).withMessage("Please enter a valid phone number."),
+    body("username").trim().isLength({ min: 3, max: 50 }).withMessage("Please enter a username (3-50 chars)."),
+    body("city").trim().isLength({ min: 2, max: 100 }).withMessage("Please enter your city."),
+    body("password").trim().isLength({ min: 8 }).withMessage("Password should be at least 8 characters."),
+    body("confirmPassword").custom((value, { req }) => value === req.body.password).withMessage("Passwords do not match.")
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    const formData = {
+      fullname: req.body.fullname,
+      businessName: req.body.businessName,
+      email: req.body.email,
+      phone: req.body.phone,
+      username: req.body.username,
+      city: req.body.city
+    };
+
+    if (!errors.isEmpty()) {
+      return res.render("partnerRegister", {
+        title: "Join as SV Partner | SV Personnels",
+        pageClass: "page-register-partner",
+        formData,
+        formNotice: createFormNotice("error", errors.array()[0].msg)
+      });
+    }
+
+    try {
+      const partner = await createPartnerAccount({
+        username: req.body.username,
+        fullName: req.body.fullname,
+        email: req.body.email,
+        phone: req.body.phone,
+        password: req.body.password,
+        businessName: req.body.businessName,
+        city: req.body.city,
+        area: req.body.area || ""
+      });
+
+      req.session.user = {
+        id: partner.id,
+        name: partner.fullName,
+        email: partner.email,
+        phone: partner.phone,
+        city: partner.city,
+        role: "partner",
+        isVerified: false
+      };
+
+      return res.redirect("/partner/onboarding");
+    } catch (error) {
+      return res.render("partnerRegister", {
+        title: "Join as SV Partner | SV Personnels",
+        pageClass: "page-register-partner",
+        formData,
+        formNotice: createFormNotice("error", error.message || "Failed to create partner account.")
+      });
+    }
+  }
+);
+
+app.get("/partner/onboarding", requireRole("partner"), async (req, res) => {
+  return res.render("partnerOnboarding", {
+    title: "Partner Verification | SV Personnels",
+    pageClass: "page-onboarding-partner",
+    formNotice: consumeSessionNotice(req, "partnerOnboardingNotice")
+  });
+});
+
+app.post(
+  "/partner/onboarding",
+  requireRole("partner"),
+  upload.fields([
+    { name: "idDocument", maxCount: 1 },
+    { name: "businessProof", maxCount: 1 },
+    { name: "livePhoto", maxCount: 1 }
+  ]),
+  async (req, res) => {
+    try {
+      const gstNumber = req.body.gstNumber || "";
+      const panNumber = req.body.panNumber || "";
+      
+      const idDocFile = req.files && req.files["idDocument"] ? req.files["idDocument"][0] : null;
+      const bizProofFile = req.files && req.files["businessProof"] ? req.files["businessProof"][0] : null;
+      const livePhotoFile = req.files && req.files["livePhoto"] ? req.files["livePhoto"][0] : null;
+
+      if (!panNumber) {
+        req.session.partnerOnboardingNotice = createFormNotice("error", "PAN Number is required for tax reporting.");
+        return res.redirect("/partner/onboarding");
+      }
+
+      if (!idDocFile || !bizProofFile || !livePhotoFile) {
+        req.session.partnerOnboardingNotice = createFormNotice("error", "All verification document files must be uploaded.");
+        return res.redirect("/partner/onboarding");
+      }
+
+      const idDocUrl = `/uploads/${idDocFile.filename}`;
+      const bizProofUrl = `/uploads/${bizProofFile.filename}`;
+      const livePhotoUrl = `/uploads/${livePhotoFile.filename}`;
+
+      const dbClient = getClient();
+      const { error } = await dbClient
+        .from("partners")
+        .update({
+          gst_number: gstNumber,
+          pan_number: panNumber,
+          id_document_url: idDocUrl,
+          business_proof_url: bizProofUrl,
+          live_photo_url: livePhotoUrl
+        })
+        .eq("id", req.session.user.id);
+
+      if (error) throw error;
+
+      req.session.partnerDashboardNotice = createFormNotice("success", "Safety verification files submitted successfully for review!");
+      return res.redirect("/partner/dashboard");
+    } catch (err) {
+      req.session.partnerOnboardingNotice = createFormNotice("error", `Submission failed: ${err.message}`);
+      return res.redirect("/partner/onboarding");
+    }
+  }
+);
+
+app.get("/partner/dashboard", requireRole("partner"), async (req, res) => {
+  try {
+    const dashboardData = await getPartnerDashboardData(req.session.user.id);
+    const services = await getServiceOptions();
+
+    req.session.user.isVerified = dashboardData.partner.is_verified;
+
+    return res.render("partnerDashboard", {
+      title: "Partner Agency Dashboard | SV Personnels",
+      pageClass: "page-dashboard-partner",
+      dashboardData,
+      services,
+      formNotice: consumeSessionNotice(req, "partnerDashboardNotice")
+    });
+  } catch (err) {
+    req.session.loginNotice = createFormNotice("error", `Failed to load partner dashboard: ${err.message}`);
+    return res.redirect("/login");
+  }
+});
+
+app.post("/partner/professionals/create", requireRole("partner"), async (req, res) => {
+  try {
+    const { fullname, username, email, phone, city, area, experience, hourlyRate, password, serviceIds } = req.body;
+    
+    await createPartnerManagedProfessional(req.session.user.id, {
+      fullName: fullname,
+      username,
+      email,
+      phone,
+      city,
+      area,
+      experience,
+      hourlyRate,
+      password,
+      serviceIds: Array.isArray(serviceIds) ? serviceIds : (serviceIds ? [serviceIds] : [])
+    });
+
+    req.session.partnerDashboardNotice = createFormNotice("success", `Staff member ${fullname} registered successfully under agency!`);
+    return res.redirect("/partner/dashboard");
+  } catch (err) {
+    req.session.partnerDashboardNotice = createFormNotice("error", `Failed to add staff: ${err.message}`);
+    return res.redirect("/partner/dashboard");
+  }
+});
+
+app.post("/partner/withdraw", requireRole("partner"), async (req, res) => {
+  try {
+    const { amount, bankDetails } = req.body;
+    await requestWithdrawal("partner", req.session.user.id, amount, bankDetails);
+
+    req.session.partnerDashboardNotice = createFormNotice("success", "Bank withdrawal request submitted successfully for processing!");
+    return res.redirect("/partner/dashboard");
+  } catch (err) {
+    req.session.partnerDashboardNotice = createFormNotice("error", `Withdrawal request failed: ${err.message}`);
+    return res.redirect("/partner/dashboard");
+  }
+});
+
+app.get("/professional/revenue", requireRole("professional"), async (req, res) => {
+  try {
+    const userId = req.session.user.id;
+    const wallet = await getWalletBalance("professional", userId);
+    const earnings = await getEarnings("professional", userId);
+    const withdrawals = await getWithdrawals("professional", userId);
+
+    return res.render("professionalRevenue", {
+      title: "My Earnings Wallet | SV Personnels",
+      pageClass: "page-revenue-professional",
+      wallet,
+      earnings,
+      withdrawals,
+      user: req.session.user,
+      formNotice: consumeSessionNotice(req, "professionalRevenueNotice")
+    });
+  } catch (err) {
+    req.session.professionalDashboardNotice = createFormNotice("error", `Failed to load revenue workspace: ${err.message}`);
+    return res.redirect("/professional/dashboard");
+  }
+});
+
+app.post("/professional/withdraw", requireRole("professional"), async (req, res) => {
+  try {
+    const { amount, bankDetails } = req.body;
+    await requestWithdrawal("professional", req.session.user.id, amount, bankDetails);
+
+    req.session.professionalRevenueNotice = createFormNotice("success", "Bank withdrawal request submitted successfully!");
+    return res.redirect("/professional/revenue");
+  } catch (err) {
+    req.session.professionalRevenueNotice = createFormNotice("error", `Withdrawal failed: ${err.message}`);
+    return res.redirect("/professional/revenue");
+  }
+});
+
+app.get("/professional/jobs", requireRole("professional"), async (req, res) => {
+  try {
+    const mappedServices = await getProfessionalServiceOptions(req.session.user.id);
+    const skills = mappedServices.map(s => s.name);
+
+    let jobs = await getOpenWorkRequirements();
+    if (skills.length > 0) {
+      jobs = jobs.filter(j => skills.includes(j.category));
+    }
+
+    return res.render("professionalJobs", {
+      title: "Open Job Postings | SV Personnels",
+      pageClass: "page-jobs-feed",
+      jobs,
+      formNotice: consumeSessionNotice(req, "professionalJobsNotice")
+    });
+  } catch (err) {
+    req.session.professionalDashboardNotice = createFormNotice("error", `Failed to load job listings feed: ${err.message}`);
+    return res.redirect("/professional/dashboard");
+  }
+});
+
+app.get("/client/work-requirements/new", requireRole("client"), async (req, res) => {
+  try {
+    const services = await getServiceOptions();
+    return res.render("clientWorkRequirements", {
+      title: "Post a Job | SV Personnels",
+      pageClass: "page-create-requirement",
+      services,
+      formNotice: consumeSessionNotice(req, "clientWorkNotice")
+    });
+  } catch (err) {
+    req.session.clientDashboardNotice = createFormNotice("error", `Failed to load job posting form: ${err.message}`);
+    return res.redirect("/client/dashboard");
+  }
+});
+
+app.post("/client/work-requirements/new", requireRole("client"), async (req, res) => {
+  try {
+    const { category, subCategory, location, budget, jobType, description } = req.body;
+    
+    await createWorkRequirement(req.session.user.id, {
+      clientName: req.session.user.name,
+      clientContact: req.session.user.phone || req.session.user.email,
+      category,
+      subCategory,
+      location,
+      budget,
+      jobType,
+      description
+    });
+
+    req.session.clientDashboardNotice = createFormNotice("success", "Job requirement posted successfully! Matching professionals will contact you.");
+    return res.redirect("/client/dashboard");
+  } catch (err) {
+    req.session.clientWorkNotice = createFormNotice("error", `Failed to post job requirement: ${err.message}`);
+    return res.redirect("/client/work-requirements/new");
+  }
+});
+
+
 app.get("/client/dashboard", requireRole("client"), async (req, res) => {
   if (!isDatabaseReady()) {
     return res.redirect("/clientlogin");
@@ -1310,6 +1611,12 @@ app.get("/client/dashboard", requireRole("client"), async (req, res) => {
   }
 
   const dashboardData = await getClientDashboardData(req.session.user.id);
+  try {
+    dashboardData.workRequirements = await getWorkRequirementsByClient(req.session.user.id);
+  } catch (workErr) {
+    console.error("Failed to fetch client work requirements:", workErr.message);
+    dashboardData.workRequirements = [];
+  }
   return res.render("clientDashboard", {
     title: "Client dashboard | SV Personnels",
     pageClass: "page-dashboard",
@@ -2779,6 +3086,66 @@ app.post("/admin/professionals/:professionalId/delete", requireRole("admin"), as
     req.session.adminDashboardNotice = createFormNotice("success", "Professional profile rejected and deleted successfully.");
   } catch (error) {
     req.session.adminDashboardNotice = createFormNotice("error", `Failed to delete professional: ${error.message}`);
+  }
+
+});
+
+// Admin verify partner agency
+app.post("/admin/partners/:id/verify", requireRole("admin"), async (req, res) => {
+  if (!isDatabaseReady()) {
+    req.session.adminDashboardNotice = createFormNotice("error", "Database connection offline.");
+    return res.redirect("/admin/dashboard");
+  }
+
+  const partnerId = Number(req.params.id);
+  const isVerified = req.body.isVerified === "true";
+
+  try {
+    await verifyPartner(partnerId, isVerified);
+    const message = isVerified ? "Partner agency approved and payouts unlocked." : "Partner agency verification revoked.";
+    req.session.adminDashboardNotice = createFormNotice("success", message);
+  } catch (error) {
+    req.session.adminDashboardNotice = createFormNotice("error", `Failed to update partner verification: ${error.message}`);
+  }
+
+  return res.redirect("/admin/dashboard");
+});
+
+// Admin delete partner agency
+app.post("/admin/partners/:id/delete", requireRole("admin"), async (req, res) => {
+  if (!isDatabaseReady()) {
+    req.session.adminDashboardNotice = createFormNotice("error", "Database connection offline.");
+    return res.redirect("/admin/dashboard");
+  }
+
+  const partnerId = Number(req.params.id);
+
+  try {
+    const dbClient = getClient();
+    const { error } = await dbClient.from("partners").delete().eq("id", partnerId);
+    if (error) throw error;
+    req.session.adminDashboardNotice = createFormNotice("success", "Partner agency profile rejected and deleted successfully.");
+  } catch (error) {
+    req.session.adminDashboardNotice = createFormNotice("error", `Failed to delete partner agency: ${error.message}`);
+  }
+
+  return res.redirect("/admin/dashboard");
+});
+
+// Admin approve withdrawal request
+app.post("/admin/withdrawals/:id/approve", requireRole("admin"), async (req, res) => {
+  if (!isDatabaseReady()) {
+    req.session.adminDashboardNotice = createFormNotice("error", "Database connection offline.");
+    return res.redirect("/admin/dashboard");
+  }
+
+  const withdrawalId = Number(req.params.id);
+
+  try {
+    await approveWithdrawal(withdrawalId);
+    req.session.adminDashboardNotice = createFormNotice("success", "Withdrawal request approved and processed successfully!");
+  } catch (error) {
+    req.session.adminDashboardNotice = createFormNotice("error", `Failed to approve withdrawal: ${error.message}`);
   }
 
   return res.redirect("/admin/dashboard");

@@ -14,6 +14,22 @@
     const historyBookings = dashboardData.bookings.filter(b => b.status === 'completed' || b.status === 'cancelled');
   %>
 
+  <!-- Client Quick Action Bar -->
+  <div class="glass-panel" style="padding: 1.5rem 2rem; border-radius: var(--radius-lg); background: rgba(22, 32, 58, 0.45); border: 1px solid var(--line-strong); margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h3 style="color: #fff; margin: 0 0 0.15rem; font-size: 1.15rem; font-family: 'Outfit', sans-serif;">Need custom services?</h3>
+      <p style="color: var(--text-soft); font-size: 0.88rem; margin: 0;">Post a custom job requirement so professional providers can contact you.</p>
+    </div>
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+      <a href="/client/work-requirements/new" class="button button-primary" style="background: linear-gradient(135deg, #a78bfa, #7c3aed); border: none; font-weight: bold; display: inline-flex; align-items: center; gap: 6px;">
+        📢 Post a Job / Create Work
+      </a>
+      <a href="/findHelpNow" class="button button-secondary" style="font-weight: bold; display: inline-flex; align-items: center; gap: 6px;">
+        🔍 Browse Professionals
+      </a>
+    </div>
+  </div>
+
   <div class="dashboard-metrics">
     <article class="metric-card glass-panel" data-reveal style="cursor: pointer;" onclick="toggleHistorySection(true)">
       <strong><%= dashboardData.summary.totalBookings %></strong>
@@ -399,5 +415,36 @@
       setInterval(updateTimers, 1000);
       updateTimers();
     });
-  </script>
+  <!-- SECTION: Client Posted Jobs -->
+  <div style="margin-top: 3.5rem; padding-top: 2rem; border-top: 1px solid rgba(255,255,255,0.15);">
+    <h2 style="font-size: 1.6rem; color: #fff; margin-bottom: 1.5rem;">📢 My Posted Job Requirements</h2>
+    
+    <% if (!dashboardData.workRequirements || !dashboardData.workRequirements.length) { %>
+      <div class="glass-panel" style="padding: 2.5rem; text-align: center; border-radius: 18px; border: 1px dashed rgba(255,255,255,0.15);">
+        <h3 style="color: #cbd5e1; margin-bottom: 0.5rem;">No custom job requirements posted yet.</h3>
+        <p style="color: #64748b; font-size: 0.9rem; margin: 0;">Post a job matching specific requirements, and professionals will contact you.</p>
+      </div>
+    <% } else { %>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+        <% dashboardData.workRequirements.forEach(function (job) { %>
+          <div class="glass-panel card-reveal" style="padding: 1.5rem; border-radius: 14px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.02); display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                <span style="font-size: 0.7rem; padding: 0.15rem 0.55rem; border-radius: 99px; font-weight: 800; text-transform: uppercase; background: rgba(124, 58, 237, 0.15); color: #c084fc; border: 1px solid rgba(124, 58, 237, 0.25);">
+                  <%= job.category %>
+                </span>
+                <span style="font-size: 0.75rem; color: var(--text-soft); font-weight: 600;"><%= job.jobType || job.job_type %></span>
+              </div>
+              <strong style="color: #fff; font-size: 1.1rem; display: block; margin-bottom: 0.5rem;"><%= job.subCategory || job.sub_category || 'General Help' %></strong>
+              <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 1rem;"><%= job.description %></p>
+            </div>
+            <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.85rem; display: flex; justify-content: space-between; font-size: 0.85rem;">
+              <span style="color: var(--text-soft);">Budget: <strong style="color: #34d399;">₹<%= job.budget_inr || job.budget %></strong></span>
+              <span style="color: var(--text-soft);">Location: <strong><%= job.location %></strong></span>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+  </div>
 </section>

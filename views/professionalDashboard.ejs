@@ -49,11 +49,17 @@
       </div>
 
       <div style="display: flex; gap: 1rem; margin-top: 1.25rem; flex-wrap: wrap; border-top: 1px solid var(--line); padding-top: 1.25rem;">
-        <a href="/professional/onboarding" class="button button-primary" style="font-size: 0.85rem; display: inline-flex; align-items: center; gap: 6px;">
-          🚀 Edit Skills &amp; Onboarding Preferences
+        <a href="/professional/jobs" class="button button-primary" style="font-size: 0.85rem; display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #a78bfa, #7c3aed); border: none;">
+          💼 Find Open Jobs
+        </a>
+        <a href="/professional/revenue" class="button button-primary" style="font-size: 0.85rem; display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #10b981, #059669); border: none;">
+          💰 My Revenue &amp; Wallet
+        </a>
+        <a href="/professional/onboarding" class="button button-secondary" style="font-size: 0.85rem; display: inline-flex; align-items: center; gap: 6px;">
+          🚀 Edit Onboarding &amp; Skills
         </a>
         <a href="/professional/profile" class="button button-secondary" style="font-size: 0.85rem; display: inline-flex; align-items: center; gap: 6px;">
-          ✏️ Edit Profile Details
+          ✏️ Edit Profile
         </a>
       </div>
     </div>
@@ -210,10 +216,16 @@
 
         <div class="dashboard-actions" style="margin-top: 1rem; width: 100%;">
           <% if (booking.status === "pending") { %>
-            <form method="POST" action="/professional/bookings/<%= booking.id %>/status" style="width: 100%;">
-              <input type="hidden" name="status" value="confirmed">
-              <button type="submit" class="button button-primary button-block">Accept request</button>
-            </form>
+            <div style="display: flex; gap: 1rem; width: 100%;">
+              <form method="POST" action="/professional/bookings/<%= booking.id %>/status" style="flex: 1;">
+                <input type="hidden" name="status" value="confirmed">
+                <button type="submit" class="button button-primary button-block" style="padding: 10px;">Accept request</button>
+              </form>
+              <form method="POST" action="/professional/bookings/<%= booking.id %>/status" style="flex: 1;" onsubmit="return confirm('Are you sure you want to reject this booking request?');">
+                <input type="hidden" name="status" value="cancelled">
+                <button type="submit" class="button button-block" style="padding: 10px; background: rgba(239, 68, 68, 0.1); color: #fb7185; border: 1px solid rgba(239, 68, 68, 0.25);">Reject request</button>
+              </form>
+            </div>
           <% } %>
 
           <% if (booking.status === "confirmed" && !workStartedAt) { %>

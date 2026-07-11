@@ -1,0 +1,155 @@
+<section class="page-hero">
+  <div class="shell page-hero-content">
+    <span class="eyebrow">SV Personnels Earnings Workspace</span>
+    <h1>My Revenue &amp; Payouts</h1>
+    <p>Monitor your job earnings, track platform fee ledger, and request payout withdrawals.</p>
+  </div>
+</section>
+
+<section class="section shell">
+  <%- include("partials/notice") %>
+
+  <!-- Managed by Partner Agency Notice -->
+  <% if (user.isPartnerManaged) { %>
+    <div class="glass-panel animate-fade-in" style="padding: 1.5rem 2rem; border-radius: 12px; border: 1px solid rgba(192, 132, 252, 0.3); background: rgba(192, 132, 252, 0.08); margin-bottom: 2.5rem; display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap;">
+      <span style="font-size: 2.2rem; align-self: center;">💼</span>
+      <div style="flex: 1; min-width: 250px;">
+        <h3 style="color: #e9d5ff; margin: 0 0 0.25rem; font-size: 1.1rem; font-weight: 700;">Partner Managed Professional Account</h3>
+        <p style="color: #f3f4f6; font-size: 0.88rem; margin: 0; line-height: 1.4;">
+          Your account is managed under an agency partner. All booking payouts automatically flow directly to your agency's account wallet. Your agency handles payouts and scheduling distributions. Individual withdrawals are locked.
+        </p>
+      </div>
+    </div>
+  <% } %>
+
+  <!-- Overview Stats Grid -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
+    <!-- Available Balance -->
+    <div class="glass-panel card-reveal" style="padding: 1.75rem; border-radius: 16px; background: rgba(22, 32, 58, 0.65); border: 1px solid var(--line); display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
+      <div>
+        <span style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.05em;">Available Balance</span>
+        <strong style="display: block; font-size: 2.2rem; color: #34d399; font-family: 'Outfit', sans-serif; margin-top: 0.5rem;">₹<%= wallet.available_inr %></strong>
+      </div>
+      <span style="font-size: 0.8rem; color: var(--text-soft);">
+        <%= user.isPartnerManaged ? 'Distributed by partner agency' : 'Available for withdrawal request' %>
+      </span>
+    </div>
+
+    <!-- Processing Balance -->
+    <div class="glass-panel card-reveal" style="padding: 1.75rem; border-radius: 16px; background: rgba(22, 32, 58, 0.65); border: 1px solid var(--line); display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
+      <div>
+        <span style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.05em;">Pending Payout</span>
+        <strong style="display: block; font-size: 2.2rem; color: #f59e0b; font-family: 'Outfit', sans-serif; margin-top: 0.5rem;">₹<%= wallet.pending_inr %></strong>
+      </div>
+      <span style="font-size: 0.8rem; color: var(--text-soft);">Currently processing in payouts queue</span>
+    </div>
+
+    <!-- Total Earnings -->
+    <div class="glass-panel card-reveal" style="padding: 1.75rem; border-radius: 16px; background: rgba(22, 32, 58, 0.65); border: 1px solid var(--line); display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
+      <div>
+        <span style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.05em;">Total Net Earnings</span>
+        <strong style="display: block; font-size: 2.2rem; color: #60a5fa; font-family: 'Outfit', sans-serif; margin-top: 0.5rem;">₹<%= wallet.total_earned_inr %></strong>
+      </div>
+      <span style="font-size: 0.8rem; color: var(--text-soft);">15% Platform fee already deducted</span>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 3rem; align-items: start; margin-bottom: 4rem;">
+    <!-- LEFT PANEL: Earnings ledger -->
+    <div class="glass-panel" style="padding: 2.5rem; border-radius: var(--radius-xl); background: rgba(22, 32, 58, 0.85); border: 1px solid var(--line-strong);">
+      <h2 style="font-family: 'Outfit', sans-serif; color: #fff; margin: 0 0 1.5rem;">Job Payout Ledger</h2>
+      
+      <% if (!earnings.length) { %>
+        <p style="text-align: center; color: var(--text-soft); padding: 3rem 0;">No completed job earnings logged yet.</p>
+      <% } else { %>
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; min-width: 500px; text-align: left;">
+            <thead>
+              <tr style="border-bottom: 2px solid var(--line-strong);">
+                <th style="padding: 12px; color: var(--text-soft); font-size: 0.85rem; text-transform: uppercase;">Job Code</th>
+                <th style="padding: 12px; color: var(--text-soft); font-size: 0.85rem; text-transform: uppercase;">Gross Amount</th>
+                <th style="padding: 12px; color: var(--text-soft); font-size: 0.85rem; text-transform: uppercase;">Platform Fee (15%)</th>
+                <th style="padding: 12px; color: var(--text-soft); font-size: 0.85rem; text-transform: uppercase;">Net Earned</th>
+                <th style="padding: 12px; color: var(--text-soft); font-size: 0.85rem; text-transform: uppercase;">Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% earnings.forEach(function (earn) { %>
+                <tr style="border-bottom: 1px solid var(--line);">
+                  <td style="padding: 12px; font-weight: bold; color: #60a5fa;"><%= earn.bookings ? earn.bookings.booking_code : 'GC Booking' %></td>
+                  <td style="padding: 12px; color: #fff;">₹<%= earn.gross_amount_inr %></td>
+                  <td style="padding: 12px; color: #fb7185;">₹<%= earn.platform_fee_inr %></td>
+                  <td style="padding: 12px; color: #34d399; font-weight: bold;">₹<%= earn.net_amount_inr %></td>
+                  <td style="padding: 12px; color: var(--text-muted);"><%= formatShortDate(earn.created_at) %></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </div>
+
+    <!-- RIGHT PANEL: Withdrawals request -->
+    <div style="display: flex; flex-direction: column; gap: 3rem;">
+      
+      <!-- Withdraw Request Card -->
+      <div class="glass-panel" style="padding: 2.5rem; border-radius: var(--radius-xl); background: rgba(22, 32, 58, 0.85); border: 1px solid var(--line-strong);">
+        <h2 style="font-family: 'Outfit', sans-serif; color: #fff; margin: 0 0 0.25rem;">Request Withdrawal</h2>
+        <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 2rem;">Available earnings can be requested once a rolling 7 days.</p>
+
+        <% if (user.isPartnerManaged) { %>
+          <div style="background: rgba(192, 132, 252, 0.08); border: 1px solid rgba(192, 132, 252, 0.25); border-radius: 10px; padding: 1.25rem; font-size: 0.85rem; color: #e9d5ff; line-height: 1.5; text-align: center;">
+            🔒 Withdrawals are managed by your agency partner.
+          </div>
+        <% } else if (!user.isVerified) { %>
+          <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 10px; padding: 1.25rem; font-size: 0.85rem; color: #fca5a5; line-height: 1.5; text-align: center;">
+            🔒 Withdrawals are locked until your professional account is verified by the administrator.
+          </div>
+        <% } else { %>
+          <form action="/professional/withdraw" method="POST" style="display: flex; flex-direction: column; gap: 1.25rem;">
+            <label class="field-group" style="display: flex; flex-direction: column; gap: 0.4rem;">
+              <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-soft);">Amount to Withdraw (₹)</span>
+              <input type="number" name="amount" min="1" max="<%= wallet.available_inr %>" required placeholder="Maximum ₹<%= wallet.available_inr %>" style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; color: #fff; font-size: 1.1rem; font-weight: bold;">
+            </label>
+
+            <label class="field-group" style="display: flex; flex-direction: column; gap: 0.4rem;">
+              <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-soft);">Bank Account Details</span>
+              <textarea name="bankDetails" required rows="4" placeholder="Bank Name:&#10;Account Holder:&#10;Account Number:&#10;IFSC Code:" style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; color: #fff; font-size: 0.9rem; resize: none;"></textarea>
+            </label>
+
+            <button type="submit" class="button button-primary button-block" style="background: linear-gradient(135deg, #10b981, #059669); border: none; font-weight: bold; border-radius: 8px; margin-top: 0.5rem; padding: 12px; font-size: 1rem; cursor: pointer; color: #fff;">
+              Request Bank Payout
+            </button>
+          </form>
+        <% } %>
+      </div>
+
+      <!-- Withdrawals history -->
+      <div class="glass-panel" style="padding: 2.5rem; border-radius: var(--radius-xl); background: rgba(22, 32, 58, 0.85); border: 1px solid var(--line-strong);">
+        <h2 style="font-family: 'Outfit', sans-serif; color: #fff; margin: 0 0 1.5rem;">Withdrawal History</h2>
+
+        <% if (!withdrawals.length) { %>
+          <p style="text-align: center; color: var(--text-soft); padding: 1.5rem 0; font-size: 0.9rem;">No payouts requested yet.</p>
+        <% } else { %>
+          <div style="display: flex; flex-direction: column; gap: 1rem;">
+            <% withdrawals.forEach(function (w) { %>
+              <div style="padding: 1rem; border-radius: 8px; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <strong style="color: #fff; font-size: 1.05rem;">₹<%= w.amount_inr %></strong>
+                  <span style="display: block; font-size: 0.78rem; color: var(--text-muted); margin-top: 0.15rem;"><%= formatShortDate(w.created_at) %></span>
+                </div>
+                <div>
+                  <span style="padding: 0.15rem 0.5rem; border-radius: 99px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+                    <%= w.status === 'completed' ? 'background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3);' : 'background: rgba(245,158,11,0.15); color: #fb7185; border: 1px solid rgba(245,158,11,0.3);' %>">
+                    <%= w.status %>
+                  </span>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+
+    </div>
+  </div>
+</section>
