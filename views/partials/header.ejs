@@ -48,11 +48,21 @@
                 Dashboard
               </a>
             </li>
+            <li>
+              <a href="/chat" class="<%= currentPath === '/chat' ? 'is-active' : '' %>">
+                Messages 💬
+              </a>
+            </li>
           <% } %>
           <% if (sessionUser && sessionUser.role === "professional") { %>
             <li>
               <a href="/professional/dashboard" class="<%= currentPath === '/professional/dashboard' ? 'is-active' : '' %>">
                 Dashboard
+              </a>
+            </li>
+            <li>
+              <a href="/chat" class="<%= currentPath === '/chat' ? 'is-active' : '' %>">
+                Messages 💬
               </a>
             </li>
           <% } %>

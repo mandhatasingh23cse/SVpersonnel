@@ -68,7 +68,11 @@ const {
   getEarnings,
   verifyPartner,
   getAdminWithdrawals,
-  approveWithdrawal
+  approveWithdrawal,
+  saveChatMessage,
+  getChatHistory,
+  markChatAsRead,
+  getUnreadChatCount
 } = require("./lib/supabaseStore");
 
 const {
@@ -109,13 +113,13 @@ const upload = multer({
   storage: storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
   fileFilter: (req, file, cb) => {
-    const filetypes = /jpeg|jpg|png|gif|pdf/;
+    const filetypes = /jpeg|jpg|png|gif|pdf|mp4|webm|avi|mov|mpeg/;
     const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = filetypes.test(file.mimetype);
     if (mimetype && extname) {
       return cb(null, true);
     }
-    cb(new Error("Only images (jpeg, jpg, png, gif) and PDFs are allowed."));
+    cb(new Error("Only images (jpeg, jpg, png, gif), PDFs, and videos (mp4, webm, avi, mov, mpeg) are allowed."));
   }
 });
 
@@ -1245,58 +1249,136 @@ app.get("/professional/onboarding", requireRole("professional"), async (req, res
   });
 });
 
-app.post("/professional/onboarding", requireRole("professional"), async (req, res) => {
-  try {
-    const user = req.session.user;
-    const { city, jobType, charges, skills, pincode, area } = req.body;
-    const selectedSkills = skills ? (Array.isArray(skills) ? skills : [skills]) : [];
-    const formattedCity = sanitizeText(city || "All India");
-    const formattedJobType = sanitizeText(jobType || "Both / Flexible");
-    const formattedCharges = Number(charges) || 0;
+app.post(
+  "/professional/onboarding",
+  requireRole("professional"),
+  upload.fields([
+    { name: "governmentIdDocument", maxCount: 1 },
+    { name: "liveSelfiePhoto", maxCount: 1 },
+    { name: "portfolioImages", maxCount: 10 },
+    { name: "portfolioVideos", maxCount: 5 },
+    { name: "certificates", maxCount: 10 }
+  ]),
+  async (req, res) => {
+    try {
+      const user = req.session.user;
+      const { 
+        username,
+        city,
+        jobType,
+        experience,
+        languages,
+        workingRadiusKm,
+        pincode,
+        area,
+        bankName,
+        bankAccountNo,
+        bankIfsc,
+        upiHandle,
+        panNumber,
+        gstNumber,
+        skills
+      } = req.body;
 
-    let bioAppend = `\n[Work Type: ${formattedJobType}] [Price Negotiable by Client: YES]`;
-    if (selectedSkills.length > 0) {
-      bioAppend += ` [Skills: ${selectedSkills.join(", ")}]`;
-    }
-    const wmTag = formattedJobType.includes("Both") || (formattedJobType.includes("Full") && formattedJobType.includes("Part")) ? "Part Time,Full Time" : (formattedJobType.includes("Full") ? "Full Time" : "Part Time");
-    bioAppend += ` [workModes:${wmTag}] [partTimeRate:${formattedCharges}] [fullTimeRate:${formattedCharges * 25}]`;
+      const selectedSkills = skills ? (Array.isArray(skills) ? skills : [skills]) : [];
+      const formattedCity = sanitizeText(city || "All India");
+      const formattedJobType = sanitizeText(jobType || "Both / Flexible");
 
-    await updateProfessionalProfile(user.id, {
-      fullName: user.name,
-      city: formattedCity,
-      area: sanitizeText(area || formattedCity || "Main"),
-      pincode: sanitizeText(pincode || ""),
-      experience: user.experience || 0,
-      description: (user.bio || "") + bioAppend
-    });
-    if (pincode) user.pincode = sanitizeText(pincode);
-    if (area) user.area = sanitizeText(area);
+      // File URLs
+      const idDocUrl = req.files && req.files.governmentIdDocument ? "/uploads/" + req.files.governmentIdDocument[0].filename : "";
+      const selfieUrl = req.files && req.files.liveSelfiePhoto ? "/uploads/" + req.files.liveSelfiePhoto[0].filename : "";
+      const portfolioImgs = req.files && req.files.portfolioImages ? req.files.portfolioImages.map(f => "/uploads/" + f.filename) : [];
+      const portfolioVids = req.files && req.files.portfolioVideos ? req.files.portfolioVideos.map(f => "/uploads/" + f.filename) : [];
+      const certsUrls = req.files && req.files.certificates ? req.files.certificates.map(f => "/uploads/" + f.filename) : [];
 
-    // Try to resolve exact service IDs or custom services from selected skills
-    const serviceIds = [];
-    for (const skillName of selectedSkills) {
-      const resolved = await resolveServiceIdsFromInput(skillName, []);
-      if (resolved && resolved.length > 0) {
-        resolved.forEach(id => { if (!serviceIds.includes(id)) serviceIds.push(id); });
-      } else {
-        const customService = await addCustomServiceOption(skillName.trim());
-        if (customService && customService.id && !serviceIds.includes(Number(customService.id))) {
-          serviceIds.push(Number(customService.id));
+      let finalDailyRate = 0;
+      let finalProjectRate = 0;
+      let totalPtRate = 0;
+      let ptRateCount = 0;
+      let totalFtRate = 0;
+      let ftRateCount = 0;
+
+      for (const skillName of selectedSkills) {
+        const safeKey = encodeURIComponent(skillName);
+        const ptVal = Number(req.body[`customSubRate_${safeKey}`]);
+        const ftVal = Number(req.body[`customSubFullRate_${safeKey}`]);
+        if (ptVal) {
+          totalPtRate += ptVal;
+          ptRateCount++;
+        }
+        if (ftVal) {
+          totalFtRate += ftVal;
+          ftRateCount++;
         }
       }
-    }
-    if (serviceIds.length > 0) {
-      await updateProfessionalServices(user.id, serviceIds, formattedCharges);
-    }
 
-    req.session.user.city = formattedCity;
-    req.session.professionalProfileNotice = createFormNotice("success", "Onboarding completed successfully! Your skills and negotiable pricing are now live.");
-    return res.redirect("/professional/dashboard");
-  } catch (error) {
-    console.error("Onboarding error:", error);
-    return res.redirect("/professional/dashboard");
+      finalDailyRate = ptRateCount > 0 ? Math.round(totalPtRate / ptRateCount) : 500;
+      finalProjectRate = ftRateCount > 0 ? Math.round(totalFtRate / ftRateCount) : 25000;
+
+      let bioAppend = `\n[Work Type: ${formattedJobType}] [Price Negotiable by Client: YES]`;
+      if (selectedSkills.length > 0) {
+        bioAppend += ` [Skills: ${selectedSkills.join(", ")}]`;
+      }
+      const wmTag = formattedJobType.includes("Both") || (formattedJobType.includes("Full") && formattedJobType.includes("Part")) ? "Part Time,Full Time" : (formattedJobType.includes("Full") ? "Full Time" : "Part Time");
+      bioAppend += ` [workModes:${wmTag}] [partTimeRate:${finalDailyRate}] [fullTimeRate:${finalProjectRate}]`;
+
+      await updateProfessionalProfile(user.id, {
+        fullName: user.name,
+        username: sanitizeText(username || ""),
+        city: formattedCity,
+        area: sanitizeText(area || formattedCity || "Main"),
+        pincode: sanitizeText(pincode || ""),
+        experience: Number(experience) || 0,
+        description: (user.bio || "") + bioAppend,
+        dailyRateInr: finalDailyRate,
+        projectRateInr: finalProjectRate,
+        languages: sanitizeText(languages || ""),
+        workingRadiusKm: Number(workingRadiusKm) || 15,
+        bankName: sanitizeText(bankName || ""),
+        bankAccountNo: sanitizeText(bankAccountNo || ""),
+        bankIfsc: sanitizeText(bankIfsc || ""),
+        upiHandle: sanitizeText(upiHandle || ""),
+        panNumber: sanitizeText(panNumber || ""),
+        gstNumber: sanitizeText(gstNumber || ""),
+        portfolioImages: portfolioImgs,
+        portfolioVideos: portfolioVids,
+        certificatesUrls: certsUrls,
+        aadhaarPanUrl: idDocUrl,
+        livePhotoUrl: selfieUrl
+      });
+
+      req.session.user.username = username;
+      req.session.user.city = formattedCity;
+      req.session.user.pincode = pincode;
+      req.session.user.area = area;
+      req.session.user.onboarding_complete = true;
+
+      // Try to resolve exact service IDs or custom services from selected skills
+      const serviceIds = [];
+      for (const skillName of selectedSkills) {
+        const resolved = await resolveServiceIdsFromInput(skillName, []);
+        if (resolved && resolved.length > 0) {
+          resolved.forEach(id => { if (!serviceIds.includes(id)) serviceIds.push(id); });
+        } else {
+          const customService = await addCustomServiceOption(skillName.trim());
+          if (customService && customService.id && !serviceIds.includes(Number(customService.id))) {
+            serviceIds.push(Number(customService.id));
+          }
+        }
+      }
+      if (serviceIds.length > 0) {
+        await updateProfessionalServices(user.id, serviceIds, finalDailyRate);
+      }
+
+      req.session.professionalProfileNotice = createFormNotice("success", "Onboarding completed successfully! Your application is submitted for verification.");
+      return res.redirect("/professional/dashboard");
+    } catch (error) {
+      console.error("Onboarding error:", error);
+      req.session.professionalProfileNotice = createFormNotice("error", `Onboarding failed: ${error.message}`);
+      return res.redirect("/professional/dashboard");
+    }
   }
-});
+);
 
 
 // ==========================================
@@ -3264,9 +3346,224 @@ app.post(
   }
 );
 
+// --- REALTIME CHAT SYSTEM ROUTES ---
+
+app.get("/chat", requireRole(["client", "professional"]), async (req, res) => {
+  const user = req.session.user;
+  const myRole = user.role;
+  const myId = user.id;
+
+  try {
+    const dbClient = getClient();
+    let contacts = [];
+    
+    if (myRole === "client") {
+      const { data: bookings } = await dbClient
+        .from("bookings")
+        .select("professional_id, professionals(full_name, photo_url)")
+        .eq("client_id", myId);
+      
+      const seen = new Set();
+      if (bookings) {
+        bookings.forEach(b => {
+          if (b.professional_id && !seen.has(b.professional_id)) {
+            seen.add(b.professional_id);
+            contacts.push({
+              id: b.professional_id,
+              role: "professional",
+              name: b.professionals?.full_name || "Professional",
+              photo: b.professionals?.photo_url || "/assets/default-user.png"
+            });
+          }
+        });
+      }
+    } else {
+      const { data: bookings } = await dbClient
+        .from("bookings")
+        .select("client_id, clients(full_name)")
+        .eq("professional_id", myId);
+      
+      const seen = new Set();
+      if (bookings) {
+        bookings.forEach(b => {
+          if (b.client_id && !seen.has(b.client_id)) {
+            seen.add(b.client_id);
+            contacts.push({
+              id: b.client_id,
+              role: "client",
+              name: b.clients?.full_name || "Client",
+              photo: "/assets/default-user.png"
+            });
+          }
+        });
+      }
+    }
+
+    const unreadCounts = await getUnreadChatCount(myRole, myId);
+
+    res.render("chat", {
+      title: "Realtime Chat Workspace | SV Personnels",
+      pageClass: "page-chat",
+      contacts,
+      unreadCounts,
+      myRole,
+      myId,
+      activeContact: null,
+      chatHistory: []
+    });
+  } catch (err) {
+    console.error("Chat page error:", err.message);
+    res.redirect("/");
+  }
+});
+
+app.get("/chat/:recipientRole/:recipientId", requireRole(["client", "professional"]), async (req, res) => {
+  const user = req.session.user;
+  const myRole = user.role;
+  const myId = user.id;
+  const targetRole = req.params.recipientRole;
+  const targetId = Number(req.params.recipientId);
+
+  try {
+    const dbClient = getClient();
+    let contacts = [];
+    let activeContact = null;
+
+    if (targetRole === "professional") {
+      const { data: targetUser } = await dbClient.from("professionals").select("id, full_name, photo_url").eq("id", targetId).maybeSingle();
+      if (targetUser) {
+        activeContact = {
+          id: targetUser.id,
+          role: "professional",
+          name: targetUser.full_name,
+          photo: targetUser.photo_url || "/assets/default-user.png"
+        };
+      }
+    } else {
+      const { data: targetUser } = await dbClient.from("clients").select("id, full_name").eq("id", targetId).maybeSingle();
+      if (targetUser) {
+        activeContact = {
+          id: targetUser.id,
+          role: "client",
+          name: targetUser.full_name,
+          photo: "/assets/default-user.png"
+        };
+      }
+    }
+
+    if (!activeContact) {
+      return res.redirect("/chat");
+    }
+
+    if (myRole === "client") {
+      const { data: bookings } = await dbClient.from("bookings").select("professional_id, professionals(full_name, photo_url)").eq("client_id", myId);
+      const seen = new Set();
+      if (bookings) {
+        bookings.forEach(b => {
+          if (b.professional_id && !seen.has(b.professional_id)) {
+            seen.add(b.professional_id);
+            contacts.push({
+              id: b.professional_id,
+              role: "professional",
+              name: b.professionals?.full_name || "Professional",
+              photo: b.professionals?.photo_url || "/assets/default-user.png"
+            });
+          }
+        });
+      }
+    } else {
+      const { data: bookings } = await dbClient.from("bookings").select("client_id, clients(full_name)").eq("professional_id", myId);
+      const seen = new Set();
+      if (bookings) {
+        bookings.forEach(b => {
+          if (b.client_id && !seen.has(b.client_id)) {
+            seen.add(b.client_id);
+            contacts.push({
+              id: b.client_id,
+              role: "client",
+              name: b.clients?.full_name || "Client",
+              photo: "/assets/default-user.png"
+            });
+          }
+        });
+      }
+    }
+
+    if (!contacts.some(c => c.id === targetId && c.role === targetRole)) {
+      contacts.push(activeContact);
+    }
+
+    await markChatAsRead(myRole, myId, targetRole, targetId);
+
+    const chatHistory = await getChatHistory(myRole, myId, targetRole, targetId);
+    const unreadCounts = await getUnreadChatCount(myRole, myId);
+
+    res.render("chat", {
+      title: `Chat with ${activeContact.name} | SV Personnels`,
+      pageClass: "page-chat",
+      contacts,
+      unreadCounts,
+      myRole,
+      myId,
+      activeContact,
+      chatHistory
+    });
+  } catch (err) {
+    console.error("Direct chat error:", err.message);
+    res.redirect("/chat");
+  }
+});
+
+app.post("/chat/upload", requireRole(["client", "professional"]), upload.single("file"), (req, res) => {
+  if (req.file) {
+    return res.json({ success: true, url: "/uploads/" + req.file.filename });
+  }
+  return res.json({ success: false, error: "Upload failed." });
+});
+
 // --- UPTIME / KEEP-ALIVE ROUTE ---
 app.get("/ping", (req, res) => {
   res.status(200).send("OK");
+});
+
+const http = require("http");
+const { Server } = require("socket.io");
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
+
+io.on("connection", (socket) => {
+  console.log("Socket.io user connected:", socket.id);
+
+  socket.on("join", (roomName) => {
+    socket.join(roomName);
+    console.log(`Socket joined room: ${roomName}`);
+  });
+
+  socket.on("send_message", async (data) => {
+    const { senderRole, senderId, receiverRole, receiverId, message, imageUrl } = data;
+    const saved = await saveChatMessage(senderRole, senderId, receiverRole, receiverId, message, imageUrl);
+    
+    const receiverRoom = `${receiverRole}_${receiverId}`;
+    const senderRoom = `${senderRole}_${senderId}`;
+
+    io.to(receiverRoom).emit("new_message", saved);
+    io.to(senderRoom).emit("new_message", saved);
+  });
+
+  socket.on("typing", (data) => {
+    const { senderRole, senderId, receiverRole, receiverId, isTyping } = data;
+    const receiverRoom = `${receiverRole}_${receiverId}`;
+    io.to(receiverRoom).emit("typing_status", { senderRole, senderId, isTyping });
+  });
+
+  socket.on("disconnect", () => {
+    console.log("Socket.io user disconnected:", socket.id);
+  });
 });
 
 async function startServer() {
@@ -3278,7 +3575,7 @@ async function startServer() {
     console.warn(`Supabase connection unavailable: ${state.lastError}`);
   }
 
-  app.listen(PORT, () => {
+  server.listen(PORT, () => {
     console.log(`Server running at http://localhost:${PORT}`);
 
     // Self-ping every 10 minutes (600,000 ms) to prevent Render free tier from going to sleep
