@@ -38,7 +38,7 @@
     </div>
 
     <!-- Official PayU POST form (Redirects to PayU checkout or sandbox simulation if test keys) -->
-    <form action="https://test.payu.in/_payment" method="POST" id="payuRedirectForm">
+    <form action="<%= payuUrl %>" method="POST" id="payuRedirectForm">
       <input type="hidden" name="key" value="<%= key %>">
       <input type="hidden" name="txnid" value="<%= txnid %>">
       <input type="hidden" name="amount" value="<%= amount %>">

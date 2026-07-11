@@ -745,6 +745,8 @@ app.get("/work/pass/buy", async (req, res) => {
 
   req.session.workPassPending = { txnid, userId: user.id, amount };
 
+  const payuUrl = process.env.PAYU_MODE === "live" ? "https://secure.payu.in/_payment" : "https://test.payu.in/_payment";
+
   return res.render("payuCheckout", {
     title: "Buy Monthly Work Pass (₹150 via PayU) | SV Personnels",
     pageClass: "page-payu",
@@ -758,6 +760,7 @@ app.get("/work/pass/buy", async (req, res) => {
     surl,
     furl,
     hash,
+    payuUrl,
     professional: { name: "SV Personnels Work Pass", photo: "/assets/gigconnect.logo.png" }
   });
 });
@@ -2530,6 +2533,8 @@ app.post("/book-service/:professionalId/confirm", requireRole("client"), async (
       isFullTimeFee: isFullTime
     };
 
+    const payuUrl = process.env.PAYU_MODE === "live" ? "https://secure.payu.in/_payment" : "https://test.payu.in/_payment";
+
     return res.render("payuCheckout", {
       title: "PayU Payment Gateway | SV Personnels",
       pageClass: "page-payu",
@@ -2543,6 +2548,7 @@ app.post("/book-service/:professionalId/confirm", requireRole("client"), async (
       surl,
       furl,
       hash,
+      payuUrl,
       professional
     });
   }
