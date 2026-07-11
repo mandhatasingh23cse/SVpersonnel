@@ -27,7 +27,7 @@
           
           <label class="field-group" style="display: flex; flex-direction: column; gap: 0.4rem;">
             <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-soft);">Agency PAN Number</span>
-            <input type="text" name="panNumber" required placeholder="10-digit PAN" style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; color: #fff;">
+            <input type="text" name="panNumber" required maxlength="10" pattern="[A-Za-z]{5}[0-9]{4}[A-Za-z]{1}" title="Strict PAN card format: 5 letters, 4 digits, 1 letter (e.g. ABCDE1234F)" placeholder="e.g. ABCDE1234F" style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; color: #fff; text-transform: uppercase; font-weight: bold;">
           </label>
         </div>
       </div>

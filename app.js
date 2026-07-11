@@ -1360,6 +1360,12 @@ app.post(
       const wmTag = formattedJobType.includes("Both") || (formattedJobType.includes("Full") && formattedJobType.includes("Part")) ? "Part Time,Full Time" : (formattedJobType.includes("Full") ? "Full Time" : "Part Time");
       bioAppend += ` [workModes:${wmTag}] [partTimeRate:${finalDailyRate}] [fullTimeRate:${finalProjectRate}]`;
 
+      const formattedPan = (panNumber || "").trim().toUpperCase();
+      if (!formattedPan || !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(formattedPan)) {
+        req.session.onboardingNotice = createFormNotice("error", "Invalid PAN Card format. Must be 5 letters, 4 digits, 1 letter (e.g. ABCDE1234F).");
+        return res.redirect("/professional/onboarding");
+      }
+
       await updateProfessionalProfile(user.id, {
         fullName: user.name,
         username: sanitizeText(username || ""),
@@ -1376,7 +1382,7 @@ app.post(
         bankAccountNo: sanitizeText(bankAccountNo || ""),
         bankIfsc: sanitizeText(bankIfsc || ""),
         upiHandle: sanitizeText(upiHandle || ""),
-        panNumber: sanitizeText(panNumber || ""),
+        panNumber: formattedPan,
         gstNumber: sanitizeText(gstNumber || ""),
         portfolioImages: portfolioImgs,
         portfolioVideos: portfolioVids,
@@ -1517,14 +1523,14 @@ app.post(
   async (req, res) => {
     try {
       const gstNumber = req.body.gstNumber || "";
-      const panNumber = req.body.panNumber || "";
+      const panNumber = (req.body.panNumber || "").trim().toUpperCase();
       
       const idDocFile = req.files && req.files["idDocument"] ? req.files["idDocument"][0] : null;
       const bizProofFile = req.files && req.files["businessProof"] ? req.files["businessProof"][0] : null;
       const livePhotoFile = req.files && req.files["livePhoto"] ? req.files["livePhoto"][0] : null;
 
-      if (!panNumber) {
-        req.session.partnerOnboardingNotice = createFormNotice("error", "PAN Number is required for tax reporting.");
+      if (!panNumber || !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(panNumber)) {
+        req.session.partnerOnboardingNotice = createFormNotice("error", "Invalid PAN Card format. Must be 5 letters, 4 digits, 1 letter (e.g. ABCDE1234F).");
         return res.redirect("/partner/onboarding");
       }
 
