@@ -1122,9 +1122,6 @@ app.get("/register", (req, res) => {
 });
 
 app.get(["/register/client", "/client/register"], (req, res) => renderSignupPage(res));
-app.get(["/register/partner", "/partner/register"], async (req, res) => {
-  await renderRegisterPage(res);
-});
 
 app.get("/register/professional", async (req, res) => {
   await renderRegisterPage(res);
