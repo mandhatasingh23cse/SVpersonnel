@@ -79,6 +79,7 @@
                   <a href="/client/settings" class="<%= currentPath === '/client/settings' ? 'is-active' : '' %>">Account Settings</a>
                 <% } else if (sessionUser.role === "professional") { %>
                   <a href="/professional/profile" class="<%= currentPath === '/professional/profile' ? 'is-active' : '' %>">Profile</a>
+                  <a href="/professional/onboarding" class="<%= currentPath === '/professional/onboarding' ? 'is-active' : '' %>">Onboarding & Skills</a>
                   <a href="/professional/settings" class="<%= currentPath === '/professional/settings' ? 'is-active' : '' %>">Account Settings</a>
                 <% } else if (sessionUser.role === "admin") { %>
                   <a href="/admin/profile" class="<%= currentPath === '/admin/profile' ? 'is-active' : '' %>">Profile</a>

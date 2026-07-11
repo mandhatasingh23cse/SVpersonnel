@@ -139,7 +139,8 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use("/uploads", express.static(path.join(__dirname, "public", "uploads")));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/uploads", (req, res) => {
-  res.redirect("/assets/gigconnect.logo.png");
+  // If a file is not found locally in public/uploads or uploads (for example, because it was uploaded on the live hosted server)
+  res.status(404).send("Verification File Not Found Locally (File exists on live hosted server disk)");
 });
 
 app.locals.currentYear = new Date().getFullYear();
@@ -1538,6 +1539,13 @@ app.get("/professional/dashboard", requireRole("professional"), async (req, res)
   }
 
   const dashboardData = await getProfessionalDashboardData(req.session.user.id);
+  if (dashboardData && dashboardData.profile && req.session && req.session.user) {
+    req.session.user = {
+      ...req.session.user,
+      ...dashboardData.profile,
+      role: "professional"
+    };
+  }
   return res.render("professionalDashboard", {
     title: "Professional dashboard | SV Personnels",
     pageClass: "page-dashboard",

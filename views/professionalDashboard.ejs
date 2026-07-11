@@ -47,6 +47,15 @@
         <span><%= formatCurrency(dashboardData.profile.startingPrice) %> starting rate</span>
         <span><%= Number(dashboardData.profile.ratings || 0).toFixed(1) %> / 5 rating</span>
       </div>
+
+      <div style="display: flex; gap: 1rem; margin-top: 1.25rem; flex-wrap: wrap; border-top: 1px solid var(--line); padding-top: 1.25rem;">
+        <a href="/professional/onboarding" class="button button-primary" style="font-size: 0.85rem; display: inline-flex; align-items: center; gap: 6px;">
+          🚀 Edit Skills &amp; Onboarding Preferences
+        </a>
+        <a href="/professional/profile" class="button button-secondary" style="font-size: 0.85rem; display: inline-flex; align-items: center; gap: 6px;">
+          ✏️ Edit Profile Details
+        </a>
+      </div>
     </div>
 
     <% if (!dashboardData.profile.isVerified) { %>

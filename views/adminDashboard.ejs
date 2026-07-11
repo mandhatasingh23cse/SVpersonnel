@@ -153,10 +153,10 @@
                           <% } else if (idUrl.toLowerCase().endsWith('.pdf')) { %>
                             <a href="<%= idUrl %>" target="_blank" class="button button-secondary" style="min-height: 38px; padding: 0 14px; font-size: 0.82rem;">📄 View ID Document (PDF)</a>
                           <% } else { %>
-                            <a href="<%= idUrl %>" target="_blank" style="display: block;">
-                              <img src="<%= idUrl %>" alt="Aadhaar/PAN Document" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" style="max-width: 220px; max-height: 140px; border-radius: var(--radius-sm); border: 1px solid var(--line-strong); object-fit: contain;">
-                              <span style="display: none; font-size: 0.82rem; color: #38bdf8; background: rgba(56,189,248,0.1); padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(56,189,248,0.3);">📄 Click to Open Document File ›</span>
+                            <a href="<%= idUrl %>" target="_blank" style="display: block; text-decoration: none;">
+                              <img src="<%= idUrl %>" alt="Aadhaar/PAN Document" style="max-width: 220px; max-height: 140px; border-radius: var(--radius-sm); border: 1px solid var(--line-strong); object-fit: contain;">
                             </a>
+                            <a href="<%= idUrl %>" target="_blank" style="font-size: 0.8rem; color: #38bdf8; text-decoration: underline;">Open Document in New Tab</a>
                           <% } %>
                         </div>
                       <% } %>
@@ -171,10 +171,10 @@
                           <% if (isPlaceholderPhoto) { %>
                             <span style="font-size: 0.82rem; color: #fb7185; background: rgba(244,63,94,0.1); padding: 6px 10px; border-radius: 6px;">⚠️ Pending actual file upload (Current value: <%= photoUrl %>)</span>
                           <% } else { %>
-                            <a href="<%= photoUrl %>" target="_blank" style="display: block;">
-                              <img src="<%= photoUrl %>" alt="Live Photo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" style="width: 140px; height: 140px; border-radius: var(--radius-sm); border: 1px solid var(--line-strong); object-fit: cover;">
-                              <span style="display: none; font-size: 0.82rem; color: #38bdf8; background: rgba(56,189,248,0.1); padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(56,189,248,0.3);">🖼️ Click to Open Live Photo ›</span>
+                            <a href="<%= photoUrl %>" target="_blank" style="display: block; text-decoration: none;">
+                              <img src="<%= photoUrl %>" alt="Live Photo" style="width: 140px; height: 140px; border-radius: var(--radius-sm); border: 1px solid var(--line-strong); object-fit: cover;">
                             </a>
+                            <a href="<%= photoUrl %>" target="_blank" style="font-size: 0.8rem; color: #38bdf8; text-decoration: underline;">Open Photo in New Tab</a>
                           <% } %>
                         </div>
                       <% } %>

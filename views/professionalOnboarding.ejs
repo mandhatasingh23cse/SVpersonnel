@@ -23,34 +23,60 @@
     <h2>Customize your service profile.</h2>
 
     <form class="auth-form onboarding-form" action="/professional/onboarding" method="POST">
-      <!-- 1. Select Skills by Ticking Checkboxes -->
-      <div class="field-group" style="margin-bottom: 2rem;">
-        <span style="font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 0.5rem; display: block;">1. Select Your Skills (Tick all that apply)</span>
-        <p style="font-size: 0.85rem; color: var(--color-ink-light); margin-top: 0; margin-bottom: 1rem;">Expand any category below and tick the exact roles and services you offer.</p>
+      <!-- STEP 1: WORK AVAILABILITY / HIRING MODE -->
+      <div class="field-group glass-inset" style="padding: 1.25rem; border-radius: 14px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(56, 189, 248, 0.4); margin-bottom: 1.5rem;">
+        <span style="font-size: 1.05rem; font-weight: 800; color: #38bdf8; display: block; margin-bottom: 0.5rem;">Step 1: Choose Work Availability</span>
+        <p style="font-size: 0.85rem; color: #cbd5e1; margin-top:0; margin-bottom: 1rem;">Select your preferred hiring mode first. This dynamically updates which rate inputs appear when you choose skills below!</p>
+        <select name="jobType" id="builder-work-mode" required class="form-input" style="width: 100%; padding: 0.75rem 1rem; border-radius: 12px; background: rgba(0, 0, 0, 0.7); color: #fff; border: 1px solid rgba(56,189,248,0.5); font-weight: 700; font-size: 0.95rem; cursor: pointer;">
+          <option value="Both / Flexible">⏰ Both / Flexible Shift (Part Time & Full Time)</option>
+          <option value="Part Time">⚡ Part Time Only (Daily / Task visits)</option>
+          <option value="Full Time">🏢 Full Time Only (Dedicated monthly placement)</option>
+        </select>
+      </div>
+
+      <!-- STEP 2: CHOOSE SKILL CATEGORY -> SUB-CATEGORY -->
+      <div class="field-group glass-inset" style="padding: 1.25rem; border-radius: 14px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(168, 85, 247, 0.4); margin-bottom: 1.5rem;">
+        <span style="font-size: 1.05rem; font-weight: 800; color: #d8b4fe; display: block; margin-bottom: 0.5rem;">Step 2: Choose Your Skill Category &amp; Sub-Category</span>
+        <p style="font-size: 0.85rem; color: #cbd5e1; margin-top:0; margin-bottom: 1rem;">First select a broad category, then pick your exact sub-category/skill from the dropdown below.</p>
         
-        <div class="onboarding-skills-accordion" style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 420px; overflow-y: auto; padding-right: 0.5rem;">
-          <% if (ottCategories && ottCategories.length) { %>
-            <% ottCategories.forEach(function(cat, idx) { %>
-              <details class="glass-inset" style="border-radius: 12px; padding: 0.75rem 1rem; border: 1px solid rgba(255,255,255,0.1); background: rgba(15, 23, 42, 0.6);" <%= idx === 0 ? 'open' : '' %>>
-                <summary style="font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: space-between; color: #fff; font-size: 0.95rem;">
-                  <span><%= cat.headerIcon || '🔹' %> <%= cat.title %></span>
-                  <span style="font-size: 0.75rem; opacity: 0.7; background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 10px;"><%= (cat.items || []).length %> skills</span>
-                </summary>
-                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.6rem; margin-top: 0.85rem; padding-top: 0.75rem; border-top: 1px solid rgba(255,255,255,0.08);">
-                  <% (cat.items || []).forEach(function(item) { %>
-                    <label style="display: flex; align-items: flex-start; gap: 0.5rem; cursor: pointer; font-size: 0.88rem; color: var(--color-ink); background: rgba(255,255,255,0.03); padding: 0.5rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); transition: all 0.2s;">
-                      <input type="checkbox" name="skills" value="<%= item.name %>" style="margin-top: 2px; accent-color: var(--color-brand); width: 16px; height: 16px;">
-                      <div>
-                        <strong style="color: #fff; display: block; line-height: 1.2;"><%= item.name %></strong>
-                        <small style="color: var(--color-ink-light); font-size: 0.75rem;"><%= item.desc %></small>
-                      </div>
-                    </label>
-                  <% }) %>
-                </div>
-              </details>
-            <% }) %>
-          <% } %>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+          <div>
+            <label style="font-size: 0.82rem; color: #94a3b8; font-weight: 600; display:block; margin-bottom: 0.35rem;">1. Select Category</label>
+            <select id="builder-cat-select" class="form-input" style="width: 100%; padding: 0.7rem 1rem; border-radius: 10px; background: rgba(0,0,0,0.7); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;">
+              <option value="">-- Choose Category --</option>
+              <% if (typeof ottCategories !== 'undefined' && ottCategories) { %>
+                <% ottCategories.forEach(function(cat, idx) { %>
+                  <option value="<%= idx %>"><%= cat.headerIcon || '🔹' %> <%= cat.title %></option>
+                <% }) %>
+              <% } %>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 0.82rem; color: #94a3b8; font-weight: 600; display:block; margin-bottom: 0.35rem;">2. Select Sub-Category / Skill</label>
+            <select id="builder-subcat-select" disabled class="form-input" style="width: 100%; padding: 0.7rem 1rem; border-radius: 10px; background: rgba(0,0,0,0.7); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;">
+              <option value="">-- First Select Category --</option>
+            </select>
+          </div>
         </div>
+        <button type="button" id="btn-add-skill-card" class="button button-primary" style="padding: 0.75rem 1.5rem; font-weight: 700; border-radius: 10px; background: linear-gradient(135deg, #a855f7, #3b82f6); border: none; cursor: pointer; color: #fff;">
+          ➕ Choose This Skill &amp; Set Price Below ›
+        </button>
+      </div>
+
+      <!-- STEP 3: SELECTED SKILLS & CUSTOM PRICING -->
+      <div class="field-group glass-inset" style="padding: 1.25rem; border-radius: 14px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(52, 211, 153, 0.4); margin-bottom: 2rem;">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem;">
+          <span style="font-size: 1.05rem; font-weight: 800; color: #34d399; display: block;">Step 3: Set Your Price For Chosen Skills</span>
+          <span id="selected-skill-count-badge" style="background: rgba(52,211,153,0.15); color: #34d399; padding: 4px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: 700;">0 Skills Added</span>
+        </div>
+        <p style="font-size: 0.85rem; color: #cbd5e1; margin-top:0; margin-bottom: 1.25rem;">Enter your expected charges for each skill below. Clients can negotiate these rates directly with you!</p>
+        
+        <div id="selected-skills-grid" style="display: flex; flex-direction: column; gap: 1rem;">
+          <div id="no-skills-placeholder" style="text-align: center; padding: 2rem; border: 1px dashed rgba(255,255,255,0.2); border-radius: 12px; color: #94a3b8;">
+            <p style="margin:0; font-size: 0.95rem;">No skills selected yet. Choose a category and sub-category above and click <strong>"➕ Choose This Skill"</strong>!</p>
+          </div>
+        </div>
+        <input type="hidden" name="charges" id="fallback_charges_input" value="500">
       </div>
 
       <!-- 2. Service Location / Pincode -->
@@ -77,34 +103,18 @@
           <small class="field-hint">Select or type your exact area.</small>
         </label>
 
-        <!-- 3. Work Type (Part Time, Full Time, Both) -->
-        <label class="field-group">
-          <span>3. Work Availability</span>
-          <select name="jobType" required class="form-input" style="width: 100%; padding: 0.75rem 1rem; border-radius: 12px; background: rgba(15, 23, 42, 0.8); color: #fff; border: 1px solid rgba(255,255,255,0.15); cursor: pointer;">
-            <option value="Both / Flexible">Both (Part Time & Full Time)</option>
-            <option value="Full Time">Full Time Only</option>
-            <option value="Part Time">Part Time Only</option>
-          </select>
-          <small class="field-hint">Are you open to part-time, full-time, or both?</small>
-        </label>
       </div>
 
-      <!-- 4. Charges & Negotiation Note -->
+      <!-- Negotiation Policy Notice -->
       <div class="field-group glass-inset" style="padding: 1.25rem; border-radius: 14px; background: rgba(255,255,255,0.03); border: 1px dashed rgba(167, 139, 250, 0.4); margin-bottom: 2rem;">
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
-          <div style="flex: 1; min-width: 220px;">
-            <span style="font-weight: 700; color: #fff; display: block; margin-bottom: 0.35rem;">4. Your Charges / Rate (₹)</span>
-            <input type="number" name="charges" min="0" step="50" placeholder="e.g. 500 or 15000" required class="form-input" style="width: 100%; padding: 0.75rem 1rem; border-radius: 10px; background: rgba(15, 23, 42, 0.9); color: #fff; border: 1px solid rgba(255,255,255,0.2); font-size: 1.05rem; font-weight: 600;">
-            <small class="field-hint">Enter your expected charges per day / task / month.</small>
-          </div>
-          
-          <div style="flex: 1.2; min-width: 240px; background: linear-gradient(135deg, rgba(167, 139, 250, 0.15), rgba(59, 130, 246, 0.15)); padding: 1rem; border-radius: 12px; border: 1px solid rgba(167, 139, 250, 0.3);">
+          <div style="flex: 1; background: linear-gradient(135deg, rgba(167, 139, 250, 0.15), rgba(59, 130, 246, 0.15)); padding: 1rem; border-radius: 12px; border: 1px solid rgba(167, 139, 250, 0.3);">
             <div style="display: flex; align-items: center; gap: 0.5rem; color: #a78bfa; font-weight: 700; font-size: 0.95rem; margin-bottom: 0.25rem;">
               <span>🤝 Client Can Negotiate</span>
               <span style="background: #a78bfa; color: #000; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; text-transform: uppercase;">Enabled</span>
             </div>
-            <p style="font-size: 0.82rem; color: var(--color-ink); margin: 0; line-height: 1.4;">
-              As per platform policy, your listed charges serve as a baseline. <strong>Client can negotiate that price</strong> directly with you before confirming any work contract or booking.
+            <p style="font-size: 0.85rem; color: #fff; margin: 0; line-height: 1.4;">
+              As per platform policy, your listed skill charges serve as your starting baseline. <strong>Clients can negotiate pricing</strong> directly with you before confirming any work contract or booking.
             </p>
           </div>
         </div>
@@ -149,5 +159,109 @@
         statusEl.textContent = "";
       }
     });
+
+    // 3-Step Interactive Builder Logic
+    const categoriesData = <%- JSON.stringify(typeof ottCategories !== 'undefined' ? ottCategories : []) %>;
+    const catSelect = document.getElementById("builder-cat-select");
+    const subcatSelect = document.getElementById("builder-subcat-select");
+    const workModeSelect = document.getElementById("builder-work-mode");
+    const addBtn = document.getElementById("btn-add-skill-card");
+    const grid = document.getElementById("selected-skills-grid");
+    const placeholder = document.getElementById("no-skills-placeholder");
+    const badge = document.getElementById("selected-skill-count-badge");
+    const fallbackCharges = document.getElementById("fallback_charges_input");
+
+    let addedSkillsCount = 0;
+
+    if (catSelect && subcatSelect) {
+      catSelect.addEventListener("change", function() {
+        const catIdx = this.value;
+        subcatSelect.innerHTML = '<option value="">-- Choose Sub-Category --</option>';
+        if (catIdx !== "" && categoriesData[catIdx] && categoriesData[catIdx].items) {
+          categoriesData[catIdx].items.forEach(function(item) {
+            const opt = document.createElement("option");
+            opt.value = item.name;
+            opt.setAttribute("data-cat", categoriesData[catIdx].title);
+            opt.textContent = item.name + " (" + item.desc + ")";
+            subcatSelect.appendChild(opt);
+          });
+          subcatSelect.disabled = false;
+        } else {
+          subcatSelect.disabled = true;
+        }
+      });
+
+      addBtn.addEventListener("click", function() {
+        if (!subcatSelect.value) {
+          alert("Please select a Category and Sub-Category first!");
+          return;
+        }
+        const skillName = subcatSelect.value;
+        const selectedOpt = subcatSelect.options[subcatSelect.selectedIndex];
+        const catName = selectedOpt ? selectedOpt.getAttribute("data-cat") : "General";
+
+        // Check if already added
+        if (document.getElementById("card_skill_" + encodeURIComponent(skillName))) {
+          alert("You have already added " + skillName + " to your list below!");
+          return;
+        }
+
+        if (placeholder) placeholder.style.display = "none";
+        addedSkillsCount++;
+        badge.textContent = addedSkillsCount + " Skills Added";
+
+        const card = document.createElement("div");
+        card.id = "card_skill_" + encodeURIComponent(skillName);
+        card.className = "skill-pricing-card glass-inset";
+        card.style.cssText = "padding: 1.1rem; border-radius: 12px; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(168,85,247,0.4); display: flex; flex-direction: column; gap: 0.8rem; position: relative;";
+        
+        const mode = workModeSelect.value;
+        const showPt = (mode === "Both / Flexible" || mode === "Part Time");
+        const showFt = (mode === "Both / Flexible" || mode === "Full Time");
+        const safeKey = encodeURIComponent(skillName);
+
+        card.innerHTML = `
+          <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">
+            <div>
+              <strong style="color: #fff; font-size: 1.05rem;">✨ \${skillName}</strong>
+              <span style="font-size: 0.78rem; color: #a855f7; background: rgba(168,85,247,0.15); padding: 2px 8px; border-radius: 6px; margin-left: 8px;">\${catName}</span>
+            </div>
+            <button type="button" class="btn-remove-skill" style="background: rgba(244,63,94,0.15); color: #fb7185; border: 1px solid rgba(244,63,94,0.3); padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;">🗑️ Remove</button>
+          </div>
+          <input type="hidden" name="skills" value="\${skillName}">
+          <input type="hidden" name="subcategorySkills" value="\${skillName}">
+          <div class="pricing-rows-box" style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center;">
+            <div class="pt-box" style="flex: 1; min-width: 200px; display: \${showPt ? 'flex' : 'none'}; align-items: center; justify-content: space-between; background: rgba(56,189,248,0.1); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(56,189,248,0.3);">
+              <span style="font-size: 0.85rem; color: #38bdf8; font-weight: 700;">⚡ Part-Time Rate (₹ / Day):</span>
+              <input type="number" name="customSubRate_\${safeKey}" value="500" min="100" max="100000" class="subrate-pt-input" style="width: 110px; padding: 6px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.3); background: rgba(0,0,0,0.7); color: #fff; font-weight: 700; font-size: 0.95rem; text-align: right;">
+            </div>
+            <div class="ft-box" style="flex: 1; min-width: 200px; display: \${showFt ? 'flex' : 'none'}; align-items: center; justify-content: space-between; background: rgba(168,85,247,0.1); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(168,85,247,0.3);">
+              <div>
+                <span style="font-size: 0.85rem; color: #d8b4fe; font-weight: 700; display:block;">🏢 Full-Time Expected Salary (₹ / Month):</span>
+                <small style="font-size: 0.7rem; color: #94a3b8;">* Client pays ₹250 platform fee on full-time hiring</small>
+              </div>
+              <input type="number" name="customSubFullRate_\${safeKey}" value="25000" min="1000" max="500000" class="subrate-ft-input" style="width: 115px; padding: 6px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.3); background: rgba(0,0,0,0.7); color: #fff; font-weight: 700; font-size: 0.95rem; text-align: right;">
+            </div>
+          </div>
+        `;
+
+        card.querySelector(".btn-remove-skill").addEventListener("click", function() {
+          card.remove();
+          addedSkillsCount--;
+          badge.textContent = addedSkillsCount + " Skills Added";
+          if (addedSkillsCount === 0 && placeholder) placeholder.style.display = "block";
+        });
+
+        grid.appendChild(card);
+      });
+
+      workModeSelect.addEventListener("change", function() {
+        const mode = this.value;
+        const showPt = (mode === "Both / Flexible" || mode === "Part Time");
+        const showFt = (mode === "Both / Flexible" || mode === "Full Time");
+        document.querySelectorAll(".pt-box").forEach(el => el.style.display = showPt ? "flex" : "none");
+        document.querySelectorAll(".ft-box").forEach(el => el.style.display = showFt ? "flex" : "none");
+      });
+    }
   </script>
 </section>
