@@ -2936,6 +2936,88 @@ app.post("/client/bookings/:bookingId/cancel", requireRole("client"), async (req
   return res.redirect("/client/dashboard");
 });
 
+app.post("/client/disputes", requireRole("client"), async (req, res) => {
+  const { bookingId, reason, description } = req.body;
+  const clientId = req.session.user.id;
+
+  try {
+    const dbClient = getClient();
+    
+    const { data: booking } = await dbClient
+      .from("bookings")
+      .select("*")
+      .eq("id", bookingId)
+      .eq("client_id", clientId)
+      .maybeSingle();
+
+    if (!booking) {
+      req.session.clientDashboardNotice = createFormNotice("error", "Booking record not found.");
+      return res.redirect("/client/dashboard");
+    }
+
+    const { error } = await dbClient
+      .from("disputes")
+      .insert({
+        booking_id: bookingId,
+        client_id: clientId,
+        professional_id: booking.professional_id,
+        reason: reason,
+        description: description,
+        status: "pending"
+      });
+
+    if (error) throw error;
+
+    await dbClient
+      .from("bookings")
+      .update({ status: "disputed", details: (booking.details || "") + "\n[Dispute Filed: pending SV mediation]" })
+      .eq("id", bookingId);
+
+    req.session.clientDashboardNotice = createFormNotice("success", "Dispute raised successfully. Our support team has been notified.");
+    return res.redirect("/client/dashboard");
+  } catch (err) {
+    console.error("Dispute filing failed:", err.message);
+    req.session.clientDashboardNotice = createFormNotice("error", `Dispute filing failed: ${err.message}`);
+    return res.redirect("/client/dashboard");
+  }
+});
+
+app.get("/bookings/:id/invoice", requireRole(["client", "professional"]), async (req, res) => {
+  const bookingId = Number(req.params.id);
+  const user = req.session.user;
+
+  try {
+    const dbClient = getClient();
+    
+    const { data: booking } = await dbClient
+      .from("bookings")
+      .select("*, professionals(full_name, email, phone), clients(full_name, email, phone)")
+      .eq("id", bookingId)
+      .maybeSingle();
+
+    if (!booking) {
+      return res.status(404).send("Booking invoice not found.");
+    }
+
+    if (user.role === "client" && Number(booking.client_id) !== Number(user.id)) {
+      return res.status(403).send("Unauthorized access to this invoice.");
+    }
+    if (user.role === "professional" && Number(booking.professional_id) !== Number(user.id)) {
+      return res.status(403).send("Unauthorized access to this invoice.");
+    }
+
+    res.render("invoice", {
+      layout: false,
+      title: `Invoice SV-${booking.booking_code} | SV Personnels`,
+      booking,
+      formatShortDate: (d) => new Date(d).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' })
+    });
+  } catch (err) {
+    console.error("Invoice generation failed:", err.message);
+    res.status(500).send("Internal Server Error generating invoice.");
+  }
+});
+
 app.post("/professional/bookings/:bookingId/start-work", requireRole("professional"), async (req, res) => {
   if (!isDatabaseReady()) {
     req.session.professionalDashboardNotice = createFormNotice("error", "Database offline.");

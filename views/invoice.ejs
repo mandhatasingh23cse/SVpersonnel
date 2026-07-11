@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title><%= title %></title>
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #334155;
+      background: #fff;
+      margin: 0;
+      padding: 2rem;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .invoice-box {
+      max-width: 800px;
+      margin: auto;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 2.5rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    }
+    .header-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 2rem;
+    }
+    .header-table td {
+      vertical-align: top;
+    }
+    .brand-name {
+      font-size: 24px;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: -0.5px;
+    }
+    .brand-caption {
+      font-size: 12px;
+      color: #64748b;
+      display: block;
+      margin-top: 2px;
+    }
+    .invoice-title {
+      text-align: right;
+      font-size: 22px;
+      font-weight: 700;
+      color: #a855f7;
+    }
+    .invoice-meta {
+      text-align: right;
+      font-size: 13px;
+      color: #64748b;
+      margin-top: 8px;
+    }
+    .details-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 2.5rem;
+    }
+    .details-table td {
+      width: 50%;
+      vertical-align: top;
+      padding: 0 10px 0 0;
+    }
+    .details-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: #94a3b8;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+    .details-body {
+      font-size: 14px;
+      color: #1e293b;
+      line-height: 1.5;
+    }
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 2.5rem;
+      text-align: left;
+    }
+    .items-table th {
+      background: #f8fafc;
+      border-bottom: 2px solid #e2e8f0;
+      padding: 12px;
+      font-weight: 700;
+      font-size: 12px;
+      text-transform: uppercase;
+      color: #64748b;
+    }
+    .items-table td {
+      padding: 16px 12px;
+      border-bottom: 1px solid #e2e8f0;
+      font-size: 14px;
+    }
+    .totals-table {
+      width: 40%;
+      margin-left: auto;
+      border-collapse: collapse;
+    }
+    .totals-table td {
+      padding: 8px 12px;
+      font-size: 14px;
+    }
+    .totals-table tr.grand-total td {
+      border-top: 2px solid #e2e8f0;
+      font-size: 18px;
+      font-weight: 800;
+      color: #0f172a;
+      padding-top: 12px;
+    }
+    .footer-note {
+      text-align: center;
+      margin-top: 4rem;
+      font-size: 12px;
+      color: #94a3b8;
+      border-top: 1px dashed #e2e8f0;
+      padding-top: 1.5rem;
+    }
+    @media print {
+      body {
+        padding: 0;
+      }
+      .invoice-box {
+        border: none;
+        box-shadow: none;
+        padding: 0;
+      }
+      .print-btn {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div style="max-width: 800px; margin: 0 auto 1.5rem auto; text-align: right;" class="print-btn">
+    <button onclick="window.print()" style="background: #a855f7; color: #fff; padding: 0.6rem 1.5rem; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(168,85,247,0.25);">
+      🖨️ Print / Download PDF
+    </button>
+  </div>
+
+  <div class="invoice-box">
+    <!-- Header -->
+    <table class="header-table">
+      <tr>
+        <td>
+          <span class="brand-name">SV Personnels</span>
+          <span class="brand-caption">Govt. Authorized Hiring &amp; Job Agency</span>
+        </td>
+        <td>
+          <div class="invoice-title">TAX INVOICE</div>
+          <div class="invoice-meta">
+            Invoice Number: <strong>SV-<%= booking.booking_code %></strong><br>
+            Date: <strong><%= formatShortDate(booking.created_at) %></strong>
+          </div>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Billing Details -->
+    <table class="details-table">
+      <tr>
+        <td>
+          <div class="details-title">Customer / Client Info</div>
+          <div class="details-body">
+            <strong><%= booking.clients ? booking.clients.full_name : (booking.guest_name || 'Client') %></strong><br>
+            Email: <%= booking.clients ? booking.clients.email : (booking.guest_email || 'N/A') %><br>
+            Phone: <%= booking.clients ? booking.clients.phone : (booking.guest_phone || 'N/A') %>
+          </div>
+        </td>
+        <td>
+          <div class="details-title">Service Provider Info</div>
+          <div class="details-body">
+            <strong><%= booking.professionals ? booking.professionals.full_name : 'Independent Contractor' %></strong><br>
+            Email: <%= booking.professionals ? booking.professionals.email : 'N/A' %><br>
+            Phone: <%= booking.professionals ? booking.professionals.phone : 'N/A' %>
+          </div>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Items Table -->
+    <table class="items-table">
+      <thead>
+        <tr>
+          <th>Description of Service</th>
+          <th>Preferred Date</th>
+          <th>Time Slot</th>
+          <th style="text-align: right;">Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <strong>Professional Booking with SV Personnel</strong><br>
+            <span style="font-size: 12px; color: #64748b;">Hiring category: <%= booking.budget_inr === 250 ? 'Dedicated Full Time placement' : 'Task visit' %></span>
+          </td>
+          <td><%= formatShortDate(booking.preferred_date) %></td>
+          <td><%= booking.preferred_time_slot %></td>
+          <td style="text-align: right; font-weight: 700;">₹<%= booking.budget_inr %></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Totals -->
+    <table class="totals-table">
+      <tr>
+        <td style="color: #64748b;">Subtotal</td>
+        <td style="text-align: right; font-weight: 700;">₹<%= booking.budget_inr %></td>
+      </tr>
+      <tr>
+        <td style="color: #64748b;">Taxes (GST 0%)</td>
+        <td style="text-align: right; font-weight: 700;">₹0</td>
+      </tr>
+      <tr class="grand-total">
+        <td>Total Paid</td>
+        <td style="text-align: right;">₹<%= booking.budget_inr %></td>
+      </tr>
+    </table>
+
+    <!-- Footer Note -->
+    <div class="footer-note">
+      Thank you for choosing SV Personnels. For support or dispute mediation, email support@svpersonnels.in.<br>
+      This is a system-generated secure digital invoice. No signature required.
+    </div>
+  </div>
+
+</body>
+</html>

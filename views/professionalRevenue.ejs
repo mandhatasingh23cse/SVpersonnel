@@ -22,35 +22,89 @@
     </div>
   <% } %>
 
+  <%
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    let todayEarnings = 0;
+    let weeklyEarnings = 0;
+    let monthlyEarnings = 0;
+    let totalPlatformFee = 0;
+
+    earnings.forEach(function (earn) {
+      const dt = new Date(earn.created_at);
+      totalPlatformFee += earn.platform_fee_inr || 0;
+      if (dt >= todayStart) {
+        todayEarnings += earn.net_amount_inr;
+      }
+      if (dt >= sevenDaysAgo) {
+        weeklyEarnings += earn.net_amount_inr;
+      }
+      if (dt >= thirtyDaysAgo) {
+        monthlyEarnings += earn.net_amount_inr;
+      }
+    });
+  %>
+
   <!-- Overview Stats Grid -->
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem; margin-bottom: 2rem;">
     <!-- Available Balance -->
-    <div class="glass-panel card-reveal" style="padding: 1.75rem; border-radius: 16px; background: rgba(22, 32, 58, 0.65); border: 1px solid var(--line); display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
+    <div class="glass-panel" style="padding: 1.5rem; border-radius: 16px; background: rgba(22, 32, 58, 0.65); border: 1px solid var(--line); display: flex; flex-direction: column; justify-content: space-between; min-height: 120px;">
       <div>
-        <span style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.05em;">Available Balance</span>
-        <strong style="display: block; font-size: 2.2rem; color: #34d399; font-family: 'Outfit', sans-serif; margin-top: 0.5rem;">₹<%= wallet.available_inr %></strong>
+        <span style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.05em;">Withdrawable Balance</span>
+        <strong style="display: block; font-size: 1.8rem; color: #34d399; font-family: 'Outfit', sans-serif; margin-top: 0.25rem;">₹<%= wallet.available_inr %></strong>
       </div>
-      <span style="font-size: 0.8rem; color: var(--text-soft);">
-        <%= user.isPartnerManaged ? 'Distributed by partner agency' : 'Available for withdrawal request' %>
+      <span style="font-size: 0.75rem; color: var(--text-soft);">
+        <%= user.isPartnerManaged ? 'Managed by agency partner' : 'Available for immediate payout' %>
       </span>
     </div>
 
     <!-- Processing Balance -->
-    <div class="glass-panel card-reveal" style="padding: 1.75rem; border-radius: 16px; background: rgba(22, 32, 58, 0.65); border: 1px solid var(--line); display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
+    <div class="glass-panel" style="padding: 1.5rem; border-radius: 16px; background: rgba(22, 32, 58, 0.65); border: 1px solid var(--line); display: flex; flex-direction: column; justify-content: space-between; min-height: 120px;">
       <div>
-        <span style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.05em;">Pending Payout</span>
-        <strong style="display: block; font-size: 2.2rem; color: #f59e0b; font-family: 'Outfit', sans-serif; margin-top: 0.5rem;">₹<%= wallet.pending_inr %></strong>
+        <span style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.05em;">Pending Earnings</span>
+        <strong style="display: block; font-size: 1.8rem; color: #f59e0b; font-family: 'Outfit', sans-serif; margin-top: 0.25rem;">₹<%= wallet.pending_inr %></strong>
       </div>
-      <span style="font-size: 0.8rem; color: var(--text-soft);">Currently processing in payouts queue</span>
+      <span style="font-size: 0.75rem; color: var(--text-soft);">Processing from escrow bookings</span>
     </div>
 
-    <!-- Total Earnings -->
-    <div class="glass-panel card-reveal" style="padding: 1.75rem; border-radius: 16px; background: rgba(22, 32, 58, 0.65); border: 1px solid var(--line); display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
+    <!-- Today's Earnings -->
+    <div class="glass-panel" style="padding: 1.5rem; border-radius: 16px; background: rgba(22, 32, 58, 0.65); border: 1px solid var(--line); display: flex; flex-direction: column; justify-content: space-between; min-height: 120px;">
       <div>
-        <span style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.05em;">Total Net Earnings</span>
-        <strong style="display: block; font-size: 2.2rem; color: #60a5fa; font-family: 'Outfit', sans-serif; margin-top: 0.5rem;">₹<%= wallet.total_earned_inr %></strong>
+        <span style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.05em;">Today's Revenue</span>
+        <strong style="display: block; font-size: 1.8rem; color: #a78bfa; font-family: 'Outfit', sans-serif; margin-top: 0.25rem;">₹<%= todayEarnings %></strong>
       </div>
-      <span style="font-size: 0.8rem; color: var(--text-soft);">15% Platform fee already deducted</span>
+      <span style="font-size: 0.75rem; color: var(--text-soft);">Net payout logged today</span>
+    </div>
+
+    <!-- Weekly Earnings -->
+    <div class="glass-panel" style="padding: 1.5rem; border-radius: 16px; background: rgba(22, 32, 58, 0.65); border: 1px solid var(--line); display: flex; flex-direction: column; justify-content: space-between; min-height: 120px;">
+      <div>
+        <span style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.05em;">Weekly Earnings</span>
+        <strong style="display: block; font-size: 1.8rem; color: #3b82f6; font-family: 'Outfit', sans-serif; margin-top: 0.25rem;">₹<%= weeklyEarnings %></strong>
+      </div>
+      <span style="font-size: 0.75rem; color: var(--text-soft);">Last 7 rolling days net</span>
+    </div>
+
+    <!-- Monthly Earnings -->
+    <div class="glass-panel" style="padding: 1.5rem; border-radius: 16px; background: rgba(22, 32, 58, 0.65); border: 1px solid var(--line); display: flex; flex-direction: column; justify-content: space-between; min-height: 120px;">
+      <div>
+        <span style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.05em;">Monthly Earnings</span>
+        <strong style="display: block; font-size: 1.8rem; color: #f43f5e; font-family: 'Outfit', sans-serif; margin-top: 0.25rem;">₹<%= monthlyEarnings %></strong>
+      </div>
+      <span style="font-size: 0.75rem; color: var(--text-soft);">Last 30 rolling days net</span>
+    </div>
+  </div>
+
+  <!-- Interactive Charts Card -->
+  <div class="glass-panel animate-fade-in" style="padding: 2rem; border-radius: 18px; background: rgba(22, 32, 58, 0.85); border: 1px solid var(--line); margin-bottom: 3rem;">
+    <h3 style="font-family: 'Outfit', sans-serif; color: #fff; margin-top: 0; margin-bottom: 1.5rem; font-size: 1.2rem; display: flex; align-items: center; gap: 0.5rem;">
+      📈 Revenue Growth Trend
+    </h3>
+    <div style="height: 280px; position: relative;">
+      <canvas id="earnings-history-chart"></canvas>
     </div>
   </div>
 
@@ -153,3 +207,79 @@
     </div>
   </div>
 </section>
+
+<!-- Load Chart.js from CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const rawEarnings = <%- JSON.stringify(earnings) %>;
+    // Sort chronologically and take last 10 points
+    const sorted = [...rawEarnings].sort((a,b) => new Date(a.created_at) - new Date(b.created_at)).slice(-10);
+    
+    const labels = sorted.map(e => {
+      const d = new Date(e.created_at);
+      return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    });
+    const netPayouts = sorted.map(e => e.net_amount_inr);
+
+    const ctx = document.getElementById('earnings-history-chart');
+    if (!ctx) return;
+
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels.length ? labels : ['No Payouts'],
+        datasets: [{
+          label: 'Net Earnings (₹)',
+          data: netPayouts.length ? netPayouts : [0],
+          borderColor: '#10b981',
+          backgroundColor: 'rgba(16, 185, 129, 0.12)',
+          borderWidth: 3,
+          fill: true,
+          tension: 0.4,
+          pointBackgroundColor: '#10b981',
+          pointBorderColor: '#fff',
+          pointHoverRadius: 7
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          }
+        },
+        scales: {
+          x: {
+            grid: {
+              color: 'rgba(255, 255, 255, 0.05)'
+            },
+            ticks: {
+              color: '#94a3b8',
+              font: {
+                family: 'Plus Jakarta Sans',
+                size: 11
+              }
+            }
+          },
+          y: {
+            grid: {
+              color: 'rgba(255, 255, 255, 0.05)'
+            },
+            ticks: {
+              color: '#94a3b8',
+              font: {
+                family: 'Plus Jakarta Sans',
+                size: 11
+              },
+              callback: function(val) {
+                return '₹' + val;
+              }
+            }
+          }
+        }
+      }
+    });
+  });
+</script>
