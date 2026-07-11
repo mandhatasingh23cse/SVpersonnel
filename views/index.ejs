@@ -2,8 +2,8 @@
   <div class="shell hero-grid">
     <div class="hero-copy" data-reveal>
       <p class="eyebrow"><%= homeContent.hero.eyebrow %></p>
-      <h1><%= homeContent.hero.title %></h1>
-      <p class="hero-description"><%= homeContent.hero.description %></p>
+      <h1><%= (typeof cmsSettings !== 'undefined' && cmsSettings && cmsSettings.heroTitle) ? cmsSettings.heroTitle : homeContent.hero.title %></h1>
+      <p class="hero-description"><%= (typeof cmsSettings !== 'undefined' && cmsSettings && cmsSettings.heroSubtitle) ? cmsSettings.heroSubtitle : homeContent.hero.description %></p>
 
       <div class="hero-actions">
         <a href="/findHelpNow" class="button button-primary">Find professionals</a>

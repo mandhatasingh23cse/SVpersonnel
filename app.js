@@ -9,6 +9,8 @@ const expressLayouts = require("express-ejs-layouts");
 const { body, param, validationResult } = require("express-validator");
 const sanitizeHtml = require("sanitize-html");
 const crypto = require("crypto");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
 
 const siteContent = require("./data/siteContent");
 const seedData = require("./data/mysqlSeed");
@@ -72,7 +74,16 @@ const {
   saveChatMessage,
   getChatHistory,
   markChatAsRead,
-  getUnreadChatCount
+  getUnreadChatCount,
+  resolveDispute,
+  createCoupon,
+  toggleCoupon,
+  deleteCoupon,
+  validateCoupon,
+  updateCmsSettings,
+  createServiceCategory,
+  updateServiceCategory,
+  deleteServiceCategory
 } = require("./lib/supabaseStore");
 
 const {
@@ -124,6 +135,32 @@ const upload = multer({
 });
 
 const app = express();
+
+// Security headers via Helmet (CSP disabled to allow inline EJS scripts, external CDN logos and Payment Gateway SDKs)
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false
+}));
+
+// Global Rate Limiter to protect against DDoS
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 1000, // limit each IP to 1000 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: "Too many requests from this IP, please try again after 15 minutes."
+});
+app.use(globalLimiter);
+
+// Specific Auth Rate Limiter against Brute Force Attacks on login/registration endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 auth attempts per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: "Too many authentication attempts. Please try again after 15 minutes."
+});
+app.use(["/login", "/register", "/admin/login", "/partner/login", "/client/login", "/professional/login"], authLimiter);
 
 const PORT = process.env.PORT || 3000;
 const SESSION_SECRET = process.env.SESSION_SECRET || "gigconnect-demo-secret";
@@ -183,6 +220,7 @@ app.use((req, res, next) => {
   res.locals.formatShortDate = formatShortDate;
   res.locals.formatStatusLabel = formatStatusLabel;
   res.locals.formatTimeSlot = formatTimeSlot;
+  res.locals.cmsSettings = global.cmsSettingsCache || { announcementBanner: "Welcome to GigConnect - India's Verified Manpower & Service Portal!", announcementActive: true };
   next();
 });
 
@@ -3359,6 +3397,138 @@ app.post(
     return res.redirect("/admin/dashboard");
   }
 );
+
+// --- PHASE 4: EXTENDED ADMIN DASHBOARD ROUTES ---
+
+// 1. Disputes Admin Manager
+app.post("/admin/disputes/:id/resolve", requireRole("admin"), async (req, res) => {
+  const disputeId = Number(req.params.id);
+  const { action, adminNotes, refundAmount } = req.body;
+  try {
+    await resolveDispute(disputeId, action, adminNotes || "", Number(refundAmount) || 0);
+    req.session.adminDashboardNotice = createFormNotice("success", `Dispute #${disputeId} resolved successfully (${action.toUpperCase()}).`);
+  } catch (error) {
+    req.session.adminDashboardNotice = createFormNotice("error", `Failed to resolve dispute: ${error.message}`);
+  }
+  return res.redirect("/admin/dashboard");
+});
+
+// 2. Coupons Admin Manager
+app.post("/admin/coupons", requireRole("admin"), async (req, res) => {
+  const { code, discount_type, discount_value, min_booking_amount_inr, max_discount_inr, expiry_date } = req.body;
+  if (!code || !code.trim()) {
+    req.session.adminDashboardNotice = createFormNotice("error", "Coupon code cannot be empty.");
+    return res.redirect("/admin/dashboard");
+  }
+  try {
+    await createCoupon({ code, discount_type, discount_value, min_booking_amount_inr, max_discount_inr, is_active: true, expiry_date: expiry_date || null });
+    req.session.adminDashboardNotice = createFormNotice("success", `Promo code '${code.trim().toUpperCase()}' created and activated.`);
+  } catch (error) {
+    req.session.adminDashboardNotice = createFormNotice("error", `Failed to create coupon: ${error.message}`);
+  }
+  return res.redirect("/admin/dashboard");
+});
+
+app.post("/admin/coupons/:id/toggle", requireRole("admin"), async (req, res) => {
+  const couponId = Number(req.params.id);
+  const isActive = req.body.isActive === "true";
+  try {
+    await toggleCoupon(couponId, isActive);
+    req.session.adminDashboardNotice = createFormNotice("success", `Coupon status updated.`);
+  } catch (error) {
+    req.session.adminDashboardNotice = createFormNotice("error", `Failed to update coupon status: ${error.message}`);
+  }
+  return res.redirect("/admin/dashboard");
+});
+
+app.post("/admin/coupons/:id/delete", requireRole("admin"), async (req, res) => {
+  const couponId = Number(req.params.id);
+  try {
+    await deleteCoupon(couponId);
+    req.session.adminDashboardNotice = createFormNotice("success", `Coupon deleted.`);
+  } catch (error) {
+    req.session.adminDashboardNotice = createFormNotice("error", `Failed to delete coupon: ${error.message}`);
+  }
+  return res.redirect("/admin/dashboard");
+});
+
+// Coupon validation API endpoint for checkout/bookings
+app.post("/api/coupons/validate", async (req, res) => {
+  const { code, bookingAmount } = req.body;
+  try {
+    const result = await validateCoupon(code, Number(bookingAmount) || 0);
+    return res.json(result);
+  } catch (err) {
+    return res.status(500).json({ valid: false, message: "Error validating coupon code." });
+  }
+});
+
+// 3. CMS Controller
+app.post("/admin/cms/update", requireRole("admin"), async (req, res) => {
+  try {
+    const updates = {
+      announcementBanner: req.body.announcementBanner || "",
+      announcementActive: req.body.announcementActive === "on" || req.body.announcementActive === "true",
+      heroTitle: req.body.heroTitle || "",
+      heroSubtitle: req.body.heroSubtitle || "",
+      supportEmail: req.body.supportEmail || "",
+      supportPhone: req.body.supportPhone || ""
+    };
+    await updateCmsSettings(updates);
+    if (updates.heroTitle && siteContent && siteContent.home && siteContent.home.hero) {
+      siteContent.home.hero.title = updates.heroTitle;
+      siteContent.home.hero.subtitle = updates.heroSubtitle;
+    }
+    req.session.adminDashboardNotice = createFormNotice("success", "Platform CMS configuration & announcement updated successfully!");
+  } catch (error) {
+    req.session.adminDashboardNotice = createFormNotice("error", `Failed to update CMS: ${error.message}`);
+  }
+  return res.redirect("/admin/dashboard");
+});
+
+// 4. Dynamic Categories (Services) Management
+app.post("/admin/services/create", requireRole("admin"), async (req, res) => {
+  const { name, slug, description, base_price_inr, icon_path } = req.body;
+  if (!name || !name.trim()) {
+    req.session.adminDashboardNotice = createFormNotice("error", "Service/Category name is required.");
+    return res.redirect("/admin/dashboard");
+  }
+  try {
+    const created = await createServiceCategory({ name, slug, description, base_price_inr, icon_path });
+    if (siteContent && siteContent.home && Array.isArray(siteContent.home.services)) {
+      if (!siteContent.home.services.some(s => s.name.toLowerCase() === created.name.toLowerCase())) {
+        siteContent.home.services.push({ name: created.name, icon: created.icon_path || "/assets/driver.png", description: created.description || "" });
+      }
+    }
+    req.session.adminDashboardNotice = createFormNotice("success", `Service category '${name.trim()}' added.`);
+  } catch (error) {
+    req.session.adminDashboardNotice = createFormNotice("error", `Failed to add service category: ${error.message}`);
+  }
+  return res.redirect("/admin/dashboard");
+});
+
+app.post("/admin/services/:id/update", requireRole("admin"), async (req, res) => {
+  const serviceId = Number(req.params.id);
+  const { name, base_price_inr, is_active, description } = req.body;
+  try {
+    await updateServiceCategory(serviceId, { name, base_price_inr, is_active: is_active === "true" || is_active === "on", description });
+    req.session.adminDashboardNotice = createFormNotice("success", "Service category updated.");
+  } catch (error) {
+    req.session.adminDashboardNotice = createFormNotice("error", `Failed to update category: ${error.message}`);
+  }
+  return res.redirect("/admin/dashboard");
+});
+
+app.post("/admin/services/:id/delete", requireRole("admin"), async (req, res) => {
+  const serviceId = Number(req.params.id);
+  try {
+    await deleteServiceCategory(serviceId);
+    req.session.adminDashboardNotice = createFormNotice("success", "Service category deactivated.");
+  } catch (error) {
+    req.session.adminDashboardNotice = createFormNotice("error", `Failed to deactivate category: ${error.message}`);
+  }
+  return res.redirect("/admin/dashboard");
+});
 
 app.get("/admin/profile", requireRole("admin"), async (req, res) => {
   if (!isDatabaseReady()) {

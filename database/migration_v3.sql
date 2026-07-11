@@ -54,3 +54,30 @@ CREATE TABLE IF NOT EXISTS chat_messages (
 CREATE INDEX IF NOT EXISTS idx_chat_messages_sender ON chat_messages (sender_role, sender_id);
 CREATE INDEX IF NOT EXISTS idx_chat_messages_receiver ON chat_messages (receiver_role, receiver_id);
 
+-- Add admin notes to disputes
+ALTER TABLE disputes ADD COLUMN IF NOT EXISTS admin_notes TEXT DEFAULT NULL;
+ALTER TABLE disputes ADD COLUMN IF NOT EXISTS resolved_at TIMESTAMPTZ DEFAULT NULL;
+
+-- Coupons Table
+CREATE TABLE IF NOT EXISTS coupons (
+  id SERIAL PRIMARY KEY,
+  code VARCHAR(50) UNIQUE NOT NULL,
+  discount_type VARCHAR(20) NOT NULL DEFAULT 'percentage', -- 'percentage' or 'flat'
+  discount_value INT NOT NULL,
+  min_booking_amount_inr INT DEFAULT 0,
+  max_discount_inr INT DEFAULT 0,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  expiry_date TIMESTAMPTZ DEFAULT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- CMS Content Table
+CREATE TABLE IF NOT EXISTS cms_content (
+  id SERIAL PRIMARY KEY,
+  key VARCHAR(100) UNIQUE NOT NULL,
+  title VARCHAR(255) DEFAULT NULL,
+  content TEXT DEFAULT NULL,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+

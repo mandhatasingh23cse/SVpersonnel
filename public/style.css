@@ -2989,6 +2989,27 @@ input:focus, select:focus, textarea:focus {
 .card-reveal:nth-child(3) { animation-delay: 0.2s; }
 .card-reveal:nth-child(4) { animation-delay: 0.3s; }
 .card-reveal:nth-child(5) { animation-delay: 0.4s; }
-.card-reveal:nth-child(6) { animation-delay: 0.5s; }
+/* Responsive Admin Dashboard & Mobile Viewport Polish */
+@media (max-width: 768px) {
+  .admin-tab-content > div {
+    padding: 1.25rem !important;
+  }
+  .admin-tab-content table {
+    font-size: 0.82rem !important;
+  }
+  .admin-tab-content form {
+    padding: 1.25rem !important;
+  }
+  .admin-tab-content div[style*="grid-template-columns: repeat(auto-fit"] {
+    grid-template-columns: 1fr !important;
+  }
+  .admin-tab-content div[style*="grid-template-columns: 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+  .announcement-banner {
+    font-size: 0.8rem !important;
+    padding: 0.5rem !important;
+  }
+}
 
 
