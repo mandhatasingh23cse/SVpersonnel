@@ -152,6 +152,12 @@ button {
   padding: 48px 0;
 }
 
+.section,
+.section-heading,
+section[id] {
+  scroll-margin-top: 90px;
+}
+
 .page-hero {
   padding: 24px 0 12px;
 }
@@ -1802,11 +1808,21 @@ select[multiple] option {
   margin: 0;
 }
 
-.booking-layout {
+.booking-layout,
+.partner-dashboard-grid,
+.professional-revenue-grid,
+.admin-dashboard-grid {
   display: grid;
   grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
   gap: 22px;
   align-items: start;
+}
+
+.rates-input-grid,
+.builder-select-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
 }
 
 .booking-summary,
@@ -2223,7 +2239,23 @@ select[multiple] option {
 
 @media (max-width: 820px) {
   .site-header {
-    padding-top: 12px;
+    padding-top: 0;
+    padding-bottom: 0;
+    background: rgba(8, 13, 26, 0.94);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--line);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+  }
+
+  .site-header .navbar.glass-shell {
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    padding: 12px 0;
+    border-radius: 0;
   }
 
   .nav-toggle {
@@ -2232,18 +2264,20 @@ select[multiple] option {
 
   .nav-panel {
     position: absolute;
-    top: calc(100% + 10px);
+    top: 100%;
     left: 0;
     right: 0;
     display: none;
     flex-direction: column;
     align-items: stretch;
     gap: 16px;
-    padding: 18px;
-    border: 1px solid var(--line);
-    border-radius: 24px;
-    background: rgba(15, 23, 42, 0.95);
-    backdrop-filter: blur(12px);
+    padding: 20px;
+    border: none;
+    border-bottom: 1px solid var(--line);
+    border-radius: 0 0 24px 24px;
+    background: rgba(10, 15, 30, 0.98);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     box-shadow: var(--shadow-lg);
   }
 
@@ -2272,8 +2306,29 @@ select[multiple] option {
   .testimonial-grid,
   .dashboard-metrics,
   .results-grid,
-  .footer-grid {
+  .booking-layout,
+  .partner-dashboard-grid,
+  .professional-revenue-grid,
+  .admin-dashboard-grid,
+  .rates-input-grid,
+  .builder-select-grid {
     grid-template-columns: 1fr;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 32px 20px;
+  }
+
+  .footer-brand-block {
+    grid-column: 1 / -1;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .footer-column a {
+    display: inline-block;
+    padding: 4px 0;
   }
 
   .footer-band,

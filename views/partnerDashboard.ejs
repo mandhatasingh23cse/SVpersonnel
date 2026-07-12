@@ -68,7 +68,7 @@
     </div>
   </div>
 
-  <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 3rem; align-items: start; margin-bottom: 4rem;">
+  <div class="partner-dashboard-grid">
     <!-- LEFT PANEL: Manage Professionals & Bookings -->
     <div style="display: flex; flex-direction: column; gap: 3rem;">
       
@@ -78,7 +78,7 @@
         <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 2rem;">Create verified credentials for staff working directly under your agency franchise.</p>
 
         <form action="/partner/professionals/create" method="POST" style="display: flex; flex-direction: column; gap: 1.25rem;">
-          <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+          <div class="form-row">
             <label class="field-group" style="display: flex; flex-direction: column; gap: 0.4rem;">
               <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-soft);">Full Name</span>
               <input type="text" name="fullname" required placeholder="Staff Full Name" style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; color: #fff;">
@@ -89,7 +89,7 @@
             </label>
           </div>
 
-          <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+          <div class="form-row">
             <label class="field-group" style="display: flex; flex-direction: column; gap: 0.4rem;">
               <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-soft);">Email Address <small style="color: #94a3b8; font-weight: normal;">(Optional)</small></span>
               <input type="email" name="email" placeholder="Optional (e.g. staff@example.com)" style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; color: #fff;">
@@ -100,7 +100,7 @@
             </label>
           </div>
 
-          <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+          <div class="form-row">
             <label class="field-group" style="display: flex; flex-direction: column; gap: 0.4rem;">
               <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-soft);">City</span>
               <input type="text" name="city" required value="<%= dashboardData.partner.city %>" style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; color: #fff;">
@@ -111,7 +111,7 @@
             </label>
           </div>
 
-          <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+          <div class="form-row">
             <label class="field-group" style="display: flex; flex-direction: column; gap: 0.4rem;">
               <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-soft);">Experience (Years)</span>
               <input type="number" name="experience" required min="0" placeholder="Years of experience" style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; color: #fff;">
@@ -136,7 +136,7 @@
               </label>
             </div>
             
-            <div id="ratesInputContainer" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+            <div id="ratesInputContainer" class="rates-input-grid">
               <label id="partTimeRateGroup" class="field-group" style="display: none; flex-direction: column; gap: 0.4rem;">
                 <span style="font-size: 0.82rem; font-weight: 600; color: #c084fc;">Part Time Base Rate (₹ / Hour or Day)</span>
                 <input type="number" name="partTimeRate" id="inputPartTimeRate" min="50" placeholder="e.g. 500" style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; color: #fff;">
@@ -156,7 +156,7 @@
             </div>
 
             <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 1.15rem; display: flex; flex-direction: column; gap: 1rem;">
-              <div style="display: grid; grid-template-columns: 1.6fr 1fr; gap: 1rem; align-items: end;">
+              <div class="builder-select-grid">
                 <label style="display: flex; flex-direction: column; gap: 0.4rem;">
                   <span style="font-size: 0.8rem; font-weight: 600; color: #f8fafc;">1. Select Main Category</span>
                   <select id="builderCategorySelect" class="form-select" style="background: #1e293b; border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; color: #fff;">
