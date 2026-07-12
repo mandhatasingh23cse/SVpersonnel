@@ -2,8 +2,8 @@
   <div class="shell hero-grid">
     <div class="hero-copy" data-reveal>
       <p class="eyebrow"><%= homeContent.hero.eyebrow %></p>
-      <h1><%= homeContent.hero.title %></h1>
-      <p class="hero-description"><%= homeContent.hero.description %></p>
+      <h1><%= (typeof cmsSettings !== 'undefined' && cmsSettings && cmsSettings.heroTitle) ? cmsSettings.heroTitle : homeContent.hero.title %></h1>
+      <p class="hero-description"><%= (typeof cmsSettings !== 'undefined' && cmsSettings && cmsSettings.heroSubtitle) ? cmsSettings.heroSubtitle : homeContent.hero.description %></p>
 
       <div class="hero-actions">
         <a href="/findHelpNow" class="button button-primary">Find professionals</a>
@@ -17,42 +17,65 @@
       </div>
     </div>
 
-    <form class="hero-search-card glass-panel tilt-3d" action="/findHelpNow" method="GET" data-reveal>
+    <form class="hero-search-card glass-panel" action="/findHelpNow" method="GET" data-reveal id="quick-search-form">
       <p class="card-kicker">Quick search</p>
       <h2>Start with what you need.</h2>
 
+      <!-- 1. Select Category -->
       <label class="field-group">
-        <span>Service or professional</span>
-        <input
-          type="text"
-          name="skill"
-          placeholder="<%= homeContent.hero.searchPlaceholder %>"
-          autocomplete="off"
-        >
+        <span>Select Category</span>
+        <select name="category" id="search-category-select" class="form-input" style="width: 100%; padding: 0.75rem 1rem; border-radius: 12px; background: rgba(15, 23, 42, 0.9); color: #fff; border: 1px solid rgba(255,255,255,0.15); font-size: 0.95rem; cursor: pointer;">
+          <option value="">All Categories</option>
+          <% if (homeContent.ottCategories) { %>
+            <% homeContent.ottCategories.forEach(function (cat) { %>
+              <option value="<%= cat.title %>" data-items="<%= encodeURIComponent(JSON.stringify(cat.items || [])) %>"><%= cat.title %></option>
+            <% }) %>
+          <% } %>
+        </select>
       </label>
 
-      <label class="field-group">
+      <!-- 2. Select Sub-Category (list given) -->
+      <label class="field-group" style="margin-top: 1rem;">
+        <span>Select Sub-Category</span>
+        <select name="skill" id="search-skill-select" class="form-input" style="width: 100%; padding: 0.75rem 1rem; border-radius: 12px; background: rgba(15, 23, 42, 0.9); color: #fff; border: 1px solid rgba(255,255,255,0.15); font-size: 0.95rem; cursor: pointer;">
+          <option value="">All Sub-Categories</option>
+          <% if (homeContent.ottCategories) { %>
+            <% homeContent.ottCategories.forEach(function (cat) { %>
+              <% (cat.items || []).forEach(function (item) { %>
+                <option value="<%= item.name %>"><%= item.name %> (<%= cat.title.replace(/^\d+\.\s*/, '') %>)</option>
+              <% }) %>
+            <% }) %>
+          <% } %>
+        </select>
+      </label>
+
+      <!-- 3. Part Time or Full Time -->
+      <label class="field-group" style="margin-top: 1rem;">
+        <span>Work Type</span>
+        <select name="jobType" class="form-input" style="width: 100%; padding: 0.75rem 1rem; border-radius: 12px; background: rgba(15, 23, 42, 0.9); color: #fff; border: 1px solid rgba(255,255,255,0.15); font-size: 0.95rem; cursor: pointer;">
+          <option value="">Both / Flexible</option>
+          <option value="Full Time">Full Time</option>
+          <option value="Part Time">Part Time</option>
+        </select>
+      </label>
+
+      <!-- 4. Location -->
+      <label class="field-group" style="margin-top: 1rem;">
         <span>Location</span>
         <input
           type="text"
           name="city"
           value="<%= brand.city %>"
-          placeholder="<%= homeContent.hero.locationPlaceholder %>"
+          placeholder="Enter city (e.g., All India, Mumbai, Delhi...)"
           autocomplete="off"
+          class="form-input"
+          style="width: 100%; padding: 0.75rem 1rem; border-radius: 12px; background: rgba(15, 23, 42, 0.9); color: #fff; border: 1px solid rgba(255,255,255,0.15); font-size: 0.95rem;"
         >
       </label>
 
-      <div class="chip-picker">
-        <% homeContent.hero.quickSearches.forEach(function (item) { %>
-          <button type="button" class="chip-button" data-fill-target="skill" data-fill-value="<%= item %>">
-            <%= item %>
-          </button>
-        <% }) %>
-      </div>
+      <button type="submit" class="button button-primary button-block" style="margin-top: 1.25rem;">Search Professionals ›</button>
 
-      <button type="submit" class="button button-primary button-block">Search now</button>
-
-      <div class="hero-stats">
+      <div class="hero-stats" style="margin-top: 1.25rem;">
         <% homeContent.hero.stats.forEach(function (stat) { %>
           <div class="stat-card">
             <strong><%= stat.value %></strong>
@@ -66,30 +89,51 @@
 
 <section class="section shell">
   <div class="section-heading" data-reveal>
-    <p class="eyebrow">Popular services</p>
-    <h2>Browse the categories people search most.</h2>
+    <p class="eyebrow">Hotstar-Style Professionals Hub</p>
+    <h2>Explore 15 specialized categories across India.</h2>
   </div>
 
-  <div class="service-grid">
-    <% homeContent.services.forEach(function (service) { %>
-      <a class="service-card glass-panel tilt-3d" data-reveal href="/findHelpNow?skill=<%= encodeURIComponent(service.name) %>&city=<%= encodeURIComponent(brand.city) %>">
-        <div class="service-icon-wrap">
-          <img src="<%= service.icon %>" alt="<%= service.name %>">
-        </div>
-        <h3><%= service.name %></h3>
-        <p><%= service.description %></p>
-        <% if (service.priceLabel || service.meta) { %>
-          <div class="service-meta">
-            <% if (service.priceLabel) { %>
-              <span><%= service.priceLabel %></span>
-            <% } %>
-            <% if (service.meta) { %>
-              <span><%= service.meta %></span>
-            <% } %>
+  <div class="ott-hub">
+    <% if (homeContent.ottCategories && homeContent.ottCategories.length) { %>
+      <% homeContent.ottCategories.forEach(function (category, catIndex) { %>
+        <div class="ott-section" data-reveal>
+          <div class="ott-header">
+            <div class="ott-title-box">
+              <span class="ott-icon"><%= category.headerIcon %></span>
+              <h3 class="ott-title"><%= category.title %></h3>
+              <span class="ott-badge" style="background: <%= category.badgeColor || 'var(--accent)' %>;"><%= category.badge || 'POPULAR' %></span>
+            </div>
+            <div class="ott-controls">
+              <button class="ott-arrow ott-prev" type="button" aria-label="Scroll left" data-tray-id="ott-tray-<%= category.id || catIndex %>">‹</button>
+              <button class="ott-arrow ott-next" type="button" aria-label="Scroll right" data-tray-id="ott-tray-<%= category.id || catIndex %>">›</button>
+            </div>
           </div>
-        <% } %>
-      </a>
-    <% }) %>
+
+          <div class="ott-tray-container">
+            <div class="ott-tray" id="ott-tray-<%= category.id || catIndex %>">
+              <% (category.items || []).forEach(function (item) { %>
+                <a class="ott-card" href="/findHelpNow?skill=<%= encodeURIComponent(item.name) %>&city=<%= encodeURIComponent(brand.city) %>">
+                  <div class="ott-card-top">
+                    <span class="ott-card-tag"><%= item.tag || 'TOP 10' %></span>
+                    <span class="ott-card-pill">Instant Hire</span>
+                  </div>
+                  <div class="ott-card-icon-wrapper">
+                    <span><%= item.icon || '💼' %></span>
+                  </div>
+                  <div class="ott-card-content">
+                    <h4 class="ott-card-title"><%= item.name %></h4>
+                    <p class="ott-card-desc"><%= item.desc || 'Verified staff available across India' %></p>
+                  </div>
+                  <div class="ott-card-footer">
+                    <span class="ott-card-action">Explore & Hire ›</span>
+                  </div>
+                </a>
+              <% }) %>
+            </div>
+          </div>
+        </div>
+      <% }) %>
+    <% } %>
   </div>
 </section>
 
@@ -152,48 +196,49 @@
 </section>
 
 <section class="section shell">
-  <div class="section-heading" data-reveal>
-    <p class="eyebrow">Verified All India Manpower</p>
-    <h2>Professionals and verified staff ready across India.</h2>
-  </div>
+  <div class="ott-section" data-reveal>
+    <div class="ott-header">
+      <div class="ott-title-box">
+        <span class="ott-icon">🔥</span>
+        <h3 class="ott-title">Top Featured Profiles across India</h3>
+        <span class="ott-badge" style="background: linear-gradient(135deg, #ec4899, #8b5cf6);">TOP 10</span>
+      </div>
+      <div class="ott-controls">
+        <button class="ott-arrow ott-prev" type="button" aria-label="Scroll left" data-tray-id="ott-tray-featured">‹</button>
+        <button class="ott-arrow ott-next" type="button" aria-label="Scroll right" data-tray-id="ott-tray-featured">›</button>
+      </div>
+    </div>
 
-  <div class="featured-worker-grid">
-    <% featuredWorkers.forEach(function (worker) { const skills = Array.isArray(worker.skills) ? worker.skills : []; const rawPhone = String(worker.phone || worker.contact || ""); const phoneDigits = rawPhone.replace(/[^\d]/g, ""); const phoneDisplay = phoneDigits.length === 10 ? `+91 ${phoneDigits.slice(0, 5)} ${phoneDigits.slice(5)}` : rawPhone; const emailDisplay = String(worker.email || ""); const hasDirectContact = Boolean(phoneDisplay || emailDisplay); const contactPanelId = `featured-contact-${worker.id || worker._id}`; %>
-      <article class="worker-preview glass-panel" data-reveal>
-        <div class="worker-preview-head">
-          <img src="<%= encodeURI(worker.photo) %>" alt="<%= worker.name %>" class="worker-preview-avatar">
-          <div>
-            <h3><%= worker.name %></h3>
-            <p><%= worker.city %></p>
+    <div class="ott-tray-container">
+      <div class="ott-tray" id="ott-tray-featured">
+        <% featuredWorkers.forEach(function (worker, idx) { const skills = Array.isArray(worker.skills) ? worker.skills : []; %>
+          <div class="ott-card" style="min-width: 260px; flex: 0 0 260px;">
+            <div class="ott-card-top">
+              <span class="ott-card-tag" style="background: linear-gradient(135deg, #f43f5e, #ec4899);">TOP #<%= idx + 1 %></span>
+              <span class="ott-card-pill"><%= worker.isVerified ? 'Verified ★' : 'New' %></span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px; z-index: 1;">
+              <img src="<%= encodeURI(worker.photo) %>" alt="<%= worker.name %>" style="width: 52px; height: 52px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent);">
+              <div style="text-align: left;">
+                <h4 class="ott-card-title" style="margin: 0; font-size: 1.05rem;"><%= worker.name %></h4>
+                <p style="margin: 2px 0 0 0; font-size: 0.8rem; color: var(--text-soft);"><%= worker.city %></p>
+              </div>
+            </div>
+            <div class="ott-card-content" style="text-align: left; margin-bottom: 12px;">
+              <p class="ott-card-desc" style="margin-bottom: 6px;"><%= worker.experience %> yrs exp | ★ <%= Number(worker.ratings || 0).toFixed(1) %></p>
+              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <% skills.slice(0, 2).forEach(function (skill) { %>
+                  <span style="font-size: 0.7rem; background: rgba(255,255,255,0.08); padding: 2px 8px; border-radius: 4px; color: #fff;"><%= skill %></span>
+                <% }) %>
+              </div>
+            </div>
+            <div class="ott-card-footer">
+              <a href="/book-service/<%= worker.id || worker._id %>" class="button button-primary" style="padding: 6px 12px; font-size: 0.8rem; width: 100%; text-align: center;">Book Now</a>
+            </div>
           </div>
-        </div>
-
-        <div class="worker-preview-badges">
-          <span class="result-badge is-rating"><%= Number(worker.ratings || 0).toFixed(1) %> / 5</span>
-          <% if (worker.isVerified) { %>
-            <span class="result-badge is-verified">Verified</span>
-          <% } else { %>
-            <span class="result-badge">New profile</span>
-          <% } %>
-        </div>
-
-        <p class="worker-preview-meta"><%= worker.experience %> years experience | <%= worker.distance %> km away</p>
-        <% if (worker.startingPrice) { %>
-          <p class="worker-preview-rate">Starts at <%= formatCurrency(worker.startingPrice) %></p>
-        <% } %>
-
-        <div class="worker-preview-skills">
-          <% skills.slice(0, 3).forEach(function (skill) { %>
-            <span class="skill-tag"><%= skill %></span>
-          <% }) %>
-        </div>
-
-        <div class="worker-preview-actions">
-          <a href="/book-service/<%= worker.id || worker._id %>" class="button button-primary">Book now</a>
-          <a href="/findHelpNow?skill=<%= encodeURIComponent(skills[0] || worker.name) %>&city=<%= encodeURIComponent(worker.city) %>" class="button button-secondary">View similar</a>
-        </div>
-      </article>
-    <% }) %>
+        <% }) %>
+      </div>
+    </div>
   </div>
 </section>
 

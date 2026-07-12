@@ -212,8 +212,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
             <div class="result-meta">
               <span>${escapeHtml(String(worker.experience || 0))} years experience</span>
-              <span>${escapeHtml(String(worker.distance || 0))} km away</span>
-              <span>Starts at ${escapeHtml(priceLabel)}</span>
+              <span>Work: Part Time / Full Time</span>
+              <span style="color: #a78bfa; font-weight: 600;">Negotiable / Fixed</span>
             </div>
 
             <div class="result-skills">
@@ -336,6 +336,27 @@ document.addEventListener("DOMContentLoaded", () => {
       });
   }
 
+  cityInput.addEventListener("input", async () => {
+    const val = cityInput.value.trim();
+    const infoBadge = document.getElementById("pincode-location-info");
+    if (infoBadge) infoBadge.textContent = "";
+    if (val.length === 6 && !isNaN(val)) {
+      if (infoBadge) infoBadge.textContent = "⌛ Looking up Pincode...";
+      try {
+        const res = await fetch(`https://api.postalpincode.in/pincode/${val}`);
+        const data = await res.json();
+        if (data && data[0] && data[0].Status === "Success" && data[0].PostOffice) {
+          const po = data[0].PostOffice[0];
+          if (infoBadge) infoBadge.textContent = `📍 Pincode ${val}: ${po.District || po.Division}, ${po.State}`;
+        } else if (infoBadge) {
+          infoBadge.textContent = "❌ Pincode not found";
+        }
+      } catch (e) {
+        if (infoBadge) infoBadge.textContent = "";
+      }
+    }
+  });
+
   searchLocationBtn.addEventListener("click", () => {
     if (!navigator.geolocation) {
       fetchIpLocationSearch();
@@ -351,13 +372,17 @@ document.addEventListener("DOMContentLoaded", () => {
         const lng = position.coords.longitude;
 
         // Reverse geocode via OpenStreetMap Nominatim
-        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&addressdetails=1&lat=${lat}&lon=${lng}`)
           .then(res => res.json())
           .then(data => {
             if (data && data.address) {
-              const city = data.address.city || data.address.town || data.address.village || data.address.suburb || "Nearby";
+              const city = data.address.city || data.address.town || data.address.village || data.address.suburb || data.address.postcode || "Nearby";
               cityInput.value = city;
               state.city = city;
+              const infoBadge = document.getElementById("pincode-location-info");
+              if (infoBadge && data.address.postcode) {
+                infoBadge.textContent = `📍 Exact Area: ${data.address.suburb || data.address.neighbourhood || city} (${data.address.postcode})`;
+              }
             } else {
               cityInput.value = "Nearby";
               state.city = "Nearby";

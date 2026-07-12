@@ -1,0 +1,517 @@
+<section class="page-hero">
+  <div class="shell page-hero-content" style="position: relative;">
+    <span class="eyebrow" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); padding: 3px 10px; border-radius: 6px; font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">SV Agency Workspace</span>
+    <h1 style="font-family: 'Outfit', sans-serif; font-size: 2.5rem; color: #fff; margin-top: 0.5rem;"><%= dashboardData.partner.business_name %></h1>
+    <p>City: <%= dashboardData.partner.city %> | Registered as: <%= dashboardData.partner.full_name %> (<%= dashboardData.partner.username %>)</p>
+  </div>
+</section>
+
+<section class="section shell">
+  <%- include("partials/notice") %>
+
+  <!-- Status Alert Banner -->
+  <% if (!dashboardData.partner.is_verified) { %>
+    <div class="glass-panel animate-fade-in" style="padding: 1.5rem 2rem; border-radius: 12px; border: 1px solid rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.08); margin-bottom: 2.5rem; display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap;">
+      <span style="font-size: 2.2rem; align-self: center;">⏳</span>
+      <div style="flex: 1; min-width: 250px;">
+        <h3 style="color: #fca5a5; margin: 0 0 0.25rem; font-size: 1.1rem; font-weight: 700;">Safety Verification Review Pending</h3>
+        <p style="color: #f3f4f6; font-size: 0.88rem; margin: 0; line-height: 1.4;">
+          Your agency credentials (GST, PAN, selfie) are under review by our administrator. While pending, you can add professionals, but client bookings and payouts are locked until verified.
+        </p>
+      </div>
+    </div>
+  <% } else { %>
+    <div class="glass-panel animate-fade-in" style="padding: 1.25rem 2rem; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.06); margin-bottom: 2.5rem; display: flex; align-items: center; gap: 1.25rem;">
+      <span style="font-size: 1.8rem; color: #34d399;">✓</span>
+      <div>
+        <h3 style="color: #a7f3d0; margin: 0; font-size: 1.05rem; font-weight: 700;">Verified SV Agency Partner Profile Active</h3>
+      </div>
+    </div>
+  <% } %>
+
+  <!-- Overview Stats Grid -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
+    <!-- Available Balance -->
+    <div class="glass-panel card-reveal" style="padding: 1.75rem; border-radius: 16px; background: rgba(22, 32, 58, 0.65); border: 1px solid var(--line); display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
+      <div>
+        <span style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.05em;">Available Balance</span>
+        <strong style="display: block; font-size: 2.2rem; color: #34d399; font-family: 'Outfit', sans-serif; margin-top: 0.5rem;">₹<%= dashboardData.wallet.available_inr %></strong>
+      </div>
+      <span style="font-size: 0.8rem; color: var(--text-soft);">Available for weekly payout request</span>
+    </div>
+
+    <!-- Platform Withheld (Pending) -->
+    <div class="glass-panel card-reveal" style="padding: 1.75rem; border-radius: 16px; background: rgba(22, 32, 58, 0.65); border: 1px solid var(--line); display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
+      <div>
+        <span style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.05em;">Pending Payout</span>
+        <strong style="display: block; font-size: 2.2rem; color: #f59e0b; font-family: 'Outfit', sans-serif; margin-top: 0.5rem;">₹<%= dashboardData.wallet.pending_inr %></strong>
+      </div>
+      <span style="font-size: 0.8rem; color: var(--text-soft);">Currently processing in withdrawals</span>
+    </div>
+
+    <!-- Total Agency Earnings -->
+    <div class="glass-panel card-reveal" style="padding: 1.75rem; border-radius: 16px; background: rgba(22, 32, 58, 0.65); border: 1px solid var(--line); display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
+      <div>
+        <span style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.05em;">Total Net Earned</span>
+        <strong style="display: block; font-size: 2.2rem; color: #60a5fa; font-family: 'Outfit', sans-serif; margin-top: 0.5rem;">₹<%= dashboardData.wallet.total_earned_inr %></strong>
+      </div>
+      <span style="font-size: 0.8rem; color: var(--text-soft);">15% Platform fee already deducted</span>
+    </div>
+
+    <!-- Managed Professionals Count -->
+    <div class="glass-panel card-reveal" style="padding: 1.75rem; border-radius: 16px; background: rgba(22, 32, 58, 0.65); border: 1px solid var(--line); display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
+      <div>
+        <span style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.05em;">Professionals Managed</span>
+        <strong style="display: block; font-size: 2.2rem; color: #c084fc; font-family: 'Outfit', sans-serif; margin-top: 0.5rem;"><%= dashboardData.professionals.length %></strong>
+      </div>
+      <span style="font-size: 0.8rem; color: var(--text-soft);">Inducted and verified under agency</span>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 3rem; align-items: start; margin-bottom: 4rem;">
+    <!-- LEFT PANEL: Manage Professionals & Bookings -->
+    <div style="display: flex; flex-direction: column; gap: 3rem;">
+      
+      <!-- Section 1: Register New Professional (Under Partner) -->
+      <div class="glass-panel" style="padding: 2.5rem; border-radius: var(--radius-xl); background: rgba(22, 32, 58, 0.85); border: 1px solid var(--line-strong);">
+        <h2 style="font-family: 'Outfit', sans-serif; color: #fff; margin: 0 0 0.25rem;">Register Professional Under Agency</h2>
+        <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 2rem;">Create verified credentials for staff working directly under your agency franchise.</p>
+
+        <form action="/partner/professionals/create" method="POST" style="display: flex; flex-direction: column; gap: 1.25rem;">
+          <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+            <label class="field-group" style="display: flex; flex-direction: column; gap: 0.4rem;">
+              <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-soft);">Full Name</span>
+              <input type="text" name="fullname" required placeholder="Staff Full Name" style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; color: #fff;">
+            </label>
+            <label class="field-group" style="display: flex; flex-direction: column; gap: 0.4rem;">
+              <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-soft);">Select Username</span>
+              <input type="text" name="username" required placeholder="unique_staff_username" style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; color: #fff;">
+            </label>
+          </div>
+
+          <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+            <label class="field-group" style="display: flex; flex-direction: column; gap: 0.4rem;">
+              <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-soft);">Email Address <small style="color: #94a3b8; font-weight: normal;">(Optional)</small></span>
+              <input type="email" name="email" placeholder="Optional (e.g. staff@example.com)" style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; color: #fff;">
+            </label>
+            <label class="field-group" style="display: flex; flex-direction: column; gap: 0.4rem;">
+              <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-soft);">Phone Number</span>
+              <input type="tel" name="phone" required placeholder="Phone number" style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; color: #fff;">
+            </label>
+          </div>
+
+          <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+            <label class="field-group" style="display: flex; flex-direction: column; gap: 0.4rem;">
+              <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-soft);">City</span>
+              <input type="text" name="city" required value="<%= dashboardData.partner.city %>" style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; color: #fff;">
+            </label>
+            <label class="field-group" style="display: flex; flex-direction: column; gap: 0.4rem;">
+              <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-soft);">Area / Locality</span>
+              <input type="text" name="area" placeholder="Locality or sector name" style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; color: #fff;">
+            </label>
+          </div>
+
+          <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+            <label class="field-group" style="display: flex; flex-direction: column; gap: 0.4rem;">
+              <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-soft);">Experience (Years)</span>
+              <input type="number" name="experience" required min="0" placeholder="Years of experience" style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; color: #fff;">
+            </label>
+            <label class="field-group" style="display: flex; flex-direction: column; gap: 0.4rem;">
+              <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-soft);">Log-in Password</span>
+              <input type="password" name="password" required placeholder="Staff password" style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; color: #fff;">
+            </label>
+          </div>
+
+          <!-- Work Schedule Option & Base Rates -->
+          <div style="background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem;">
+            <span style="font-size: 0.88rem; font-weight: 700; color: #38bdf8; display: block;">Step 1: Work Schedule &amp; Base Rates</span>
+            <div style="display: flex; gap: 1.75rem; flex-wrap: wrap;">
+              <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.92rem; color: #fff; cursor: pointer; font-weight: 600;">
+                <input type="checkbox" name="workSchedule" value="Part Time" id="chkPartTime" style="width: 18px; height: 18px; cursor: pointer;">
+                <span>Part Time Available</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.92rem; color: #fff; cursor: pointer; font-weight: 600;">
+                <input type="checkbox" name="workSchedule" value="Full Time" id="chkFullTime" style="width: 18px; height: 18px; cursor: pointer;">
+                <span>Full Time Available</span>
+              </label>
+            </div>
+            
+            <div id="ratesInputContainer" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+              <label id="partTimeRateGroup" class="field-group" style="display: none; flex-direction: column; gap: 0.4rem;">
+                <span style="font-size: 0.82rem; font-weight: 600; color: #c084fc;">Part Time Base Rate (₹ / Hour or Day)</span>
+                <input type="number" name="partTimeRate" id="inputPartTimeRate" min="50" placeholder="e.g. 500" style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; color: #fff;">
+              </label>
+              <label id="fullTimeRateGroup" class="field-group" style="display: none; flex-direction: column; gap: 0.4rem;">
+                <span style="font-size: 0.82rem; font-weight: 600; color: #34d399;">Full Time Base Rate (₹ / Month)</span>
+                <input type="number" name="fullTimeRate" id="inputFullTimeRate" min="500" placeholder="e.g. 25000" style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; color: #fff;">
+              </label>
+            </div>
+          </div>
+
+          <!-- Interactive Service Category, Subcategories & Skill Rates Assignment Builder -->
+          <div style="background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem;">
+            <div>
+              <span style="font-size: 0.88rem; font-weight: 700; color: #38bdf8; display: block;">Step 2: Assign Service Categories, Subcategories &amp; Custom Skill Rates</span>
+              <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0.25rem 0 0;">Select a main category to view its exact subcategories/skills. You can add multiple categories with distinct rates and even type custom skills!</p>
+            </div>
+
+            <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 1.15rem; display: flex; flex-direction: column; gap: 1rem;">
+              <div style="display: grid; grid-template-columns: 1.6fr 1fr; gap: 1rem; align-items: end;">
+                <label style="display: flex; flex-direction: column; gap: 0.4rem;">
+                  <span style="font-size: 0.8rem; font-weight: 600; color: #f8fafc;">1. Select Main Category</span>
+                  <select id="builderCategorySelect" class="form-select" style="background: #1e293b; border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; color: #fff;">
+                    <option value="">-- Select Service Category --</option>
+                    <% services.forEach(function(svc) { %>
+                      <option value="<%= svc.id %>" data-name="<%= svc.name %>" data-subskills='<%= JSON.stringify(svc.subskills || []) %>'><%= svc.name %></option>
+                    <% }) %>
+                  </select>
+                </label>
+                <label style="display: flex; flex-direction: column; gap: 0.4rem;">
+                  <span style="font-size: 0.8rem; font-weight: 600; color: #f8fafc;">3. Custom Rate for this Skill (₹)</span>
+                  <input type="number" id="builderRateInput" placeholder="e.g. 500 / hr or 18000 / mo" style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; color: #fff;">
+                </label>
+              </div>
+
+              <div>
+                <span style="font-size: 0.8rem; font-weight: 600; color: #f8fafc; display: block; margin-bottom: 0.5rem;">2. Select Subcategories / Subskills</span>
+                <div id="builderSubskillsBox" style="display: flex; flex-wrap: wrap; gap: 0.5rem; min-height: 44px; background: rgba(255,255,255,0.02); border: 1px dashed rgba(255,255,255,0.15); border-radius: 8px; padding: 10px;">
+                  <span style="font-size: 0.8rem; color: #64748b;">Select a category above to load exact subcategories...</span>
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+                <input type="text" id="builderCustomSkillInput" placeholder="+ Want to add more skill? Type custom subskill & press Add..." style="flex: 1; min-width: 260px; background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; color: #fff; font-size: 0.85rem;">
+                <button type="button" id="btnAddCustomSubskill" class="button button-outline" style="padding: 10px 16px; border-radius: 8px; font-size: 0.82rem; border-color: #38bdf8; color: #38bdf8; white-space: nowrap; cursor: pointer;">+ Add Custom Subskill</button>
+              </div>
+
+              <button type="button" id="btnAddSkillToStaff" class="button button-primary" style="background: linear-gradient(135deg, #0284c7, #0369a1); border: 1px solid rgba(56,189,248,0.4); font-weight: bold; border-radius: 8px; padding: 11px 16px; font-size: 0.92rem; cursor: pointer; color: #fff; align-self: flex-start; margin-top: 0.25rem;">
+                + Add Category &amp; Subskills to Staff
+              </button>
+            </div>
+
+            <!-- Assigned Skills Table -->
+            <div>
+              <span style="font-size: 0.85rem; font-weight: 700; color: #f8fafc; display: block; margin-bottom: 0.5rem;">Assigned Skills &amp; Rates for this Staff Member:</span>
+              <div id="assignedSkillsContainer" style="display: flex; flex-direction: column; gap: 0.6rem;">
+                <p id="noSkillsNotice" style="font-size: 0.82rem; color: #64748b; margin: 0; padding: 0.8rem; border: 1px dashed rgba(255,255,255,0.1); border-radius: 8px; text-align: center;">No categories assigned yet. Pick a category above and click '+ Add Category & Subskills to Staff'.</p>
+              </div>
+              <input type="hidden" name="assignedSkillsJson" id="assignedSkillsJsonInput" value="[]">
+            </div>
+          </div>
+
+          <button type="submit" class="button button-primary button-block" style="background: linear-gradient(135deg, #a78bfa, #7c3aed); border: none; font-weight: bold; border-radius: 8px; margin-top: 1.5rem; padding: 14px; font-size: 1.05rem; cursor: pointer; color: #fff; box-shadow: 0 4px 14px rgba(124,58,237,0.35);">
+            Add Verified Professional Under Agency
+          </button>
+        </form>
+      </div>
+
+      <!-- Section 2: List of Managed Staff -->
+      <div class="glass-panel" style="padding: 2.5rem; border-radius: var(--radius-xl); background: rgba(22, 32, 58, 0.85); border: 1px solid var(--line-strong);">
+        <h2 style="font-family: 'Outfit', sans-serif; color: #fff; margin: 0 0 1.5rem;">Verified Staff Members</h2>
+        
+        <% if (!dashboardData.professionals.length) { %>
+          <p style="text-align: center; color: var(--text-soft); padding: 2rem 0;">No professionals added under your agency franchise yet.</p>
+        <% } else { %>
+          <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+            <% dashboardData.professionals.forEach(function (pro) { %>
+              <div style="padding: 1.25rem; border-radius: 12px; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                <div>
+                  <strong style="color: #fff; font-size: 1.05rem; display: block;"><%= pro.full_name %></strong>
+                  <span style="font-size: 0.82rem; color: var(--text-muted); display: block; margin-top: 0.15rem;">
+                    Username: <code style="color: #22d3ee;"><%= pro.username || pro.email %></code> | Experience: <%= pro.years_experience %> yrs
+                  </span>
+                </div>
+                <div style="text-align: right;">
+                  <span style="padding: 0.2rem 0.6rem; border-radius: 99px; font-size: 0.72rem; font-weight: 700; background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3);">Verified</span>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+
+    </div>
+
+    <!-- RIGHT PANEL: Withdrawals & Billing Operations -->
+    <div style="display: flex; flex-direction: column; gap: 3rem;">
+      
+      <!-- Section A: Request Payout -->
+      <div class="glass-panel" style="padding: 2.5rem; border-radius: var(--radius-xl); background: rgba(22, 32, 58, 0.85); border: 1px solid var(--line-strong);">
+        <h2 style="font-family: 'Outfit', sans-serif; color: #fff; margin: 0 0 0.25rem;">Withdraw Payout</h2>
+        <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 2rem;">Available earnings can be requested once a rolling 7 days.</p>
+
+        <% if (dashboardData.partner.is_verified) { %>
+          <form action="/partner/withdraw" method="POST" style="display: flex; flex-direction: column; gap: 1.25rem;">
+            <label class="field-group" style="display: flex; flex-direction: column; gap: 0.4rem;">
+              <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-soft);">Amount to Withdraw (₹)</span>
+              <input type="number" name="amount" min="1" max="<%= dashboardData.wallet.available_inr %>" required placeholder="Maximum ₹<%= dashboardData.wallet.available_inr %>" style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; color: #fff; font-size: 1.1rem; font-weight: bold;">
+            </label>
+
+            <label class="field-group" style="display: flex; flex-direction: column; gap: 0.4rem;">
+              <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-soft);">Bank Account Details</span>
+              <textarea name="bankDetails" required rows="4" placeholder="Bank Name:&#10;Account Holder:&#10;Account Number:&#10;IFSC Code:" style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; color: #fff; font-size: 0.9rem; resize: none;"></textarea>
+            </label>
+
+            <button type="submit" class="button button-primary button-block" style="background: linear-gradient(135deg, #10b981, #059669); border: none; font-weight: bold; border-radius: 8px; margin-top: 0.5rem; padding: 12px; font-size: 1rem; cursor: pointer; color: #fff;">
+              Request Bank Payout
+            </button>
+          </form>
+        <% } else { %>
+          <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 10px; padding: 1.25rem; font-size: 0.85rem; color: #fca5a5; line-height: 1.5; text-align: center;">
+            🔒 Withdrawals are locked until your agency is verified by the administrator.
+          </div>
+        <% } %>
+      </div>
+
+      <!-- Section B: Withdrawals Ledger -->
+      <div class="glass-panel" style="padding: 2.5rem; border-radius: var(--radius-xl); background: rgba(22, 32, 58, 0.85); border: 1px solid var(--line-strong);">
+        <h2 style="font-family: 'Outfit', sans-serif; color: #fff; margin: 0 0 1.5rem;">Withdrawal History</h2>
+
+        <% if (!dashboardData.withdrawals.length) { %>
+          <p style="text-align: center; color: var(--text-soft); padding: 1.5rem 0; font-size: 0.9rem;">No payouts requested yet.</p>
+        <% } else { %>
+          <div style="display: flex; flex-direction: column; gap: 1rem;">
+            <% dashboardData.withdrawals.forEach(function (w) { %>
+              <div style="padding: 1rem; border-radius: 8px; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <strong style="color: #fff; font-size: 1.05rem;">₹<%= w.amount_inr %></strong>
+                  <span style="display: block; font-size: 0.78rem; color: var(--text-muted); margin-top: 0.15rem;"><%= formatShortDate(w.created_at) %></span>
+                </div>
+                <div>
+                  <span style="padding: 0.15rem 0.5rem; border-radius: 99px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+                    <%= w.status === 'completed' ? 'background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3);' : 'background: rgba(245,158,11,0.15); color: #fb7185; border: 1px solid rgba(245,158,11,0.3);' %>">
+                    <%= w.status %>
+                  </span>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Booking and Earnings Ledger -->
+  <div class="glass-panel" style="padding: 2.5rem; border-radius: var(--radius-xl); background: rgba(22, 32, 58, 0.85); border: 1px solid var(--line-strong); margin-bottom: 4rem;">
+    <h2 style="font-family: 'Outfit', sans-serif; color: #fff; margin: 0 0 1.5rem;">Agency Bookings & Payout Ledger</h2>
+    
+    <% if (!dashboardData.bookings.length) { %>
+      <p style="text-align: center; color: var(--text-soft); padding: 3rem 0;">No booking records or job receipts found for your agency professionals.</p>
+    <% } else { %>
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; min-width: 700px; text-align: left;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--line-strong);">
+              <th style="padding: 12px; color: var(--text-soft); font-size: 0.85rem; text-transform: uppercase;">Code</th>
+              <th style="padding: 12px; color: var(--text-soft); font-size: 0.85rem; text-transform: uppercase;">Professional</th>
+              <th style="padding: 12px; color: var(--text-soft); font-size: 0.85rem; text-transform: uppercase;">Service</th>
+              <th style="padding: 12px; color: var(--text-soft); font-size: 0.85rem; text-transform: uppercase;">Client</th>
+              <th style="padding: 12px; color: var(--text-soft); font-size: 0.85rem; text-transform: uppercase;">Gross Amt</th>
+              <th style="padding: 12px; color: var(--text-soft); font-size: 0.85rem; text-transform: uppercase;">Fee (15%)</th>
+              <th style="padding: 12px; color: var(--text-soft); font-size: 0.85rem; text-transform: uppercase;">Net Earned</th>
+              <th style="padding: 12px; color: var(--text-soft); font-size: 0.85rem; text-transform: uppercase;">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% dashboardData.bookings.forEach(function (b) { %>
+              <tr style="border-bottom: 1px solid var(--line);">
+                <td style="padding: 12px; font-weight: bold; color: #60a5fa;"><%= b.booking_code %></td>
+                <td style="padding: 12px; color: #fff;"><%= (dashboardData.professionals.find(p => p.id === b.professional_id) || {}).full_name || 'Staff' %></td>
+                <td style="padding: 12px; color: var(--text-soft);"><%= b.services ? b.services.name : 'Service' %></td>
+                <td style="padding: 12px; color: var(--text-muted);">
+                  <%= b.clients ? b.clients.full_name : 'Guest' %>
+                </td>
+                <td style="padding: 12px; color: #fff; font-weight: bold;">₹<%= b.budget_inr %></td>
+                <td style="padding: 12px; color: #fb7185;">₹<%= Math.round(b.budget_inr * 0.15) %></td>
+                <td style="padding: 12px; color: #34d399; font-weight: bold;">₹<%= b.budget_inr - Math.round(b.budget_inr * 0.15) %></td>
+                <td style="padding: 12px;">
+                  <span style="padding: 0.15rem 0.5rem; border-radius: 99px; font-size: 0.72rem; font-weight: bold; text-transform: uppercase;
+                    <%= b.status === 'completed' ? 'background: rgba(16,185,129,0.15); color: #34d399;' : (b.status === 'cancelled' ? 'background: rgba(239,68,68,0.15); color: #fca5a5;' : 'background: rgba(245,158,11,0.15); color: #fba5c5;') %>">
+                    <%= b.status %>
+                  </span>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  // 1. Work Schedule Toggle
+  const chkPartTime = document.getElementById("chkPartTime");
+  const chkFullTime = document.getElementById("chkFullTime");
+  const ptGroup = document.getElementById("partTimeRateGroup");
+  const ftGroup = document.getElementById("fullTimeRateGroup");
+  const ptInput = document.getElementById("inputPartTimeRate");
+  const ftInput = document.getElementById("inputFullTimeRate");
+
+  function updateScheduleVisibility() {
+    if (chkPartTime && chkPartTime.checked) {
+      ptGroup.style.display = "flex";
+      ptInput.required = true;
+    } else if (ptGroup) {
+      ptGroup.style.display = "none";
+      if (ptInput) ptInput.required = false;
+    }
+
+    if (chkFullTime && chkFullTime.checked) {
+      ftGroup.style.display = "flex";
+      ftInput.required = true;
+    } else if (ftGroup) {
+      ftGroup.style.display = "none";
+      if (ftInput) ftInput.required = false;
+    }
+  }
+
+  if (chkPartTime) chkPartTime.addEventListener("change", updateScheduleVisibility);
+  if (chkFullTime) chkFullTime.addEventListener("change", updateScheduleVisibility);
+
+  // 2. Interactive Service Category, Subskills & Custom Rate Builder
+  const categorySelect = document.getElementById("builderCategorySelect");
+  const subskillsBox = document.getElementById("builderSubskillsBox");
+  const rateInput = document.getElementById("builderRateInput");
+  const customSkillInput = document.getElementById("builderCustomSkillInput");
+  const btnAddCustom = document.getElementById("btnAddCustomSubskill");
+  const btnAddSkill = document.getElementById("btnAddSkillToStaff");
+  const assignedContainer = document.getElementById("assignedSkillsContainer");
+  const noSkillsNotice = document.getElementById("noSkillsNotice");
+  const assignedJsonInput = document.getElementById("assignedSkillsJsonInput");
+
+  let assignedSkillsList = [];
+
+  function renderSubskills(subskills) {
+    if (!subskillsBox) return;
+    if (!subskills || !subskills.length) {
+      subskillsBox.innerHTML = '<span style="font-size: 0.8rem; color: #64748b;">No default subcategories for this selection. Type below to add custom subskills.</span>';
+      return;
+    }
+    subskillsBox.innerHTML = subskills.map(sub => `
+      <label style="display: inline-flex; gap: 0.4rem; align-items: center; font-size: 0.82rem; color: #e2e8f0; background: rgba(30,41,59,0.85); border: 1px solid rgba(255,255,255,0.15); padding: 5px 10px; border-radius: 6px; cursor: pointer;">
+        <input type="checkbox" class="subskill-checkbox" value="${sub}" style="cursor: pointer;">
+        <span>${sub}</span>
+      </label>
+    `).join("");
+  }
+
+  if (categorySelect) {
+    categorySelect.addEventListener("change", function() {
+      const selectedOpt = categorySelect.options[categorySelect.selectedIndex];
+      if (!selectedOpt || !selectedOpt.value) {
+        if (subskillsBox) subskillsBox.innerHTML = '<span style="font-size: 0.8rem; color: #64748b;">Select a category above to load exact subcategories...</span>';
+        return;
+      }
+      let subskills = [];
+      try {
+        subskills = JSON.parse(selectedOpt.getAttribute("data-subskills") || "[]");
+      } catch(e) {}
+      renderSubskills(subskills);
+    });
+  }
+
+  if (btnAddCustom) {
+    btnAddCustom.addEventListener("click", function() {
+      const val = (customSkillInput.value || "").trim();
+      if (!val) return;
+      if (!subskillsBox) return;
+      if (subskillsBox.querySelector("span") && subskillsBox.querySelectorAll("label").length === 0) {
+        subskillsBox.innerHTML = "";
+      }
+      const label = document.createElement("label");
+      label.style.cssText = "display: inline-flex; gap: 0.4rem; align-items: center; font-size: 0.82rem; color: #38bdf8; background: rgba(14,165,233,0.18); border: 1px solid rgba(56,189,248,0.45); padding: 5px 10px; border-radius: 6px; cursor: pointer;";
+      label.innerHTML = `<input type="checkbox" class="subskill-checkbox" value="${val}" checked style="cursor: pointer;"> <span>${val}</span>`;
+      subskillsBox.appendChild(label);
+      customSkillInput.value = "";
+    });
+  }
+
+  function renderAssignedSkills() {
+    if (!assignedContainer) return;
+    if (assignedSkillsList.length === 0) {
+      if (noSkillsNotice) noSkillsNotice.style.display = "block";
+      assignedContainer.innerHTML = '<p id="noSkillsNotice" style="font-size: 0.82rem; color: #64748b; margin: 0; padding: 0.8rem; border: 1px dashed rgba(255,255,255,0.1); border-radius: 8px; text-align: center;">No categories assigned yet. Pick a category above and click \'+ Add Category & Subskills to Staff\'.</p>';
+    } else {
+      assignedContainer.innerHTML = assignedSkillsList.map((item, idx) => `
+        <div style="background: rgba(30,41,59,0.75); border: 1px solid rgba(56,189,248,0.3); border-radius: 8px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
+          <div>
+            <strong style="color: #38bdf8; font-size: 0.96rem; display: block;">${item.categoryName}</strong>
+            <span style="font-size: 0.82rem; color: #e2e8f0; display: block; margin-top: 0.25rem;">
+              Subskills: <em style="color: #f1f5f9;">${item.subskills.length ? item.subskills.join(", ") : "All Category Tasks"}</em> | Rate: <strong style="color: #34d399;">₹${item.rate}</strong>
+            </span>
+          </div>
+          <button type="button" onclick="removeAssignedSkill(${idx})" style="background: rgba(239,68,68,0.2); color: #f87171; border: 1px solid rgba(239,68,68,0.4); border-radius: 6px; padding: 5px 12px; font-size: 0.78rem; cursor: pointer; font-weight: bold;">Remove</button>
+        </div>
+      `).join("");
+    }
+    if (assignedJsonInput) {
+      assignedJsonInput.value = JSON.stringify(assignedSkillsList);
+    }
+  }
+
+  window.removeAssignedSkill = function(idx) {
+    assignedSkillsList.splice(idx, 1);
+    renderAssignedSkills();
+  };
+
+  if (btnAddSkill) {
+    btnAddSkill.addEventListener("click", function() {
+      const selectedOpt = categorySelect ? categorySelect.options[categorySelect.selectedIndex] : null;
+      if (!selectedOpt || !selectedOpt.value) {
+        alert("Please select a Service Category first.");
+        return;
+      }
+      const categoryId = selectedOpt.value;
+      const categoryName = selectedOpt.getAttribute("data-name") || selectedOpt.text;
+      const rateVal = Number(rateInput.value) || 0;
+      if (rateVal <= 0) {
+        alert("Please enter a valid Custom Rate (₹) for this skill category.");
+        return;
+      }
+
+      const checkedSubskills = [];
+      if (subskillsBox) {
+        subskillsBox.querySelectorAll(".subskill-checkbox:checked").forEach(cb => {
+          checkedSubskills.push(cb.value);
+        });
+      }
+
+      const existingIdx = assignedSkillsList.findIndex(item => item.categoryId == categoryId);
+      if (existingIdx >= 0) {
+        const existing = assignedSkillsList[existingIdx];
+        existing.rate = rateVal;
+        checkedSubskills.forEach(sub => {
+          if (!existing.subskills.includes(sub)) existing.subskills.push(sub);
+        });
+      } else {
+        assignedSkillsList.push({
+          categoryId: Number(categoryId),
+          categoryName: categoryName,
+          subskills: checkedSubskills,
+          rate: rateVal
+        });
+      }
+
+      if (rateInput) rateInput.value = "";
+      if (subskillsBox) {
+        subskillsBox.querySelectorAll(".subskill-checkbox").forEach(cb => cb.checked = false);
+      }
+      renderAssignedSkills();
+    });
+  }
+
+  const regForm = document.querySelector('form[action="/partner/professionals/create"]');
+  if (regForm) {
+    regForm.addEventListener("submit", function(e) {
+      if (assignedSkillsList.length === 0) {
+        e.preventDefault();
+        alert("Please assign at least one Service Category & Custom Rate to this staff member before submitting.");
+        return false;
+      }
+    });
+  }
+});
+</script>
+</section>

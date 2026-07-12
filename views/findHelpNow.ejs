@@ -14,72 +14,192 @@
   data-initial-sort="<%= searchDefaults.sort %>"
   data-initial-verified="<%= searchDefaults.verifiedOnly %>"
 >
-  <div class="discover-search-panel glass-panel" data-reveal>
-    <div class="discover-sidebar-copy">
-      <p class="card-kicker">Search and filter</p>
-      <h2>Start with service and location, then refine if needed.</h2>
+  <div class="discover-search-panel glass-panel" data-reveal style="width: 100%; max-width: 100%; box-sizing: border-box; padding: 1.75rem 2rem; border-radius: 24px; border: 1px solid rgba(255,255,255,0.15); background: rgba(15, 23, 42, 0.75); box-shadow: 0 12px 40px rgba(0,0,0,0.5);">
+    <div class="discover-sidebar-copy" style="margin-bottom: 1.5rem;">
+      <p class="card-kicker" style="color: #38bdf8; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; font-size: 0.8rem; margin-bottom: 0.4rem;">Search & Filter Directory</p>
+      <h2 style="margin: 0; color: #fff; font-size: 1.6rem; font-weight: 800; letter-spacing: -0.02em;">Find verified professionals for any task across India.</h2>
     </div>
 
-    <form class="discover-form" id="discoverForm">
-      <div class="discover-form-grid">
-        <label class="field-group">
-          <span>Service or professional</span>
-          <input type="text" id="search-query" name="skill" placeholder="Electrician, plumber, driver..." autocomplete="off">
+    <form class="discover-form" id="discoverForm" style="width: 100%; max-width: 100%; box-sizing: border-box;">
+      <!-- Row 1: Category, Sub-Category & Availability -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 1.25rem; margin-bottom: 1.25rem; width: 100%; max-width: 100%; box-sizing: border-box;">
+        <!-- 1. Select Category -->
+        <label class="field-group" style="min-width: 0; max-width: 100%; box-sizing: border-box; margin: 0;">
+          <span style="color: #cbd5e1; font-weight: 600; font-size: 0.88rem; display: block; margin-bottom: 0.45rem;">Select Category</span>
+          <select id="search-category-select" class="form-input" style="width: 100%; max-width: 100%; box-sizing: border-box; padding: 0.85rem 1rem; border-radius: 14px; background: rgba(15, 23, 42, 0.95); color: #fff; border: 1px solid rgba(255,255,255,0.2); font-weight: 600; cursor: pointer; text-overflow: ellipsis; overflow: hidden;">
+            <option value="">🌟 All Categories</option>
+            <% if (typeof ottCategories !== 'undefined' && ottCategories) { %>
+              <% ottCategories.forEach(function (cat) { %>
+                <option value="<%= cat.title %>" data-items="<%= encodeURIComponent(JSON.stringify(cat.items || [])) %>"><%= cat.title %></option>
+              <% }) %>
+            <% } %>
+          </select>
         </label>
 
-        <label class="field-group" style="position: relative;">
-          <span style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-            <span>Location</span>
-            <button type="button" id="btn-search-location" style="background: none; border: none; color: var(--accent); cursor: pointer; font-size: 0.8rem; font-weight: 700; display: flex; align-items: center; gap: 0.25rem; padding: 0;">
-              📍 Use Current Location
-            </button>
-          </span>
-          <div style="position: relative; width: 100%;">
-            <input type="text" id="search-city" name="city" placeholder="Sector, locality, or city" autocomplete="off" style="width: 100%;">
-            <div id="search-suggestions" style="position: absolute; top: 100%; left: 0; right: 0; background: #0f172a; border: 1px solid var(--line); border-radius: var(--radius-sm); max-height: 200px; overflow-y: auto; z-index: 100; display: none; box-shadow: var(--shadow-lg);"></div>
-          </div>
-          <span style="font-size: 0.75rem; color: var(--text-soft); margin-top: 0.25rem; display: block;">
-            💡 Type your city/area to search, or use the auto-locator.
-          </span>
+        <!-- 2. Select Sub-Category (ID: search-query so findhelpnow.js uses this directly!) -->
+        <label class="field-group" style="min-width: 0; max-width: 100%; box-sizing: border-box; margin: 0;">
+          <span style="color: #cbd5e1; font-weight: 600; font-size: 0.88rem; display: block; margin-bottom: 0.45rem;">Select Sub-Category</span>
+          <select id="search-query" name="skill" class="form-input" style="width: 100%; max-width: 100%; box-sizing: border-box; padding: 0.85rem 1rem; border-radius: 14px; background: rgba(15, 23, 42, 0.95); color: #fff; border: 1px solid rgba(255,255,255,0.2); font-weight: 600; cursor: pointer; text-overflow: ellipsis; overflow: hidden;">
+            <option value="">💼 All Sub-Categories</option>
+            <% if (typeof ottCategories !== 'undefined' && ottCategories) { %>
+              <% ottCategories.forEach(function (cat) { %>
+                <% (cat.items || []).forEach(function (item) { %>
+                  <option value="<%= item.name %>"><%= item.name %> (<%= cat.title.replace(/^\d+\.\s*/, '') %>)</option>
+                <% }) %>
+              <% }) %>
+            <% } %>
+          </select>
         </label>
 
-        <label class="field-group">
-          <span>Sort by</span>
-          <select id="sort-select" name="sort">
-            <option value="relevance">Best match</option>
-            <option value="rating">Highest rating</option>
-            <option value="experience">Most experienced</option>
-            <option value="distance">Nearest first</option>
-            <option value="newest">Newest profiles</option>
+        <!-- 3. Part Time or Full Time -->
+        <label class="field-group" style="min-width: 0; max-width: 100%; box-sizing: border-box; margin: 0;">
+          <span style="color: #cbd5e1; font-weight: 600; font-size: 0.88rem; display: block; margin-bottom: 0.45rem;">Work Availability</span>
+          <select id="search-job-type" name="jobType" class="form-input" style="width: 100%; max-width: 100%; box-sizing: border-box; padding: 0.85rem 1rem; border-radius: 14px; background: rgba(15, 23, 42, 0.95); color: #fff; border: 1px solid rgba(255,255,255,0.2); font-weight: 600; cursor: pointer; text-overflow: ellipsis; overflow: hidden;">
+            <option value="">⏰ Both / Flexible Shift</option>
+            <option value="Full Time">Full Time Hiring</option>
+            <option value="Part Time">Part Time Booking</option>
           </select>
         </label>
       </div>
 
-      <div class="discover-form-row" style="gap: 1.5rem;">
-        <label class="toggle-row" for="verified-only">
-          <span>Show verified professionals only</span>
-          <input type="checkbox" id="verified-only" name="verified">
+      <!-- Row 2: Location & Sort -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: 1.25rem; width: 100%; max-width: 100%; box-sizing: border-box;">
+        <!-- 4. Location -->
+        <label class="field-group" style="position: relative; min-width: 0; max-width: 100%; box-sizing: border-box; margin: 0;">
+          <span style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 0.45rem;">
+            <span style="color: #cbd5e1; font-weight: 600; font-size: 0.88rem;">Work Location / City / Pincode</span>
+            <button type="button" id="btn-search-location" style="background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; border-radius: 8px; cursor: pointer; font-size: 0.76rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.35rem; padding: 3px 10px; transition: all 0.2s;">
+              📍 Use Current GPS
+            </button>
+          </span>
+          <div style="position: relative; width: 100%; max-width: 100%; box-sizing: border-box;">
+            <input type="text" id="search-city" name="city" placeholder="Enter Pincode, City or Locality (e.g. 226006, Delhi, Gurugram)" autocomplete="off" style="width: 100%; max-width: 100%; box-sizing: border-box; padding: 0.85rem 1rem; border-radius: 14px; background: rgba(15, 23, 42, 0.95); color: #fff; border: 1px solid rgba(255,255,255,0.2); font-weight: 500; text-overflow: ellipsis; overflow: hidden;">
+            <div id="pincode-location-info" style="font-size: 0.82rem; color: #38bdf8; margin-top: 6px; font-weight: 600; min-height: 1.1em;"></div>
+            <div id="search-suggestions" style="position: absolute; top: 100%; left: 0; right: 0; background: #0f172a; border: 1px solid rgba(255,255,255,0.2); border-radius: 14px; max-height: 220px; overflow-y: auto; z-index: 200; display: none; box-shadow: 0 16px 40px rgba(0,0,0,0.8);"></div>
+          </div>
         </label>
 
-        <label class="toggle-row" for="radius-limit">
-          <span>Show nearby only (< 50 km)</span>
-          <input type="checkbox" id="radius-limit" name="radiusLimit">
+        <!-- 5. Sort by -->
+        <label class="field-group" style="min-width: 0; max-width: 100%; box-sizing: border-box; margin: 0;">
+          <span style="color: #cbd5e1; font-weight: 600; font-size: 0.88rem; display: block; margin-bottom: 0.45rem;">Sort Results By</span>
+          <select id="sort-select" name="sort" style="width: 100%; max-width: 100%; box-sizing: border-box; padding: 0.85rem 1rem; border-radius: 14px; background: rgba(15, 23, 42, 0.95); color: #fff; border: 1px solid rgba(255,255,255,0.2); font-weight: 600; cursor: pointer; text-overflow: ellipsis; overflow: hidden;">
+            <option value="relevance">⚡ Best Match & Relevance</option>
+            <option value="rating">⭐ Highest Customer Rating</option>
+            <option value="experience">🏆 Most Experienced First</option>
+            <option value="distance">📍 Nearest Distance First</option>
+            <option value="newest">✨ Newest Verified Profiles</option>
+          </select>
         </label>
+      </div>
 
-        <div class="discover-form-actions">
-          <button type="submit" class="button button-primary">Search</button>
-          <button type="button" class="button button-secondary" id="clear-search">Clear</button>
+      <!-- Row 3: Toggles -->
+      <div style="display: flex; gap: 1.5rem; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid rgba(255,255,255,0.1); flex-wrap: wrap; align-items: center; justify-content: space-between;">
+        <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+          <label style="display: flex; align-items: center; gap: 0.65rem; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.12); padding: 0.55rem 1.1rem; border-radius: 30px; cursor: pointer; color: #e2e8f0; font-size: 0.88rem; font-weight: 600; transition: all 0.2s;" class="toggle-row" for="verified-only">
+            <input type="checkbox" id="verified-only" name="verified" style="accent-color: #38bdf8; transform: scale(1.2); cursor: pointer;">
+            <span>🛡️ Show verified professionals only</span>
+          </label>
+
+          <label style="display: flex; align-items: center; gap: 0.65rem; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.12); padding: 0.55rem 1.1rem; border-radius: 30px; cursor: pointer; color: #e2e8f0; font-size: 0.88rem; font-weight: 600; transition: all 0.2s;" class="toggle-row" for="radius-limit">
+            <input type="checkbox" id="radius-limit" name="radiusLimit" style="accent-color: #38bdf8; transform: scale(1.2); cursor: pointer;">
+            <span>📍 Show nearby only (< 50 km)</span>
+          </label>
+        </div>
+
+        <div class="discover-form-actions" style="display: flex; gap: 0.85rem; align-items: center;">
+          <button type="button" class="button button-secondary" id="clear-search" style="padding: 0.8rem 1.6rem; border-radius: 14px; background: rgba(255,255,255,0.08); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.2); font-weight: 700; cursor: pointer; transition: all 0.2s;">Reset Filters</button>
+          <button type="submit" class="button button-primary" style="padding: 0.8rem 2.4rem; border-radius: 14px; background: linear-gradient(135deg, #38bdf8, #2563eb); color: #fff; font-weight: 800; border: none; box-shadow: 0 4px 18px rgba(37, 99, 235, 0.4); cursor: pointer; transition: all 0.2s;">⚡ Apply & Search ›</button>
         </div>
       </div>
     </form>
 
-    <div class="discover-chip-group">
-      <% discoverContent.quickFilters.forEach(function (filter) { %>
-        <button type="button" class="chip-button" data-fill-target="search-query" data-fill-value="<%= filter %>">
-          <%= filter %>
-        </button>
+    <!-- Dynamic Sub-category Script & Quick Filters -->
+    <script>
+      document.addEventListener("DOMContentLoaded", function() {
+        const catSelect = document.getElementById("search-category-select");
+        const skillSelect = document.getElementById("search-query");
+        if (catSelect && skillSelect) {
+          const originalOptions = Array.from(skillSelect.options).map(opt => ({
+            value: opt.value,
+            text: opt.text
+          }));
+
+          catSelect.addEventListener("change", function() {
+            const selectedOpt = catSelect.options[catSelect.selectedIndex];
+            skillSelect.innerHTML = '<option value="">All Sub-Categories</option>';
+            if (!selectedOpt || !selectedOpt.value) {
+              originalOptions.forEach(opt => {
+                if (opt.value) {
+                  const el = document.createElement("option");
+                  el.value = opt.value;
+                  el.textContent = opt.text;
+                  skillSelect.appendChild(el);
+                }
+              });
+              return;
+            }
+            try {
+              const raw = selectedOpt.getAttribute("data-items");
+              if (raw) {
+                const items = JSON.parse(decodeURIComponent(raw));
+                items.forEach(item => {
+                  const el = document.createElement("option");
+                  el.value = item.name;
+                  el.textContent = `${item.name} (${item.desc || 'Verified'})`;
+                  skillSelect.appendChild(el);
+                });
+              }
+            } catch(e) {
+              console.error("Failed parsing subcategory items", e);
+            }
+          });
+        }
+      });
+    </script>
+  </div>
+
+  <!-- Horizontal Scrolling Categories & Sub-categories (same as Home Page) -->
+  <div class="ott-hub" style="margin: 2.5rem 0;">
+    <% if (typeof ottCategories !== 'undefined' && ottCategories && ottCategories.length) { %>
+      <% ottCategories.forEach(function (category, catIndex) { %>
+        <div class="ott-section" data-reveal style="margin-bottom: 2rem;">
+          <div class="ott-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <div class="ott-title-box" style="display: flex; align-items: center; gap: 0.75rem;">
+              <span class="ott-icon" style="font-size: 1.5rem;"><%= category.headerIcon %></span>
+              <h3 class="ott-title" style="margin: 0; font-size: 1.3rem; color: #fff;"><%= category.title %></h3>
+              <span class="ott-badge" style="background: <%= category.badgeColor || 'var(--accent)' %>; padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; color: #000;"><%= category.badge || 'POPULAR' %></span>
+            </div>
+            <div class="ott-controls" style="display: flex; gap: 0.5rem;">
+              <button class="ott-arrow ott-prev" type="button" aria-label="Scroll left" data-tray-id="fhn-tray-<%= category.id || catIndex %>" style="width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">‹</button>
+              <button class="ott-arrow ott-next" type="button" aria-label="Scroll right" data-tray-id="fhn-tray-<%= category.id || catIndex %>" style="width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">›</button>
+            </div>
+          </div>
+
+          <div class="ott-tray-container" style="overflow: hidden;">
+            <div class="ott-tray" id="fhn-tray-<%= category.id || catIndex %>" style="display: flex; gap: 1.25rem; overflow-x: auto; scroll-behavior: smooth; padding-bottom: 0.75rem; scrollbar-width: none;">
+              <% (category.items || []).forEach(function (item) { %>
+                <a class="ott-card" href="/findHelpNow?skill=<%= encodeURIComponent(item.name) %>&city=<%= encodeURIComponent(brand.city) %>" style="min-width: 240px; max-width: 240px; background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; padding: 1.25rem; text-decoration: none; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s, border-color 0.2s;">
+                  <div class="ott-card-top" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                    <span class="ott-card-tag" style="background: rgba(96, 165, 250, 0.15); color: #60a5fa; font-size: 0.72rem; padding: 2px 8px; border-radius: 6px; font-weight: 700;"><%= item.tag || 'TOP 10' %></span>
+                    <span class="ott-card-pill" style="font-size: 0.72rem; color: #38bdf8;">Instant Hire</span>
+                  </div>
+                  <div class="ott-card-icon-wrapper" style="font-size: 2.2rem; margin-bottom: 0.5rem;">
+                    <span><%= item.icon || '💼' %></span>
+                  </div>
+                  <div class="ott-card-content" style="margin-bottom: 1rem;">
+                    <h4 class="ott-card-title" style="margin: 0 0 0.3rem 0; color: #fff; font-size: 1.05rem;"><%= item.name %></h4>
+                    <p class="ott-card-desc" style="margin: 0; color: #94a3b8; font-size: 0.82rem; line-height: 1.4;"><%= item.desc || 'Verified staff available across India' %></p>
+                  </div>
+                  <div class="ott-card-footer" style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 0.75rem; color: #60a5fa; font-size: 0.85rem; font-weight: 700;">
+                    <span>Explore & Hire ›</span>
+                  </div>
+                </a>
+              <% }) %>
+            </div>
+          </div>
+        </div>
       <% }) %>
-    </div>
+    <% } %>
   </div>
 
   <div class="discover-results">

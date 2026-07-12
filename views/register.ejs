@@ -46,61 +46,6 @@
           <span>Phone number</span>
           <input type="tel" id="phone" name="phone" value="<%= registerFormData.phone %>" placeholder="+91 12345 67890" required>
         </label>
-
-        <label class="field-group">
-          <span>Primary skill</span>
-          <select id="primary-skill" name="primary-skill" required style="cursor: pointer;">
-            <option value="">Select a platform service</option>
-            <% platformServices.forEach(function (service) { %>
-              <option value="<%= service.name %>" <%= registerFormData.primarySkill === service.name ? "selected" : "" %>>
-                <%= service.name %>
-              </option>
-            <% }) %>
-            <option value="Other" <%= registerFormData.primarySkill === "Other" ? "selected" : "" %>>+ Other (Add Custom Skill)</option>
-          </select>
-          <div id="primary-skill-custom-box" class="custom-skill-box <%= registerFormData.primarySkill === 'Other' ? 'active' : '' %>">
-            <input type="text" id="primary-skill-custom" name="primary-skill-custom" placeholder="Type your custom primary skill (e.g. Catering Chef)..." class="skills-search-input" style="margin-top: 8px;">
-            <small class="field-hint" style="color: #a78bfa; font-weight: 600;">✨ Type your skill above and it will be added to platform options.</small>
-          </div>
-          <small class="field-hint">Choose the main service you want clients to find you for.</small>
-        </label>
-      </div>
-
-      <div class="form-row">
-        <label class="field-group">
-          <span>Additional skills</span>
-          <select id="secondary-skills" name="secondary-skills" style="cursor: pointer;">
-            <option value="">Select an additional service</option>
-            <% platformServices.forEach(function (service) { %>
-              <option value="<%= service.name %>" <%= selectedSecondarySkill === service.name ? "selected" : "" %>>
-                <%= service.name %>
-              </option>
-            <% }) %>
-            <option value="Other" <%= selectedSecondarySkill === "Other" ? "selected" : "" %>>+ Other (Add Custom Skill)</option>
-          </select>
-          <div id="secondary-skills-custom-box" class="custom-skill-box <%= selectedSecondarySkill === 'Other' ? 'active' : '' %>">
-            <input type="text" id="secondary-skills-custom" name="secondary-skills-custom" placeholder="Type your custom additional skill..." class="skills-search-input" style="margin-top: 8px;">
-            <small class="field-hint" style="color: #a78bfa; font-weight: 600;">✨ Type your skill above and it will be added to platform options.</small>
-          </div>
-          <small class="field-hint">Optional. Choose one extra platform category you also serve.</small>
-        </label>
-
-        <label class="field-group">
-          <span>City</span>
-          <input type="text" id="city" name="city" value="<%= registerFormData.city %>" placeholder="Gurugram" required>
-        </label>
-
-        <label class="field-group">
-          <span>Experience in years</span>
-          <input type="number" id="experience" name="experience" value="<%= registerFormData.experience %>" min="0" max="100" placeholder="6" required>
-        </label>
-      </div>
-
-      <div class="form-row">
-        <label class="field-group">
-          <span>Profile photo (Choose from Gallery)</span>
-          <input type="file" id="photo" name="photo" accept="image/*" required>
-        </label>
       </div>
 
       <div class="form-row">
@@ -131,11 +76,6 @@
           </div>
         </label>
       </div>
-
-      <label class="field-group">
-        <span>Professional summary</span>
-        <textarea id="description" name="description" rows="5" placeholder="Describe your work, service quality, and what clients can expect."><%= registerFormData.description %></textarea>
-      </label>
 
       <label class="toggle-row">
         <span>I agree to the <a href="/terms" target="_blank" style="text-decoration: underline; color: var(--color-brand);">Terms of Service</a> and Privacy Policy.</span>

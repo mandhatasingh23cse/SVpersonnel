@@ -1,0 +1,81 @@
+<section class="page-hero">
+  <div class="shell page-hero-content">
+    <span class="eyebrow">SV Personnels Professional Feed</span>
+    <h1>Available Jobs & Work Leads</h1>
+    <p>Find local client job requests matching your category and contact clients directly to start working.</p>
+  </div>
+</section>
+
+<section class="section shell animate-fade-in">
+  <%- include("partials/notice") %>
+
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+    <h2>Active Job Postings (<%= jobs.length %>)</h2>
+    <a href="/professional/dashboard" style="color: var(--accent); text-decoration: none; font-size: 0.9rem;">‹ Back to Dashboard</a>
+  </div>
+
+  <% if (!jobs.length) { %>
+    <div class="glass-panel" style="padding: 4rem; text-align: center; border-radius: 18px; border: 1px dashed rgba(255,255,255,0.15);">
+      <h3 style="color: #cbd5e1; margin-bottom: 0.5rem;">No matching job requirements open right now.</h3>
+      <p style="color: #64748b; font-size: 0.92rem; margin: 0;">Check back later for new customer listings in your area.</p>
+    </div>
+  <% } else { %>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap: 1.5rem;">
+      <% jobs.forEach(function (job) { %>
+        <article class="glass-panel card-reveal" style="padding: 2rem; border-radius: 16px; border: 1px solid var(--line); background: rgba(22, 32, 58, 0.65); display: flex; flex-direction: column; justify-content: space-between; min-height: 285px;">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+              <div>
+                <span style="font-size: 0.72rem; padding: 0.15rem 0.55rem; border-radius: 99px; font-weight: 800; text-transform: uppercase; background: rgba(139, 92, 246, 0.15); color: #c4b5fd; border: 1px solid rgba(139, 92, 246, 0.3);">
+                  <%= job.category %>
+                </span>
+                <% if (job.subCategory) { %>
+                  <span style="display: block; font-size: 0.82rem; color: var(--text-soft); margin-top: 0.35rem;"><%= job.subCategory %></span>
+                <% } %>
+              </div>
+              <span style="font-size: 0.8rem; font-weight: 700; color: #34d399; background: rgba(52, 211, 153, 0.1); border: 1px solid rgba(52, 211, 153, 0.3); padding: 2px 8px; border-radius: 6px;">
+                <%= job.job_type || job.jobType || 'Part Time' %>
+              </span>
+            </div>
+
+            <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.25rem; color: #fff; margin-bottom: 0.75rem;"><%= job.client_name || job.clientName %></h3>
+            
+            <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.5; margin-bottom: 1.25rem; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;">
+              <%= job.description %>
+            </p>
+          </div>
+
+          <div style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 1.25rem; margin-top: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+            <div>
+              <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Proposed Budget</span>
+              <strong style="font-size: 1.2rem; color: #fff;">₹<%= job.budget_inr || job.budget %></strong>
+            </div>
+            <div>
+              <span style="font-size: 0.75rem; color: var(--text-muted); display: block; text-align: right;">Location</span>
+              <span style="font-size: 0.85rem; color: var(--text-soft); font-weight: 600;"><%= job.location %></span>
+            </div>
+          </div>
+
+          <div style="margin-top: 1.25rem; width: 100%;">
+            <button onclick="revealContact(this, '<%= job.client_contact || job.clientContact %>', '<%= job.client_name || job.clientName %>')" class="button button-primary button-block" style="background: linear-gradient(135deg, #a78bfa, #7c3aed); border: none; font-weight: 700; border-radius: 8px; padding: 10px; font-size: 0.85rem; cursor: pointer; color: #fff; text-align: center; display: block; width: 100%;">
+              📞 View Client Contact Information
+            </button>
+          </div>
+        </article>
+      <% }) %>
+    </div>
+  <% } %>
+</section>
+
+<script>
+  function revealContact(btn, contact, name) {
+    // Reveal name and phone/email info dynamically inline
+    const parent = btn.parentElement;
+    parent.innerHTML = `
+      <div style="padding: 0.75rem; border-radius: 8px; background: rgba(52, 211, 153, 0.1); border: 1px solid rgba(52, 211, 153, 0.3); text-align: center; color: #34d399; font-size: 0.88rem;">
+        <strong>Contact ${name}:</strong><br>
+        <span style="font-family: monospace; font-size: 1rem; font-weight: bold; margin-top: 0.25rem; display: block; color: #fff;">${contact}</span>
+      </div>
+    `;
+  }
+</script>

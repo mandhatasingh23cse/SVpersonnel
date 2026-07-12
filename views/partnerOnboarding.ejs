@@ -1,0 +1,78 @@
+<section class="section shell animate-fade-in" style="max-width: 800px; margin: 0 auto; padding: 3rem 1.5rem;">
+  
+  <div class="glass-panel" style="padding: 2.5rem; border-radius: var(--radius-lg); background: rgba(15, 23, 42, 0.45); border: 1px solid var(--line-strong); text-align: center; margin-bottom: 2rem;">
+    <span class="eyebrow" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); padding: 3px 10px; border-radius: 6px; font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">Step 2: Partner Safety Verification</span>
+    <h1 style="font-family: 'Outfit', sans-serif; font-size: 2.2rem; color: #fff; margin-top: 1rem;">Complete Partner Verification</h1>
+    <p style="color: var(--text-soft); font-size: 0.95rem; max-width: 600px; margin: 0.5rem auto 0;">
+      Provide your agency tax, identification, and proof documents so our admin team can verify your agency safely.
+    </p>
+  </div>
+
+  <div class="glass-panel" style="padding: 3rem; border-radius: var(--radius-lg); border: 1px solid var(--line-strong); background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(20px);">
+    <%- include("partials/notice") %>
+
+    <form action="/partner/onboarding" method="POST" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 2rem;">
+      
+      <!-- Section A: Government Details -->
+      <div style="border-bottom: 1px solid var(--line-strong); padding-bottom: 1.5rem;">
+        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.25rem; color: #fff; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+          <span>📝</span> Government Identification Numbers
+        </h3>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+          <label class="field-group" style="display: flex; flex-direction: column; gap: 0.4rem;">
+            <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-soft);">GST Number (Optional)</span>
+            <input type="text" name="gstNumber" placeholder="15-digit GSTIN" style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; color: #fff;">
+          </label>
+          
+          <label class="field-group" style="display: flex; flex-direction: column; gap: 0.4rem;">
+            <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-soft);">Agency PAN Number</span>
+            <input type="text" name="panNumber" required maxlength="10" pattern="[A-Za-z]{5}[0-9]{4}[A-Za-z]{1}" title="Strict PAN card format: 5 letters, 4 digits, 1 letter (e.g. ABCDE1234F)" placeholder="e.g. ABCDE1234F" style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; color: #fff; text-transform: uppercase; font-weight: bold;">
+          </label>
+        </div>
+      </div>
+
+      <!-- Section B: File Uploads -->
+      <div>
+        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.25rem; color: #fff; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+          <span>📂</span> Upload Verification Documents
+        </h3>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+          <!-- 1. Partner ID Document -->
+          <div style="padding: 1.5rem; border-radius: 12px; border: 1px dashed var(--line); background: rgba(255,255,255,0.02); display: flex; flex-direction: column; gap: 0.8rem;">
+            <strong style="color: #fff; font-size: 0.95rem;">Representative ID Card (Aadhaar/PAN)</strong>
+            <p style="color: var(--text-muted); font-size: 0.78rem; margin: 0; line-height: 1.4;">Upload a clear JPEG, PNG, or PDF of your government ID.</p>
+            <input type="file" name="idDocument" required style="font-size: 0.85rem; color: var(--text-soft); padding: 5px 0;">
+          </div>
+
+          <!-- 2. Business Registration Proof -->
+          <div style="padding: 1.5rem; border-radius: 12px; border: 1px dashed var(--line); background: rgba(255,255,255,0.02); display: flex; flex-direction: column; gap: 0.8rem;">
+            <strong style="color: #fff; font-size: 0.95rem;">Business Registration Proof</strong>
+            <p style="color: var(--text-muted); font-size: 0.78rem; margin: 0; line-height: 1.4;">GST Certificate, MSME, or Incorporation license (PDF/Image).</p>
+            <input type="file" name="businessProof" required style="font-size: 0.85rem; color: var(--text-soft); padding: 5px 0;">
+          </div>
+
+          <!-- 3. Live Photo -->
+          <div style="padding: 1.5rem; border-radius: 12px; border: 1px dashed var(--line); background: rgba(255,255,255,0.02); display: flex; flex-direction: column; gap: 0.8rem;">
+            <strong style="color: #fff; font-size: 0.95rem;">Live Selfie Photo</strong>
+            <p style="color: var(--text-muted); font-size: 0.78rem; margin: 0; line-height: 1.4;">A live selfie photo of the partner representative holding their ID card.</p>
+            <input type="file" name="livePhoto" required style="font-size: 0.85rem; color: var(--text-soft); padding: 5px 0;">
+          </div>
+        </div>
+      </div>
+
+      <!-- Warning & Submit -->
+      <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 10px; padding: 1.25rem; font-size: 0.85rem; color: #fca5a5; line-height: 1.5;">
+        ⚠️ <strong>Important Safety Note:</strong> To prevent fraud, our administrator checks all uploaded proofs and numbers against governmental registries. Providing false documentation will result in permanent blacklist and legal referral.
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+        <button type="submit" class="button button-primary" style="background: linear-gradient(135deg, #f59e0b, #d97706); border: none; font-weight: bold; border-radius: 8px; padding: 12px 30px; font-size: 1rem; cursor: pointer; color: #000;">
+          Submit for Verification ›
+        </button>
+      </div>
+
+    </form>
+  </div>
+</section>

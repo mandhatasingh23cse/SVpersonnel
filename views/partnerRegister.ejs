@@ -1,0 +1,99 @@
+<section class="section shell auth-layout" style="max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1.2fr; gap: 3rem; align-items: center; min-height: 80vh; padding: 3rem 1.5rem;">
+  
+  <!-- Content Card (Left) -->
+  <div class="glass-panel auth-story animate-fade-in" style="padding: 2.5rem; border-radius: var(--radius-lg); border: 1px solid var(--line-strong); background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(20px);">
+    <span class="eyebrow" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); padding: 3px 10px; border-radius: 6px; font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">SV Agency Partners</span>
+    <h1 style="font-family: 'Outfit', sans-serif; font-size: 2.2rem; color: #fff; margin-top: 1rem; line-height: 1.25;">Register your Service Agency / Franchise</h1>
+    <p style="color: var(--text-soft); font-size: 0.98rem; line-height: 1.6; margin: 1.25rem 0 2rem;">
+      Partner with SV Personnels to onboard, verify, and manage multiple service professionals. Receive booking requests and earn revenue with automatic billing splits.
+    </p>
+
+    <ul class="check-list" style="display: flex; flex-direction: column; gap: 0.85rem; padding: 0; list-style: none;">
+      <li style="display: flex; gap: 0.75rem; align-items: start; color: var(--text-muted); font-size: 0.92rem;">
+        <span style="color: #10b981; font-weight: bold; font-size: 1.1rem;">✓</span>
+        <span>Register and create verified professional accounts instantly under your agency</span>
+      </li>
+      <li style="display: flex; gap: 0.75rem; align-items: start; color: var(--text-muted); font-size: 0.92rem;">
+        <span style="color: #10b981; font-weight: bold; font-size: 1.1rem;">✓</span>
+        <span>Auto-verification for your professionals (skip manual verification queues)</span>
+      </li>
+      <li style="display: flex; gap: 0.75rem; align-items: start; color: var(--text-muted); font-size: 0.92rem;">
+        <span style="color: #10b981; font-weight: bold; font-size: 1.1rem;">✓</span>
+        <span>Centralized partner earnings wallet & rolling weekly withdrawals</span>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Form Card (Right) -->
+  <div class="glass-panel auth-form-card animate-slide-up" style="padding: 3rem; border-radius: var(--radius-lg); border: 1px solid var(--line-strong); background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(20px); box-shadow: 0 20px 40px rgba(0,0,0,0.4);">
+    <p class="card-kicker" style="color: #f59e0b;">Franchise Sign up</p>
+    <h2 style="font-family: 'Outfit', sans-serif; font-size: 1.7rem; color: #fff; margin-bottom: 2rem;">Create Partner Account</h2>
+
+    <%- include("partials/notice") %>
+
+    <form class="auth-form" action="/register/partner" method="POST" style="display: flex; flex-direction: column; gap: 1.25rem;">
+      <div class="form-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem;">
+        <label class="field-group" style="display: flex; flex-direction: column; gap: 0.4rem;">
+          <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-soft);">Full Name</span>
+          <input type="text" name="fullname" value="<%= formData.fullname %>" required placeholder="Authorized Representative" style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; color: #fff;">
+        </label>
+        <label class="field-group" style="display: flex; flex-direction: column; gap: 0.4rem;">
+          <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-soft);">Business / Agency Name</span>
+          <input type="text" name="businessName" value="<%= formData.businessName %>" required placeholder="e.g. SV Cleaning Services" style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; color: #fff;">
+        </label>
+      </div>
+
+      <div class="form-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem;">
+        <label class="field-group" style="display: flex; flex-direction: column; gap: 0.4rem;">
+          <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-soft);">Email Address</span>
+          <input type="email" name="email" value="<%= formData.email %>" required placeholder="agency@example.com" style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; color: #fff;">
+        </label>
+        <label class="field-group" style="display: flex; flex-direction: column; gap: 0.4rem;">
+          <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-soft);">Phone Number</span>
+          <input type="tel" name="phone" value="<%= formData.phone %>" required placeholder="+91..." style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; color: #fff;">
+        </label>
+      </div>
+
+      <div class="form-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem;">
+        <label class="field-group" style="display: flex; flex-direction: column; gap: 0.4rem;">
+          <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-soft);">Choose Username</span>
+          <input type="text" name="username" value="<%= formData.username %>" required placeholder="unique_agency_username" style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; color: #fff;">
+        </label>
+        <label class="field-group" style="display: flex; flex-direction: column; gap: 0.4rem;">
+          <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-soft);">City</span>
+          <input type="text" name="city" value="<%= formData.city %>" required placeholder="e.g. New Delhi" style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; color: #fff;">
+        </label>
+      </div>
+
+      <div class="form-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem;">
+        <label class="field-group" style="display: flex; flex-direction: column; gap: 0.4rem;">
+          <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-soft);">Create Password</span>
+          <div style="position: relative;">
+            <input type="password" id="password" name="password" required style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; color: #fff; width: 100%; padding-right: 4.5rem;">
+            <button type="button" class="toggle-password-btn" onclick="const input = document.getElementById('password'); if (input.type === 'password') { input.type = 'text'; this.textContent = 'Hide'; } else { input.type = 'password'; this.textContent = 'Show'; }" style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 0.8rem; font-weight: 600; color: #f59e0b; cursor: pointer;">Show</button>
+          </div>
+        </label>
+        <label class="field-group" style="display: flex; flex-direction: column; gap: 0.4rem;">
+          <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-soft);">Confirm Password</span>
+          <div style="position: relative;">
+            <input type="password" id="confirm-password" name="confirmPassword" required style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; color: #fff; width: 100%; padding-right: 4.5rem;">
+            <button type="button" class="toggle-password-btn" onclick="const input = document.getElementById('confirm-password'); if (input.type === 'password') { input.type = 'text'; this.textContent = 'Hide'; } else { input.type = 'password'; this.textContent = 'Show'; }" style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 0.8rem; font-weight: 600; color: #f59e0b; cursor: pointer;">Show</button>
+          </div>
+        </label>
+      </div>
+
+      <label class="toggle-row" style="display: flex; gap: 0.5rem; align-items: center; margin-top: 0.5rem;">
+        <input type="checkbox" id="agree-terms" name="agreeTerms" required style="cursor: pointer;">
+        <span style="font-size: 0.85rem; color: var(--text-soft);">I agree to the SV Partner franchise agreement and terms.</span>
+      </label>
+
+      <button type="submit" class="button button-primary button-block" style="background: linear-gradient(135deg, #f59e0b, #d97706); border: none; font-weight: bold; border-radius: 8px; margin-top: 1rem; padding: 12px; font-size: 1rem; cursor: pointer; color: #000;">
+        Create Partner Account
+      </button>
+    </form>
+
+    <p class="auth-switch" style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem; color: var(--text-soft);">
+      Already have an account? <a href="/login" style="color: #f59e0b; font-weight: bold; text-decoration: none;">Log in</a>
+    </p>
+  </div>
+</section>

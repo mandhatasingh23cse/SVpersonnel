@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS services (
   icon_path VARCHAR(255) NOT NULL,
   description TEXT NOT NULL,
   base_price_inr INT NOT NULL,
+  subskills TEXT DEFAULT '[]',
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CONSTRAINT uniq_services_name UNIQUE (name),

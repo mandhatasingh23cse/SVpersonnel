@@ -1,17 +1,17 @@
 <section class="page-hero">
   <div class="shell page-hero-content">
     <p class="eyebrow">My Account</p>
-    <h1>Manage your client profile.</h1>
-    <p>Update your personal information, manage security settings, or delete your account.</p>
+    <h1>Manage your client profile &amp; saved addresses.</h1>
+    <p>Update your personal information, save multiple booking addresses with geolocation, and manage security settings.</p>
   </div>
 </section>
 
 <section class="section shell dashboard-shell">
   <%- include("partials/notice") %>
 
-  <div style="display: grid; grid-template-columns: 1fr; gap: 3rem; max-width: 800px; margin: 0 auto;">
+  <div style="display: grid; grid-template-columns: 1fr; gap: 3rem; max-width: 860px; margin: 0 auto;">
     <!-- Profile Information Form -->
-    <article class="glass-panel" style="padding: 2.5rem; border-radius: var(--radius-lg);">
+    <article class="glass-panel" style="padding: 2.5rem; border-radius: var(--radius-large);">
       <p class="card-kicker">Personal Details</p>
       <h2 style="margin-bottom: 1.5rem;">Edit Profile Information</h2>
 
@@ -44,19 +44,275 @@
       </form>
     </article>
 
-    <!-- Change Password Form -->
-    <article class="glass-panel" style="padding: 2.5rem; border-radius: var(--radius-lg);">
-      <p class="card-kicker">Security</p>
-      <h2 style="margin-bottom: 1.5rem;">Change Password</h2>
+    <!-- Saved Addresses Section matching Screenshots 3 & 4 -->
+    <article class="glass-panel" style="padding: 2.5rem; border-radius: var(--radius-large);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <p class="card-kicker">Manage Addresses</p>
+          <h2 style="margin: 0;">Your Saved Addresses</h2>
+          <p style="color: var(--color-ink-light); margin: 0.35rem 0 0; font-size: 0.9rem;">Save multiple addresses (Home, Work, etc.) and select them with one click while booking any professional.</p>
+        </div>
+        <button type="button" class="button button-primary" style="padding: 0.75rem 1.25rem;" onclick="document.getElementById('addAddressModal').style.display = 'block';">
+          + Add a New Address
+        </button>
+      </div>
 
-      <form method="POST" action="/client/change-password" class="auth-form">
+      <% if (!clientAddresses || clientAddresses.length === 0) { %>
+        <div style="text-align: center; padding: 2.5rem 1rem; border: 1px dashed rgba(255,255,255,0.2); border-radius: 12px; background: rgba(0,0,0,0.15);">
+          <p style="font-size: 2.5rem; margin-bottom: 0.5rem;">📍</p>
+          <h3 style="margin-bottom: 0.5rem; color: #fff;">No saved addresses yet</h3>
+          <p style="color: var(--color-ink-light); margin-bottom: 1.25rem; max-width: 500px; margin-left: auto; margin-right: auto;">Save multiple addresses with exact street, pincode, and geolocation so you don't have to type them during checkout!</p>
+          <button type="button" class="button button-secondary" onclick="document.getElementById('addAddressModal').style.display = 'block';">+ Add Address Now</button>
+        </div>
+      <% } else { %>
+        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+          <% clientAddresses.forEach(function(addr) { %>
+            <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 12px; padding: 1.25rem; position: relative; transition: border-color 0.2s;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+                <span style="background: rgba(167, 139, 250, 0.2); color: #a78bfa; font-weight: 800; font-size: 0.75rem; padding: 3px 10px; border-radius: 6px; text-transform: uppercase; border: 1px solid rgba(167, 139, 250, 0.3);">
+                  <%= addr.addressType %>
+                </span>
+                <form action="/client/addresses/delete/<%= addr.id %>" method="POST" style="margin: 0;" onsubmit="return confirm('Are you sure you want to delete this address?');">
+                  <button type="submit" style="background: none; border: none; color: #f87171; font-weight: 700; cursor: pointer; font-size: 0.85rem; padding: 0;">🗑️ Delete</button>
+                </form>
+              </div>
+
+              <div style="font-weight: 700; font-size: 1.05rem; color: #fff; margin-bottom: 0.35rem;">
+                <%= addr.name || profile.name %> &nbsp;&bull;&nbsp; <span style="color: #cbd5e1;"><%= addr.phone || profile.phone %></span>
+              </div>
+
+              <p style="margin: 0; color: var(--color-ink-light); font-size: 0.95rem; line-height: 1.5;">
+                <%= addr.address %><%= addr.locality ? ', ' + addr.locality : '' %>, <%= addr.city ? addr.city + ', ' : '' %><%= addr.state ? addr.state + ' - ' : '' %><strong><%= addr.pincode %></strong>
+                <% if (addr.landmark) { %><br><small style="color: #a78bfa;">Landmark: <%= addr.landmark %></small><% } %>
+              </p>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+
+      <!-- Add New Address Modal matching Screenshot 4 exactly -->
+      <div id="addAddressModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; background: rgba(0,0,0,0.8); backdrop-filter: blur(6px); overflow-y: auto; padding: 2rem 1rem;">
+        <div class="glass-panel" style="max-width: 680px; margin: 2rem auto; padding: 2.25rem; border-radius: 20px; background: #0f172a; border: 1px solid rgba(255,255,255,0.25); position: relative; box-shadow: 0 25px 50px rgba(0,0,0,0.8);">
+          <h3 style="color: #38bdf8; font-size: 1.05rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 800; margin-bottom: 1.25rem;">ADD A NEW ADDRESS</h3>
+          
+          <button type="button" id="useCurrentLocBtn" class="button button-primary" style="background: #2563eb; color: #fff; font-weight: 600; padding: 0.75rem 1.25rem; border-radius: 8px; margin-bottom: 1.5rem; display: inline-flex; align-items: center; gap: 8px; border: none; cursor: pointer;">
+            <span>🎯</span> <span>Use my current location</span>
+          </button>
+
+          <form action="/client/addresses/add" method="POST" style="display: flex; flex-direction: column; gap: 1rem;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 1rem;">
+              <input type="text" name="name" id="addr_name" value="<%= profile.name %>" placeholder="Name" required class="form-input" style="padding: 0.75rem 1rem; border-radius: 8px; background: rgba(255,255,255,0.06); color: #fff; border: 1px solid rgba(255,255,255,0.2);">
+              <input type="text" name="phone" id="addr_phone" value="<%= profile.phone && profile.phone.startsWith('G_') ? '' : profile.phone %>" placeholder="10-digit mobile number" required class="form-input" style="padding: 0.75rem 1rem; border-radius: 8px; background: rgba(255,255,255,0.06); color: #fff; border: 1px solid rgba(255,255,255,0.2);">
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 1rem;">
+              <div style="position: relative;">
+                <input type="text" name="pincode" id="addr_pincode" maxlength="6" placeholder="6-digit Pincode (e.g. 226006)" required class="form-input" style="width: 100%; padding: 0.75rem 1rem; border-radius: 8px; background: rgba(255,255,255,0.06); color: #fff; border: 1px solid rgba(255,255,255,0.2);">
+                <span id="pincode_status" style="position: absolute; right: 10px; top: 12px; font-size: 0.8rem; color: #38bdf8;"></span>
+              </div>
+              <input type="text" name="locality" id="addr_locality" list="pincode-localities" placeholder="Locality / Area (Select or Type)" required class="form-input" style="padding: 0.75rem 1rem; border-radius: 8px; background: rgba(255,255,255,0.06); color: #fff; border: 1px solid rgba(255,255,255,0.2);">
+              <datalist id="pincode-localities"></datalist>
+            </div>
+
+            <textarea name="address" id="addr_street" rows="3" placeholder="Exact House / Building Address & Street" required class="form-input" style="padding: 0.75rem 1rem; border-radius: 8px; background: rgba(255,255,255,0.06); color: #fff; border: 1px solid rgba(255,255,255,0.2);"></textarea>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 1rem;">
+              <input type="text" name="city" id="addr_city" value="<%= profile.city %>" placeholder="City/District/Town" required class="form-input" style="padding: 0.75rem 1rem; border-radius: 8px; background: rgba(255,255,255,0.06); color: #fff; border: 1px solid rgba(255,255,255,0.2);">
+              <select name="state" id="addr_state" required class="form-input" style="padding: 0.75rem 1rem; border-radius: 8px; background: #1e293b; color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;">
+                <option value="">--Select State--</option>
+                <option value="Andhra Pradesh">Andhra Pradesh</option>
+                <option value="Assam">Assam</option>
+                <option value="Bihar">Bihar</option>
+                <option value="Chandigarh">Chandigarh</option>
+                <option value="Chhattisgarh">Chhattisgarh</option>
+                <option value="Delhi">Delhi / NCR</option>
+                <option value="Goa">Goa</option>
+                <option value="Gujarat">Gujarat</option>
+                <option value="Haryana" selected>Haryana</option>
+                <option value="Himachal Pradesh">Himachal Pradesh</option>
+                <option value="Jharkhand">Jharkhand</option>
+                <option value="Karnataka">Karnataka</option>
+                <option value="Kerala">Kerala</option>
+                <option value="Madhya Pradesh">Madhya Pradesh</option>
+                <option value="Maharashtra">Maharashtra</option>
+                <option value="Orissa">Orissa</option>
+                <option value="Punjab">Punjab</option>
+                <option value="Rajasthan">Rajasthan</option>
+                <option value="Tamil Nadu">Tamil Nadu</option>
+                <option value="Telangana">Telangana</option>
+                <option value="Uttar Pradesh">Uttar Pradesh</option>
+                <option value="Uttarakhand">Uttarakhand</option>
+                <option value="West Bengal">West Bengal</option>
+                <option value="Other">Other / All India</option>
+              </select>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 1rem;">
+              <input type="text" name="landmark" id="addr_landmark" placeholder="Landmark (Optional)" class="form-input" style="padding: 0.75rem 1rem; border-radius: 8px; background: rgba(255,255,255,0.06); color: #fff; border: 1px solid rgba(255,255,255,0.2);">
+              <input type="text" name="alternatePhone" placeholder="Alternate Phone (Optional)" class="form-input" style="padding: 0.75rem 1rem; border-radius: 8px; background: rgba(255,255,255,0.06); color: #fff; border: 1px solid rgba(255,255,255,0.2);">
+            </div>
+
+            <div style="margin-top: 0.5rem;">
+              <span style="font-size: 0.85rem; color: #cbd5e1; font-weight: 600; display: block; margin-bottom: 0.5rem;">Address Type</span>
+              <div style="display: flex; gap: 1.5rem; align-items: center;">
+                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: #fff; font-weight: 600;">
+                  <input type="radio" name="addressType" value="Home" checked> Home
+                </label>
+                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: #fff; font-weight: 600;">
+                  <input type="radio" name="addressType" value="Work"> Work
+                </label>
+                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: #fff; font-weight: 600;">
+                  <input type="radio" name="addressType" value="Other"> Other
+                </label>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 1.25rem; align-items: center; margin-top: 1.5rem;">
+              <button type="submit" class="button button-primary" style="background: #2563eb; padding: 0.85rem 2.5rem; font-weight: 700; border-radius: 10px;">SAVE</button>
+              <button type="button" class="button button-secondary" style="background: none; border: none; color: #38bdf8; font-weight: 700; cursor: pointer; padding: 0.85rem 1rem;" onclick="document.getElementById('addAddressModal').style.display = 'none';">CANCEL</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <script>
+        async function fetchPincodeDetails(pin) {
+          const statusEl = document.getElementById("pincode_status");
+          const datalist = document.getElementById("pincode-localities");
+          if (!pin || pin.length !== 6 || isNaN(pin)) {
+            statusEl.textContent = "";
+            return;
+          }
+          statusEl.textContent = "⌛ Fetching...";
+          try {
+            const res = await fetch(`https://api.postalpincode.in/pincode/${pin}`);
+            const data = await res.json();
+            if (data && data[0] && data[0].Status === "Success" && data[0].PostOffice) {
+              const pos = data[0].PostOffice;
+              const firstPo = pos[0];
+              document.getElementById("addr_city").value = firstPo.District || firstPo.Division || firstPo.Block || "";
+              
+              // Set State
+              const stateSelect = document.getElementById("addr_state");
+              const stateName = firstPo.State || "";
+              let found = false;
+              for (let opt of stateSelect.options) {
+                if (opt.value.toLowerCase() === stateName.toLowerCase()) {
+                  opt.selected = true;
+                  found = true;
+                  break;
+                }
+              }
+              if (!found && stateName) {
+                const newOpt = document.createElement("option");
+                newOpt.value = stateName;
+                newOpt.textContent = stateName;
+                newOpt.selected = true;
+                stateSelect.appendChild(newOpt);
+              }
+
+              // Populate datalist with localities
+              datalist.innerHTML = "";
+              pos.forEach(po => {
+                const opt = document.createElement("option");
+                opt.value = po.Name;
+                datalist.appendChild(opt);
+              });
+              if (!document.getElementById("addr_locality").value && pos.length > 0) {
+                document.getElementById("addr_locality").value = pos[0].Name;
+              }
+              statusEl.textContent = "✅ Valid";
+            } else {
+              statusEl.textContent = "❌ Not found";
+            }
+          } catch (e) {
+            statusEl.textContent = "";
+          }
+        }
+
+        document.getElementById("addr_pincode").addEventListener("input", function() {
+          fetchPincodeDetails(this.value.trim());
+        });
+
+        document.getElementById("useCurrentLocBtn").addEventListener("click", function() {
+          const btn = this;
+          btn.innerHTML = "<span>⏳</span> <span>Locating via GPS...</span>";
+          if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(async (pos) => {
+              try {
+                const lat = pos.coords.latitude;
+                const lon = pos.coords.longitude;
+                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&addressdetails=1&lat=${lat}&lon=${lon}`);
+                const data = await res.json();
+                if (data && data.address) {
+                  const pin = data.address.postcode || "";
+                  if (pin) {
+                    document.getElementById("addr_pincode").value = pin;
+                    await fetchPincodeDetails(pin);
+                  }
+                  const locality = data.address.suburb || data.address.neighbourhood || data.address.residential || data.address.village || data.address.town || "";
+                  if (locality) document.getElementById("addr_locality").value = locality;
+                  
+                  const housePart = [data.address.house_number, data.address.building, data.address.road, data.address.residential].filter(Boolean).join(", ");
+                  document.getElementById("addr_street").value = housePart || data.display_name || "";
+                  
+                  const cityPart = data.address.city || data.address.district || data.address.state_district || "";
+                  if (cityPart) document.getElementById("addr_city").value = cityPart;
+                }
+              } catch (e) {
+                alert("Coordinates captured! Please verify the exact street and pincode.");
+              } finally {
+                btn.innerHTML = "<span>🎯</span> <span>Use my current location</span>";
+              }
+            }, () => {
+              alert("Please enable location permissions in your browser settings to auto-fill.");
+              btn.innerHTML = "<span>🎯</span> <span>Use my current location</span>";
+            });
+          } else {
+            alert("Geolocation is not supported by this browser.");
+            btn.innerHTML = "<span>🎯</span> <span>Use my current location</span>";
+          }
+        });
+      </script>
+    </article>
+
+    <!-- Change Password Form (Strictly matched with platform rules) -->
+    <article class="glass-panel" style="padding: 2.5rem; border-radius: var(--radius-large);">
+      <p class="card-kicker">Security Rules & Authentication</p>
+      <h2 style="margin-bottom: 1.5rem;">Change Account Password</h2>
+
+      <form method="POST" action="/client/change-password" class="auth-form" id="clientPassForm">
         <label class="field-group">
           <span>New Password</span>
-          <input type="password" name="newPassword" placeholder="Minimum 6 characters" required>
+          <div style="position: relative;">
+            <input type="password" name="newPassword" id="clientNewPass" placeholder="Enter new strong password" required style="width: 100%; padding-right: 45px;">
+            <button type="button" onclick="const p=document.getElementById('clientNewPass');p.type=p.type==='password'?'text':'password';this.textContent=p.type==='password'?'👁️':'🔒';" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 1.1rem; color: #fff;">👁️</button>
+          </div>
         </label>
 
-        <button type="submit" class="button button-secondary" style="margin-top: 1rem;">Update Password</button>
+        <div style="background: rgba(255,255,255,0.04); border-radius: 10px; padding: 1rem; margin-bottom: 1.25rem; border: 1px solid rgba(255,255,255,0.1);">
+          <span style="font-size: 0.82rem; font-weight: 700; color: #a78bfa; display: block; margin-bottom: 0.5rem;">Password Rules Requirement:</span>
+          <ul style="margin: 0; padding-left: 1.2rem; font-size: 0.8rem; color: var(--color-ink-light); display: flex; flex-direction: column; gap: 4px;">
+            <li>At least <strong>8 characters</strong> minimum length</li>
+            <li>Contains at least one <strong>Uppercase letter [A-Z]</strong></li>
+            <li>Contains at least one <strong>Lowercase letter [a-z]</strong></li>
+            <li>Contains at least one <strong>Number [0-9]</strong></li>
+            <li>Contains at least one <strong>Special character (@, #, $, !, etc.)</strong></li>
+          </ul>
+        </div>
+
+        <button type="submit" class="button button-secondary" style="margin-top: 0.5rem;">Update Password Strictly</button>
       </form>
+
+      <script>
+        document.getElementById("clientPassForm").addEventListener("submit", function(e) {
+          const val = document.getElementById("clientNewPass").value;
+          if (val.length < 8 || !/[A-Z]/.test(val) || !/[a-z]/.test(val) || !/[0-9]/.test(val) || !/[\W_]/.test(val)) {
+            e.preventDefault();
+            alert("Password must be at least 8 characters long and include an uppercase letter, lowercase letter, number, and special character.");
+          }
+        });
+      </script>
     </article>
   </div>
 </section>

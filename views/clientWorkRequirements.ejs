@@ -1,0 +1,71 @@
+<section class="page-hero">
+  <div class="shell page-hero-content">
+    <span class="eyebrow">SV Personnels Client Portal</span>
+    <h1>Post a Job / Create Work</h1>
+    <p>Submit your service requirements so matching verified professionals can contact and work with you directly.</p>
+  </div>
+</section>
+
+<section class="section shell animate-fade-in" style="max-width: 760px; margin: 0 auto;">
+  
+  <div class="glass-panel" style="padding: 3rem; border-radius: var(--radius-lg); border: 1px solid var(--line-strong); background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(20px);">
+    <%- include("partials/notice") %>
+
+    <form action="/client/work-requirements/new" method="POST" style="display: flex; flex-direction: column; gap: 1.5rem;">
+      
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem;">
+        <label class="field-group" style="display: flex; flex-direction: column; gap: 0.4rem;">
+          <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-soft);">Service Category</span>
+          <select name="category" required style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; color: #fff; font-size: 0.95rem; cursor: pointer;">
+            <option value="" disabled selected style="background: #0f172a;">Select category...</option>
+            <% services.forEach(function (svc) { %>
+              <option value="<%= svc.name %>" style="background: #0f172a;"><%= svc.name %></option>
+            <% }) %>
+          </select>
+        </label>
+        
+        <label class="field-group" style="display: flex; flex-direction: column; gap: 0.4rem;">
+          <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-soft);">Sub-Category / Skill Focus (Optional)</span>
+          <input type="text" name="subCategory" placeholder="e.g. Deep kitchen cleaning, Sofa repair" style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; color: #fff;">
+        </label>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem;">
+        <label class="field-group" style="display: flex; flex-direction: column; gap: 0.4rem;">
+          <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-soft);">Work Location (City or Address)</span>
+          <input type="text" name="location" required placeholder="e.g. New Delhi, Sector 4" style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; color: #fff;">
+        </label>
+        
+        <label class="field-group" style="display: flex; flex-direction: column; gap: 0.4rem;">
+          <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-soft);">Estimated Budget (₹)</span>
+          <input type="number" name="budget" required min="100" placeholder="e.g. 1500" style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; color: #fff;">
+        </label>
+      </div>
+
+      <label class="field-group" style="display: flex; flex-direction: column; gap: 0.4rem;">
+        <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-soft);">Job Schedule Type</span>
+        <div style="display: flex; gap: 2rem; margin-top: 0.25rem;">
+          <label style="display: flex; gap: 0.5rem; align-items: center; color: var(--text-soft); cursor: pointer; font-size: 0.95rem;">
+            <input type="radio" name="jobType" value="Part Time" checked style="cursor: pointer;"> Part-Time / Single Booking
+          </label>
+          <label style="display: flex; gap: 0.5rem; align-items: center; color: var(--text-soft); cursor: pointer; font-size: 0.95rem;">
+            <input type="radio" name="jobType" value="Full Time" style="cursor: pointer;"> Full-Time Staff Placement
+          </label>
+        </div>
+      </label>
+
+      <label class="field-group" style="display: flex; flex-direction: column; gap: 0.4rem;">
+        <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-soft);">Job Description & Details</span>
+        <textarea name="description" required rows="6" placeholder="Describe the job, tasks, working hours, and any requirements..." style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; color: #fff; font-size: 0.95rem; resize: vertical; line-height: 1.5;"></textarea>
+      </label>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; flex-wrap: wrap; gap: 1rem;">
+        <a href="/client/dashboard" style="color: var(--text-muted); text-decoration: none; font-size: 0.9rem;">‹ Back to Client Dashboard</a>
+        <button type="submit" class="button button-primary" style="background: linear-gradient(135deg, #a78bfa, #7c3aed); border: none; font-weight: bold; border-radius: 8px; padding: 12px 30px; font-size: 1rem; cursor: pointer; color: #fff;">
+          Publish Job Requirement ›
+        </button>
+      </div>
+
+    </form>
+  </div>
+</section>

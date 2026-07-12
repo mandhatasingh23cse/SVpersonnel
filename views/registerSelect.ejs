@@ -5,7 +5,7 @@
     <p style="color: var(--color-ink-light); max-width: 600px; margin: 0 auto;">Choose how you want to use the platform to get started.</p>
   </div>
 
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem; width: 100%;">
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: 2rem; width: 100%;">
     <!-- Option 1: Client -->
     <div class="glass-panel card-reveal" style="padding: 2.5rem; border-radius: var(--radius-large); display: flex; flex-direction: column; justify-content: space-between; align-items: center; text-align: center; background: rgba(255,255,255,0.45); transition: transform 0.3s ease, border-color 0.3s ease;">
       <div>
@@ -13,17 +13,27 @@
         <h2 style="font-family: var(--font-display); font-size: 1.6rem; margin-bottom: 0.75rem; color: var(--color-ink);">I want to hire</h2>
         <p style="color: var(--color-ink-light); font-size: 0.95rem; line-height: 1.6; margin-bottom: 2rem;">Find and book verified local professionals for cleaning, repair, tutoring, and more. Simple booking, secure process.</p>
       </div>
-      <a href="/signup" class="button button-primary button-block" style="text-decoration: none;">Register as a Client</a>
+      <a href="/signup" class="button button-primary button-block" style="text-decoration: none; width: 100%;">Register as a Client</a>
     </div>
 
     <!-- Option 2: Professional -->
     <div class="glass-panel card-reveal" style="padding: 2.5rem; border-radius: var(--radius-large); display: flex; flex-direction: column; justify-content: space-between; align-items: center; text-align: center; background: rgba(255,255,255,0.45); transition: transform 0.3s ease, border-color 0.3s ease;">
       <div>
         <div style="font-size: 3.5rem; margin-bottom: 1.5rem;">💼</div>
-        <h2 style="font-family: var(--font-display); font-size: 1.6rem; margin-bottom: 0.75rem; color: var(--color-ink);">I want to offer services</h2>
+        <h2 style="font-family: var(--font-display); font-size: 1.6rem; margin-bottom: 0.75rem; color: var(--color-ink);">I want to work</h2>
         <p style="color: var(--color-ink-light); font-size: 0.95rem; line-height: 1.6; margin-bottom: 2rem;">Grow your local service business, get verified booking requests from clients, and manage your schedule easily.</p>
       </div>
-      <a href="/register/professional" class="button button-secondary button-block" style="text-decoration: none;">Register as a Partner</a>
+      <a href="/register/professional" class="button button-secondary button-block" style="text-decoration: none; width: 100%;">Register as a Professional</a>
+    </div>
+
+    <!-- Option 3: Partner -->
+    <div class="glass-panel card-reveal" style="padding: 2.5rem; border-radius: var(--radius-large); display: flex; flex-direction: column; justify-content: space-between; align-items: center; text-align: center; background: rgba(255,255,255,0.45); transition: transform 0.3s ease, border-color 0.3s ease;">
+      <div>
+        <div style="font-size: 3.5rem; margin-bottom: 1.5rem;">🏢</div>
+        <h2 style="font-family: var(--font-display); font-size: 1.6rem; margin-bottom: 0.75rem; color: var(--color-ink);">I am an Agency / Partner</h2>
+        <p style="color: var(--color-ink-light); font-size: 0.95rem; line-height: 1.6; margin-bottom: 2rem;">Onboard and manage multiple professionals under your agency. Collect bookings and receive weekly payouts.</p>
+      </div>
+      <a href="/register/partner" class="button button-secondary button-block" style="text-decoration: none; border-color: #f59e0b; color: #fff; width: 100%;">Register as Partner</a>
     </div>
   </div>
 

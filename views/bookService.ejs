@@ -1,13 +1,13 @@
 <section class="page-hero">
   <div class="shell page-hero-content">
-    <p class="eyebrow">Book service</p>
+    <p class="eyebrow">Step 1 of 2: Service & Address Selection</p>
     <h1><%= professional ? `Book ${professional.name}` : "Request a service" %></h1>
-    <p>Share your preferred time, area, and budget in rupees to create a live booking request.</p>
+    <p>Select your preferred work date, time slot, and doorstep service address to continue.</p>
   </div>
 </section>
 
-<section class="section shell booking-layout">
-  <div class="glass-panel booking-summary" data-reveal>
+<section class="section shell booking-layout" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap: 2.5rem; align-items: start; width: 100%; max-width: 1300px; margin: 0 auto; box-sizing: border-box;">
+  <div class="glass-panel booking-summary" data-reveal style="width: 100%; max-width: 100%; box-sizing: border-box; padding: 2.25rem; border-radius: 24px; border: 1px solid rgba(255,255,255,0.15); background: rgba(15, 23, 42, 0.75); box-shadow: 0 16px 48px rgba(0,0,0,0.5);">
     <p class="card-kicker">Professional summary</p>
 
     <% if (professional) { %>
@@ -29,7 +29,7 @@
       <div class="booking-meta">
         <span><%= professional.experience %> years experience</span>
         <span><%= professional.distance %> km away</span>
-        <span>Starts at <%= formatCurrency(professional.startingPrice) %></span>
+        <span style="color: #a78bfa; font-weight: 700;">Price Negotiable on site</span>
       </div>
 
       <div class="result-skills">
@@ -44,282 +44,212 @@
     <% } %>
   </div>
 
-  <div class="glass-panel booking-form-card" data-reveal>
-    <p class="card-kicker">Create request</p>
-    <h2>Send a booking request</h2>
+  <div class="glass-panel booking-form-card" data-reveal style="width: 100%; max-width: 100%; box-sizing: border-box; padding: 2.25rem; border-radius: 24px; border: 1px solid rgba(255,255,255,0.15); background: rgba(15, 23, 42, 0.75); box-shadow: 0 16px 48px rgba(0,0,0,0.5);">
+    <div style="margin-bottom: 1.75rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1.25rem;">
+      <span style="display: inline-block; background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 0.5rem;">Step 1: Booking Details</span>
+      <h2 style="margin: 0; color: #fff; font-size: 1.75rem; font-weight: 800; letter-spacing: -0.02em;">Select Date, Time & Doorstep Address</h2>
+    </div>
 
     <%- include("partials/notice") %>
 
-    <form class="auth-form" method="POST" action="<%= professional ? `/book-service/${professional.id}` : '#' %>">
-      <div class="form-row">
-        <label class="field-group">
-          <span>Full name</span>
-          <input type="text" name="fullName" value="<%= formData.fullName %>" readonly required>
+    <form class="auth-form" method="POST" action="<%= professional ? `/book-service/${professional.id}` : '#' %>" style="width: 100%; max-width: 100%; box-sizing: border-box;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 1.25rem; margin-bottom: 1.25rem;">
+        <label class="field-group" style="margin: 0; min-width: 0; max-width: 100%;">
+          <span style="color: #cbd5e1; font-weight: 600; font-size: 0.88rem; display: block; margin-bottom: 0.45rem;">Your Full Name</span>
+          <input type="text" name="fullName" value="<%= formData.fullName %>" readonly required style="width: 100%; box-sizing: border-box; padding: 0.85rem 1rem; border-radius: 12px; background: rgba(255,255,255,0.05); color: #94a3b8; border: 1px solid rgba(255,255,255,0.1); font-weight: 600;">
         </label>
 
-        <label class="field-group">
-          <span>Email</span>
-          <input type="email" name="email" value="<%= formData.email %>" readonly required>
+        <label class="field-group" style="margin: 0; min-width: 0; max-width: 100%;">
+          <span style="color: #cbd5e1; font-weight: 600; font-size: 0.88rem; display: block; margin-bottom: 0.45rem;">Registered Email</span>
+          <input type="email" name="email" value="<%= formData.email %>" readonly required style="width: 100%; box-sizing: border-box; padding: 0.85rem 1rem; border-radius: 12px; background: rgba(255,255,255,0.05); color: #94a3b8; border: 1px solid rgba(255,255,255,0.1); font-weight: 600;">
         </label>
       </div>
 
-      <div class="form-row">
-        <label class="field-group">
-          <span>Phone number</span>
-          <input type="tel" name="phone" value="<%= formData.phone %>" readonly required>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 1.25rem; margin-bottom: 1.75rem;">
+        <label class="field-group" style="margin: 0; min-width: 0; max-width: 100%;">
+          <span style="color: #cbd5e1; font-weight: 600; font-size: 0.88rem; display: block; margin-bottom: 0.45rem;">Phone Number</span>
+          <input type="tel" name="phone" value="<%= formData.phone %>" readonly required style="width: 100%; box-sizing: border-box; padding: 0.85rem 1rem; border-radius: 12px; background: rgba(255,255,255,0.05); color: #94a3b8; border: 1px solid rgba(255,255,255,0.1); font-weight: 600;">
         </label>
 
-        <label class="field-group">
-          <span>Service</span>
-          <select name="serviceId" required>
-            <% serviceOptions.forEach(function (service) { %>
-              <option value="<%= service.id %>" <%= String(formData.serviceId) === String(service.id) ? "selected" : "" %>>
-                <%= service.name %> | <%= formatCurrency(service.priceInr) %>
-              </option>
-            <% }) %>
+        <label class="field-group" style="margin: 0; min-width: 0; max-width: 100%;">
+          <span style="color: #cbd5e1; font-weight: 600; font-size: 0.88rem; display: block; margin-bottom: 0.45rem;">Select Service / Skill Needed</span>
+          <select name="serviceId" class="form-input" required style="width: 100%; box-sizing: border-box; padding: 0.85rem 1rem; border-radius: 12px; background: rgba(15, 23, 42, 0.95); color: #fff; border: 1px solid rgba(255,255,255,0.2); font-weight: 600; cursor: pointer;">
+            <% if (typeof serviceOptions !== 'undefined' && serviceOptions && serviceOptions.length > 0) { %>
+              <% serviceOptions.forEach(function (service) { %>
+                <option value="<%= service.id %>" <%= String(formData.serviceId) === String(service.id) ? "selected" : "" %>>
+                  🛠️ <%= service.name %> (<%= formatCurrency(service.priceInr || professional.startingPrice || 500) %> base / part-time)
+                </option>
+              <% }) %>
+            <% } else if (professional && professional.skills && professional.skills.length > 0) { %>
+              <% professional.skills.forEach(function (skill, idx) { %>
+                <option value="<%= idx + 1 %>">🛠️ <%= skill %></option>
+              <% }) %>
+            <% } else { %>
+              <option value="1">🛠️ Professional Service</option>
+            <% } %>
           </select>
         </label>
       </div>
 
-      <div class="form-row">
-        <label class="field-group">
-          <span>Preferred date</span>
-          <input type="date" name="preferredDate" value="<%= formData.preferredDate %>" required>
+      <!-- Select Work Type: Part Time vs Full Time -->
+      <div style="margin: 1.75rem 0; padding: 1.75rem; border-radius: 20px; border: 1px solid rgba(255,255,255,0.12); background: rgba(30, 41, 59, 0.5); width: 100%; box-sizing: border-box;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.5rem;">
+          <h4 style="margin: 0; font-size: 1.15rem; color: #fff; font-weight: 800;">⏳ Select Hiring Mode (Part Time vs Full Time)</h4>
+          <span style="font-size: 0.8rem; color: #a78bfa; font-weight: 600;">Choose how you wish to hire this professional</span>
+        </div>
+
+        <% 
+          const hasPartTime = !professional || !professional.workModes || professional.workModes.includes('Part Time');
+          const hasFullTime = !professional || !professional.workModes || professional.workModes.includes('Full Time');
+        %>
+        <div style="display: grid; grid-template-columns: 1fr; gap: 1.25rem; width: 100%;">
+          <% if (hasPartTime) { %>
+            <label style="display: flex; align-items: flex-start; gap: 1.25rem; padding: 1.5rem; border-radius: 16px; border: 2px solid #38bdf8; background: rgba(56, 189, 248, 0.12); cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 20px rgba(56, 189, 248, 0.15); width: 100%; box-sizing: border-box;" id="jobtype-part" onclick="selectBookingJobType('Part Time')">
+              <div style="flex-shrink: 0; padding-top: 3px;">
+                <input type="radio" name="jobType" id="radio-part" value="Part Time" checked style="margin: 0; accent-color: #38bdf8; transform: scale(1.35); cursor: pointer;">
+              </div>
+              <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
+                  <strong style="color: #fff; font-size: 1.1rem; font-weight: 700;">Part Time Booking</strong>
+                  <span style="background: #38bdf8; color: #000; font-size: 0.72rem; font-weight: 800; padding: 3px 10px; border-radius: 6px; letter-spacing: 0.03em;">FIXED PRICE</span>
+                </div>
+                <p style="margin: 0; font-size: 0.9rem; color: #cbd5e1; line-height: 1.6;">
+                  Payment is fixed based on selected service rate (approx ₹<%= professional ? (professional.partTimeRate || professional.startingPrice || 500) : 500 %> / day). Settle payment directly on work completion.
+                </p>
+              </div>
+            </label>
+          <% } %>
+
+          <% if (hasFullTime) { %>
+            <label style="display: flex; align-items: flex-start; gap: 1.25rem; padding: 1.5rem; border-radius: 16px; border: <%= !hasPartTime ? '2px solid #f59e0b' : '1px solid rgba(255,255,255,0.15)' %>; background: <%= !hasPartTime ? 'rgba(245, 158, 11, 0.15)' : 'rgba(15, 23, 42, 0.75)' %>; cursor: pointer; transition: all 0.2s; width: 100%; box-sizing: border-box;" id="jobtype-full" onclick="selectBookingJobType('Full Time')">
+              <div style="flex-shrink: 0; padding-top: 3px;">
+                <input type="radio" name="jobType" id="radio-full" value="Full Time" <%= !hasPartTime ? 'checked' : '' %> style="margin: 0; accent-color: #f59e0b; transform: scale(1.35); cursor: pointer;">
+              </div>
+              <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
+                  <strong style="color: #fff; font-size: 1.1rem; font-weight: 700;">Full Time Hiring</strong>
+                  <span style="background: #f59e0b; color: #000; font-size: 0.72rem; font-weight: 800; padding: 3px 10px; border-radius: 6px; letter-spacing: 0.03em;">NEGOTIABLE + ₹250 FEE</span>
+                </div>
+                <p style="margin: 0; font-size: 0.9rem; color: #94a3b8; line-height: 1.6;">
+                  Monthly salary is negotiable directly with the professional on site (approx ₹<%= professional ? (professional.fullTimeRate || 25000) : 25000 %> / month). Note: A ₹250 platform fee must be paid online via PayU on the next step to confirm full-time hiring.
+                </p>
+              </div>
+            </label>
+          <% } %>
+        </div>
+
+        <script>
+          function selectBookingJobType(type) {
+            const partCard = document.getElementById("jobtype-part");
+            const fullCard = document.getElementById("jobtype-full");
+            const partRadio = document.getElementById("radio-part");
+            const fullRadio = document.getElementById("radio-full");
+            if (type === 'Part Time') {
+              if (partRadio) partRadio.checked = true;
+              if (partCard) {
+                partCard.style.border = "2px solid #38bdf8";
+                partCard.style.background = "rgba(56, 189, 248, 0.12)";
+                partCard.style.boxShadow = "0 4px 20px rgba(56, 189, 248, 0.15)";
+              }
+              if (fullCard) {
+                fullCard.style.border = "1px solid rgba(255,255,255,0.15)";
+                fullCard.style.background = "rgba(15, 23, 42, 0.75)";
+                fullCard.style.boxShadow = "none";
+              }
+            } else {
+              if (fullRadio) fullRadio.checked = true;
+              if (fullCard) {
+                fullCard.style.border = "2px solid #f59e0b";
+                fullCard.style.background = "rgba(245, 158, 11, 0.15)";
+                fullCard.style.boxShadow = "0 4px 20px rgba(245, 158, 11, 0.15)";
+              }
+              if (partCard) {
+                partCard.style.border = "1px solid rgba(255,255,255,0.15)";
+                partCard.style.background = "rgba(15, 23, 42, 0.75)";
+                partCard.style.boxShadow = "none";
+              }
+            }
+          }
+        </script>
+      </div>
+
+      <!-- Preferred Date and Time Slot -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 1.25rem; margin-bottom: 1.75rem;">
+        <label class="field-group" style="margin: 0; min-width: 0; max-width: 100%;">
+          <span style="color: #cbd5e1; font-weight: 600; font-size: 0.88rem; display: block; margin-bottom: 0.45rem;">📅 Preferred Date</span>
+          <input type="date" name="preferredDate" value="<%= formData.preferredDate || new Date().toISOString().split('T')[0] %>" required style="width: 100%; box-sizing: border-box; padding: 0.85rem 1rem; border-radius: 12px; background: rgba(15, 23, 42, 0.95); color: #fff; border: 1px solid rgba(255,255,255,0.2); font-weight: 600;">
         </label>
 
-        <label class="field-group">
-          <span>🕒 Select Preferred Work Time (Clock)</span>
-          <input type="time" name="preferredTimeSlot" id="preferredTimeSlotInput" value="<%= formData.preferredTimeSlot || '10:00' %>" required style="font-size: 1rem; padding: 0.75rem; cursor: pointer;">
-          <div style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.35rem;">
-            <button type="button" class="time-pill-btn" onclick="document.getElementById('preferredTimeSlotInput').value='09:00'" style="background: rgba(255,255,255,0.05); border: 1px solid var(--line); border-radius: 4px; padding: 3px 8px; font-size: 0.75rem; color: var(--text-soft); cursor: pointer;">09:00 AM</button>
-            <button type="button" class="time-pill-btn" onclick="document.getElementById('preferredTimeSlotInput').value='11:00'" style="background: rgba(255,255,255,0.05); border: 1px solid var(--line); border-radius: 4px; padding: 3px 8px; font-size: 0.75rem; color: var(--text-soft); cursor: pointer;">11:00 AM</button>
-            <button type="button" class="time-pill-btn" onclick="document.getElementById('preferredTimeSlotInput').value='14:00'" style="background: rgba(255,255,255,0.05); border: 1px solid var(--line); border-radius: 4px; padding: 3px 8px; font-size: 0.75rem; color: var(--text-soft); cursor: pointer;">02:00 PM</button>
-            <button type="button" class="time-pill-btn" onclick="document.getElementById('preferredTimeSlotInput').value='17:00'" style="background: rgba(255,255,255,0.05); border: 1px solid var(--line); border-radius: 4px; padding: 3px 8px; font-size: 0.75rem; color: var(--text-soft); cursor: pointer;">05:00 PM</button>
-          </div>
+        <label class="field-group" style="margin: 0; min-width: 0; max-width: 100%;">
+          <span style="color: #cbd5e1; font-weight: 600; font-size: 0.88rem; display: block; margin-bottom: 0.45rem;">🕒 Preferred Arrival Time</span>
+          <input type="time" name="preferredTimeSlot" id="preferredTimeSlotInput" value="<%= formData.preferredTimeSlot || '10:00' %>" required style="width: 100%; box-sizing: border-box; font-size: 1rem; padding: 0.85rem 1rem; border-radius: 12px; background: rgba(15, 23, 42, 0.95); color: #fff; border: 1px solid rgba(255,255,255,0.2); font-weight: 600; cursor: pointer;">
         </label>
       </div>
 
-      <!-- Flipkart / Amazon style Complete Service Address -->
-      <div style="margin: 1.5rem 0; padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--line); background: rgba(255, 255, 255, 0.015);">
-        <h4 style="margin: 0 0 0.5rem 0; font-size: 1.05rem; display: flex; justify-content: space-between; align-items: center;">
-          <span>📍 Complete Service Address (Like Flipkart / Amazon)</span>
-          <button type="button" id="btn-fetch-location" style="background: none; border: none; color: var(--accent); cursor: pointer; font-size: 0.8rem; font-weight: 700; display: flex; align-items: center; gap: 0.25rem; padding: 0;">
-            🎯 Use GPS Location
+      <!-- Quick Select Time Pills -->
+      <div style="margin-bottom: 2rem; padding: 1.1rem 1.4rem; background: rgba(255,255,255,0.03); border-radius: 14px; border: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
+        <span style="font-size: 0.84rem; color: #94a3b8; font-weight: 600;">⚡ Quick Select Arrival Slot:</span>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button type="button" onclick="document.getElementById('preferredTimeSlotInput').value='09:00'" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.18); border-radius: 8px; padding: 6px 12px; font-size: 0.8rem; font-weight: 600; color: #e2e8f0; cursor: pointer; transition: all 0.2s;">🌅 09:00 AM</button>
+          <button type="button" onclick="document.getElementById('preferredTimeSlotInput').value='11:00'" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.18); border-radius: 8px; padding: 6px 12px; font-size: 0.8rem; font-weight: 600; color: #e2e8f0; cursor: pointer; transition: all 0.2s;">☀️ 11:00 AM</button>
+          <button type="button" onclick="document.getElementById('preferredTimeSlotInput').value='14:00'" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.18); border-radius: 8px; padding: 6px 12px; font-size: 0.8rem; font-weight: 600; color: #e2e8f0; cursor: pointer; transition: all 0.2s;">🌤️ 02:00 PM</button>
+          <button type="button" onclick="document.getElementById('preferredTimeSlotInput').value='17:00'" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.18); border-radius: 8px; padding: 6px 12px; font-size: 0.8rem; font-weight: 600; color: #e2e8f0; cursor: pointer; transition: all 0.2s;">🌆 05:00 PM</button>
+        </div>
+      </div>
+
+      <!-- Complete Doorstep Service Address -->
+      <div style="margin: 2rem 0; padding: 1.75rem; border-radius: 20px; border: 1px solid rgba(255,255,255,0.12); background: rgba(30, 41, 59, 0.5); width: 100%; box-sizing: border-box;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; flex-wrap: wrap; gap: 0.5rem;">
+          <h4 style="margin: 0; font-size: 1.15rem; color: #fff; font-weight: 800;">📍 Select Doorstep Service Address</h4>
+          <a href="/client/profile" style="color: #38bdf8; font-size: 0.84rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem;">+ Add / Manage Addresses ›</a>
+        </div>
+        <p style="font-size: 0.88rem; color: #94a3b8; margin-bottom: 1.4rem;">
+          Select your verified doorstep address where the professional will arrive via GPS navigation.
+        </p>
+
+        <% if (clientAddresses && clientAddresses.length > 0) { %>
+          <div style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 0.5rem; width: 100%;">
+            <% clientAddresses.forEach(function(addr, index) { %>
+              <label style="display: flex; align-items: flex-start; gap: 1.25rem; padding: 1.4rem; border-radius: 16px; border: <%= index === 0 ? '2px solid #3b82f6' : '1px solid rgba(255, 255, 255, 0.15)' %>; background: <%= index === 0 ? 'rgba(59, 130, 246, 0.15)' : 'rgba(15, 23, 42, 0.75)' %>; cursor: pointer; transition: all 0.2s; box-shadow: <%= index === 0 ? '0 4px 20px rgba(59, 130, 246, 0.15)' : 'none' %>; width: 100%; box-sizing: border-box;">
+                <div style="flex-shrink: 0; padding-top: 3px;">
+                  <input type="radio" name="selectedAddressId" value="<%= addr.id %>" <%= index === 0 ? 'checked' : '' %> style="margin: 0; accent-color: #3b82f6; transform: scale(1.35); cursor: pointer;">
+                </div>
+                <div style="flex: 1; min-width: 0;">
+                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
+                    <strong style="color: #fff; font-size: 1.05rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                      <span style="background: <%= index === 0 ? '#3b82f6' : 'rgba(255,255,255,0.15)' %>; color: #fff; font-size: 0.75rem; font-weight: 800; padding: 3px 10px; border-radius: 6px;"><%= addr.addressType || 'HOME' %></span>
+                      <span><%= addr.locality || addr.city %> (<%= addr.pincode || 'No PIN' %>)</span>
+                    </strong>
+                    <span style="font-size: 0.78rem; background: rgba(255,255,255,0.08); padding: 3px 10px; border-radius: 6px; color: #e2e8f0; font-weight: 600;"><%= addr.city %></span>
+                  </div>
+                  <div style="font-size: 0.92rem; color: #cbd5e1; line-height: 1.6;">
+                    <%= addr.address || '' %> <%= addr.landmark ? `(Landmark: ${addr.landmark})` : '' %> — <strong>Pincode: <%= addr.pincode %></strong>
+                  </div>
+                </div>
+              </label>
+            <% }) %>
+          </div>
+        <% } else { %>
+          <div style="background: rgba(234, 179, 8, 0.12); border: 1px solid rgba(234, 179, 8, 0.35); padding: 2rem; border-radius: 16px; text-align: center;">
+            <div style="font-size: 2.8rem; margin-bottom: 0.6rem;">🏡</div>
+            <h4 style="color: #fde047; margin: 0 0 0.5rem 0; font-size: 1.25rem; font-weight: 800;">No Saved Addresses Found</h4>
+            <p style="color: #fef08a; font-size: 0.94rem; margin-bottom: 1.5rem; max-width: 500px; margin-left: auto; margin-right: auto; line-height: 1.5;">
+              To book this service, please save a doorstep service address (with exact house/building number, Pincode, and landmark) in your profile first.
+            </p>
+            <a href="/client/profile" class="button button-primary" style="padding: 0.95rem 2.2rem; font-weight: 800; border-radius: 12px; background: #eab308; color: #000; text-decoration: none; display: inline-block; box-shadow: 0 6px 20px rgba(234, 179, 8, 0.3);">
+              + Add Doorstep Address in Profile ›
+            </a>
+          </div>
+        <% } %>
+      </div>
+
+      <% if (clientAddresses && clientAddresses.length > 0) { %>
+        <div style="margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); text-align: right;">
+          <button type="submit" class="button button-primary" style="width: 100%; padding: 1.25rem 2rem; font-size: 1.15rem; font-weight: 800; border-radius: 14px; background: linear-gradient(135deg, #38bdf8, #2563eb); color: #fff; border: none; box-shadow: 0 6px 28px rgba(37, 99, 235, 0.45); cursor: pointer; transition: all 0.2s;">
+            Proceed to Payment Selection ›
           </button>
-        </h4>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Please provide your exact doorstep address so the professional can easily reach you via Google Maps navigation.</p>
-
-        <div class="form-row" style="margin-bottom: 1rem;">
-          <label class="field-group" style="position: relative; flex: 1;">
-            <span>City & Locality / Area</span>
-            <input type="text" id="addressAreaInput" name="addressArea" value="<%= formData.addressArea %>" placeholder="Type to search (e.g. Kaptanganj, Kushinagar or Sector 14, Gurugram)" autocomplete="off" required style="width: 100%;">
-            <div id="address-suggestions" style="position: absolute; top: 100%; left: 0; right: 0; background: #0f172a; border: 1px solid var(--line); border-radius: var(--radius-sm); max-height: 200px; overflow-y: auto; z-index: 100; display: none; box-shadow: var(--shadow-lg);"></div>
-          </label>
         </div>
-
-        <div class="form-row">
-          <label class="field-group" style="width: 100%;">
-            <span>House No., Building Name, Exact Street & Landmark</span>
-            <textarea name="serviceAddress" id="serviceAddressInput" rows="2" placeholder="e.g. Flat 402, Shivam Apartments, Near Durga Mandir, MG Road" required style="width: 100%;"><%= formData.serviceAddress || '' %></textarea>
-          </label>
-        </div>
-
-        <input type="hidden" id="latitudeInput" name="latitude" value="">
-        <input type="hidden" id="longitudeInput" name="longitude" value="">
-      </div>
-
-      <!-- Payment Method Selection -->
-      <div style="margin: 2rem 0 1.5rem 0; border-top: 1px solid var(--line); padding-top: 1.5rem;">
-        <h3 style="font-size: 1.25rem; margin-bottom: 0.75rem;">Payment Method</h3>
-        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.25rem;">Choose how you want to pay the professional:</p>
-        
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
-          <label style="display: flex; flex-direction: column; gap: 0.5rem; padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--line); background: rgba(255, 255, 255, 0.02); cursor: pointer;">
-            <div style="display: flex; align-items: center; gap: 0.75rem;">
-              <input type="radio" name="paymentMethod" value="cod" checked style="width: auto;">
-              <strong style="color: var(--text);">Pay After Service (COD)</strong>
-            </div>
-            <span style="font-size: 0.85rem; color: var(--text-muted);">Pay directly via Cash/UPI after the work is completed.</span>
-          </label>
-          
-          <label style="display: flex; flex-direction: column; gap: 0.5rem; padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--line); background: rgba(255, 255, 255, 0.02); cursor: pointer;">
-            <div style="display: flex; align-items: center; gap: 0.75rem;">
-              <input type="radio" name="paymentMethod" value="online" style="width: auto;">
-              <strong style="color: var(--text);">Online Payment</strong>
-            </div>
-            <span style="font-size: 0.85rem; color: var(--text-muted);">Secure digital payment via UPI, Credit/Debit Cards, or NetBanking.</span>
-          </label>
-        </div>
-
-        <!-- Simulated UPI QR Code or Card Input (Shown only when 'online' is selected) -->
-        <div id="online-payment-details" style="display: none; padding: 1.5rem; border-radius: var(--radius-md); border: 1px solid var(--accent-soft); background: rgba(124, 58, 237, 0.04); margin-bottom: 1.5rem; text-align: center;">
-          <h4 style="margin: 0 0 0.5rem 0; color: var(--accent);">Simulated Secure Payment</h4>
-          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Scan this QR code with any UPI app (GPay, PhonePe, Paytm) to pay securely:</p>
-          <div style="background: white; padding: 10px; display: inline-block; border-radius: var(--radius-sm); margin-bottom: 1rem;">
-            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=upi://pay?pa=gigconnect@sbi%26pn=SV%20Personnels%26mc=0000%26tr=GC12345%26tn=Booking%20Payment" alt="UPI QR Code" style="display: block; width: 150px; height: 150px;">
-          </div>
-          <p style="font-size: 0.8rem; color: var(--text-soft); margin: 0;">UPI ID: <strong style="color: var(--text);">gigconnect@sbi</strong></p>
-        </div>
-      </div>
-
-      <label class="field-group">
-        <span>Job details</span>
-        <textarea name="details" rows="5" placeholder="What needs to be done?"><%= formData.details %></textarea>
-      </label>
-
-      <button type="submit" class="button button-primary button-block">Create booking request</button>
+      <% } %>
     </form>
   </div>
 </section>
-
-<script>
-  document.addEventListener("DOMContentLoaded", () => {
-    const paymentRadios = document.querySelectorAll('input[name="paymentMethod"]');
-    const onlineDetails = document.getElementById('online-payment-details');
-
-    paymentRadios.forEach(radio => {
-      radio.addEventListener('change', (e) => {
-        if (e.target.value === 'online') {
-          onlineDetails.style.display = 'block';
-        } else {
-          onlineDetails.style.display = 'none';
-        }
-      });
-    });
-
-    const locationBtn = document.getElementById("btn-fetch-location");
-    const addressInput = document.getElementById("addressAreaInput");
-    const latInput = document.getElementById("latitudeInput");
-    const lngInput = document.getElementById("longitudeInput");
-
-    function fetchIpLocation() {
-      locationBtn.innerHTML = "⌛ IP Fetching...";
-      locationBtn.disabled = true;
-      fetch("https://ipapi.co/json/")
-        .then(res => res.json())
-        .then(data => {
-          if (data && data.city) {
-            const fullAddress = `${data.city}, ${data.region || ""}, ${data.country_name || ""}`;
-            addressInput.value = fullAddress;
-            latInput.value = data.latitude || "";
-            lngInput.value = data.longitude || "";
-            locationBtn.innerHTML = "📍 Location Saved (IP)";
-            locationBtn.disabled = false;
-          } else {
-            throw new Error("Invalid IP location data");
-          }
-        })
-        .catch(err => {
-          console.error(err);
-          alert("Unable to retrieve location automatically (HTTPS is required for GPS on mobile). Please type it manually.");
-          locationBtn.innerHTML = "📍 Use Current Location";
-          locationBtn.disabled = false;
-        });
-    }
-
-    locationBtn.addEventListener("click", () => {
-      if (!navigator.geolocation) {
-        fetchIpLocation();
-        return;
-      }
-
-      locationBtn.innerHTML = "⌛ Fetching...";
-      locationBtn.disabled = true;
-
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          latInput.value = lat;
-          lngInput.value = lng;
-
-          // Reverse geocode via OpenStreetMap Nominatim
-          fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
-            .then(res => res.json())
-            .then(data => {
-              if (data && data.display_name) {
-                addressInput.value = data.display_name;
-              } else {
-                addressInput.value = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-              }
-              locationBtn.innerHTML = "📍 Location Saved";
-              locationBtn.disabled = false;
-            })
-            .catch(err => {
-              console.error(err);
-              addressInput.value = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-              locationBtn.innerHTML = "📍 Location Saved";
-              locationBtn.disabled = false;
-            });
-        },
-        (error) => {
-          console.error(error);
-          fetchIpLocation();
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0
-        }
-      );
-    });
-
-    // Address Autocomplete Logic
-    const suggestionsContainer = document.getElementById("address-suggestions");
-    let debounceTimeout;
-
-    addressInput.addEventListener("input", () => {
-      clearTimeout(debounceTimeout);
-      const query = addressInput.value.trim();
-      if (query.length < 3) {
-        suggestionsContainer.style.display = "none";
-        return;
-      }
-
-      debounceTimeout = setTimeout(() => {
-        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=in&limit=5`)
-          .then(res => res.json())
-          .then(data => {
-            if (data && data.length > 0) {
-              suggestionsContainer.innerHTML = data.map(item => `
-                <div class="suggestion-item" data-lat="${item.lat}" data-lon="${item.lon}" data-name="${item.display_name}" style="padding: 10px 12px; cursor: pointer; border-bottom: 1px solid var(--line); font-size: 0.85rem; color: #f8fafc; text-align: left; transition: background 0.2s;">
-                  ${item.display_name}
-                </div>
-              `).join("");
-              suggestionsContainer.style.display = "block";
-
-              // Add click listeners to items
-              suggestionsContainer.querySelectorAll(".suggestion-item").forEach(item => {
-                item.addEventListener("click", () => {
-                  addressInput.value = item.dataset.name;
-                  latInput.value = item.dataset.lat;
-                  lngInput.value = item.dataset.lon;
-                  suggestionsContainer.style.display = "none";
-                });
-              });
-            } else {
-              suggestionsContainer.style.display = "none";
-            }
-          })
-          .catch(err => console.error(err));
-      }, 300);
-    });
-
-    // Hover styling
-    suggestionsContainer.addEventListener("mouseover", (e) => {
-      const target = e.target.closest(".suggestion-item");
-      if (target) target.style.background = "rgba(255, 255, 255, 0.08)";
-    });
-    suggestionsContainer.addEventListener("mouseout", (e) => {
-      const target = e.target.closest(".suggestion-item");
-      if (target) target.style.background = "none";
-    });
-
-    // Close suggestions when clicking outside
-    document.addEventListener("click", (e) => {
-      if (e.target !== addressInput && e.target !== suggestionsContainer) {
-        suggestionsContainer.style.display = "none";
-      }
-    });
-  });
-</script>

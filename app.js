@@ -8,6 +8,9 @@ const FileStore = require("./lib/fileSessionStore")(session);
 const expressLayouts = require("express-ejs-layouts");
 const { body, param, validationResult } = require("express-validator");
 const sanitizeHtml = require("sanitize-html");
+const crypto = require("crypto");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
 
 const siteContent = require("./data/siteContent");
 const seedData = require("./data/mysqlSeed");
@@ -55,8 +58,47 @@ const {
   getProfessionalProfile,
   updateServicePrice,
   authenticateUnified,
-  getContactMessagesByEmail
+
+  createPartnerAccount,
+  authenticatePartner,
+  getPartnerDashboardData,
+  createPartnerManagedProfessional,
+  getWalletBalance,
+  addEarningRecord,
+  requestWithdrawal,
+  getWithdrawals,
+  getEarnings,
+  verifyPartner,
+  getAdminWithdrawals,
+  approveWithdrawal,
+  saveChatMessage,
+  getChatHistory,
+  markChatAsRead,
+  getUnreadChatCount,
+  resolveDispute,
+  createCoupon,
+  toggleCoupon,
+  deleteCoupon,
+  validateCoupon,
+  updateCmsSettings,
+  createServiceCategory,
+  updateServiceCategory,
+  deleteServiceCategory
 } = require("./lib/supabaseStore");
+
+const {
+  getAllWorkRequirements,
+  getWorkRequirementById,
+  getWorkRequirementsForProfessional,
+  getWorkRequirementsByClient,
+  createWorkRequirement,
+} = require("./lib/workRequirementsStore");
+
+const {
+  getAddressesByClient,
+  addClientAddress,
+  deleteClientAddress
+} = require("./lib/clientAddressStore");
 
 const multer = require("multer");
 const fsSync = require("fs");
@@ -82,17 +124,43 @@ const upload = multer({
   storage: storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
   fileFilter: (req, file, cb) => {
-    const filetypes = /jpeg|jpg|png|gif|pdf/;
+    const filetypes = /jpeg|jpg|png|gif|pdf|mp4|webm|avi|mov|mpeg/;
     const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = filetypes.test(file.mimetype);
     if (mimetype && extname) {
       return cb(null, true);
     }
-    cb(new Error("Only images (jpeg, jpg, png, gif) and PDFs are allowed."));
+    cb(new Error("Only images (jpeg, jpg, png, gif), PDFs, and videos (mp4, webm, avi, mov, mpeg) are allowed."));
   }
 });
 
 const app = express();
+
+// Security headers via Helmet (CSP disabled to allow inline EJS scripts, external CDN logos and Payment Gateway SDKs)
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false
+}));
+
+// Global Rate Limiter to protect against DDoS
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 1000, // limit each IP to 1000 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: "Too many requests from this IP, please try again after 15 minutes."
+});
+app.use(globalLimiter);
+
+// Specific Auth Rate Limiter against Brute Force Attacks on login/registration endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 auth attempts per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: "Too many authentication attempts. Please try again after 15 minutes."
+});
+app.use(["/login", "/register", "/admin/login", "/partner/login", "/client/login", "/professional/login"], authLimiter);
 
 const PORT = process.env.PORT || 3000;
 const SESSION_SECRET = process.env.SESSION_SECRET || "gigconnect-demo-secret";
@@ -122,6 +190,12 @@ app.use(
   })
 );
 app.use(express.static(path.join(__dirname, "public")));
+app.use("/uploads", express.static(path.join(__dirname, "public", "uploads")));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/uploads", (req, res) => {
+  // If a file is not found locally in public/uploads or uploads (for example, because it was uploaded on the live hosted server)
+  res.status(404).send("Verification File Not Found Locally (File exists on live hosted server disk)");
+});
 
 app.locals.currentYear = new Date().getFullYear();
 app.locals.formatCurrency = formatCurrency;
@@ -130,6 +204,11 @@ app.locals.formatStatusLabel = formatStatusLabel;
 app.locals.formatTimeSlot = formatTimeSlot;
 
 app.use((req, res, next) => {
+  if (req.path.includes("/dashboard") || req.path.includes("/admin") || req.path.includes("/profile")) {
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+  }
   res.locals.brand = siteContent.brand;
   res.locals.navigation = siteContent.navigation;
   res.locals.footerContent = siteContent.footer;
@@ -141,6 +220,7 @@ app.use((req, res, next) => {
   res.locals.formatShortDate = formatShortDate;
   res.locals.formatStatusLabel = formatStatusLabel;
   res.locals.formatTimeSlot = formatTimeSlot;
+  res.locals.cmsSettings = global.cmsSettingsCache || { announcementBanner: "Welcome to GigConnect - India's Verified Manpower & Service Portal!", announcementActive: true };
   next();
 });
 
@@ -261,7 +341,11 @@ function cloneHomeContent() {
       stats: [...siteContent.home.hero.stats]
     },
     services: [...siteContent.home.services],
-    testimonials: [...siteContent.home.testimonials]
+    testimonials: [...siteContent.home.testimonials],
+    ottCategories: siteContent.home.ottCategories ? siteContent.home.ottCategories.map(cat => ({
+      ...cat,
+      items: [...cat.items]
+    })) : []
   };
 }
 
@@ -347,7 +431,8 @@ async function getWorkers({ queryText = "", cityQ = "", sortKey = "relevance", v
     const matchesCity =
       !city ||
       worker.city.toLowerCase().includes(city) ||
-      worker.area.toLowerCase().includes(city);
+      worker.area.toLowerCase().includes(city) ||
+      (worker.pincode && String(worker.pincode).toLowerCase().includes(city));
     const matchesVerified = !verifiedOnly || worker.isVerified;
 
     return matchesQuery && matchesCity && matchesVerified;
@@ -577,6 +662,7 @@ function renderBookingPage(res, overrides = {}) {
     pageClass: "page-booking",
     professional: null,
     serviceOptions: [],
+    clientAddresses: [],
     formNotice: null,
     formData: {
       fullName: "",
@@ -625,6 +711,170 @@ app.get("/howitworks", (req, res) =>
   })
 );
 
+app.get("/work", async (req, res) => {
+  const content = siteContent;
+  const allJobs = await getAllWorkRequirements();
+  const user = req.session.user;
+  let displayedJobs = allJobs;
+
+  if (user && user.role === "professional") {
+    displayedJobs = await getWorkRequirementsForProfessional(user);
+  } else if (user && user.role === "client") {
+    displayedJobs = allJobs;
+  }
+
+  const formNotice = req.session.workNotice || null;
+  delete req.session.workNotice;
+
+  res.render("work", {
+    title: "Work & Job Requirements | SV Personnels",
+    pageClass: "page-work",
+    bridgeNote: null,
+    ottCategories: content.home.ottCategories || [],
+    displayedJobs,
+    allJobs,
+    user,
+    formNotice
+  });
+});
+
+app.post("/work/post", async (req, res) => {
+  try {
+    const user = req.session.user;
+    if (!user || user.role !== "client") {
+      req.session.loginNotice = createFormNotice("error", "Please login as a client first to upload work requirements.");
+      return res.redirect("/clientlogin");
+    }
+
+    const isPassActive = user.workPassActive && (!user.workPassExpiresAt || new Date(user.workPassExpiresAt) > new Date());
+    if (!isPassActive) {
+      req.session.workNotice = createFormNotice("error", "🔒 You must have an active Monthly Work Pass (₹150 / 30 days) to upload job requirements. Please activate your pass above!");
+      return res.redirect("/work");
+    }
+
+    const { category, subCategory, location, budget, jobType, description } = req.body;
+    
+    await createWorkRequirement({
+      clientId: user.id,
+      clientName: user.name,
+      clientContact: user.phone || user.email || "",
+      category: category || "General",
+      subCategory: subCategory || "",
+      location: location || "All India",
+      budget: Number(budget) || 0,
+      jobType: jobType || "Full Time",
+      description: description || ""
+    });
+
+    const displayCat = subCategory ? `${category} (${subCategory})` : category;
+    req.session.workNotice = createFormNotice("success", `Work requirement posted successfully! Professionals under '${displayCat}' have been notified.`);
+    return res.redirect("/work");
+  } catch (error) {
+    req.session.workNotice = createFormNotice("error", `Failed to post work requirement: ${error.message}`);
+    return res.redirect("/work");
+  }
+});
+
+// PayU 30-Day Monthly Work Pass (₹150)
+app.get("/work/pass/buy", async (req, res) => {
+  const user = req.session.user;
+  if (!user || user.role !== "client") {
+    req.session.loginNotice = createFormNotice("error", "Please login as a client first to buy a Work Pass.");
+    return res.redirect("/clientlogin");
+  }
+
+  const key = process.env.PAYU_MERCHANT_KEY || "gtKFFx";
+  const salt = process.env.PAYU_MERCHANT_SALT || "eCwWELxi";
+  const txnid = "WP_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
+  const amount = 150;
+  const productinfo = "30-Day Client Work Pass (Unlimited Work Posts)";
+  const firstname = user.name || "Verified Client";
+  const email = user.email || "client@svpersonnels.in";
+  const phone = user.phone || "9999999999";
+  const originUrl = getRequestOrigin(req);
+  const surl = originUrl + "/work/pass/success";
+  const furl = originUrl + "/work/pass/failure";
+
+  const hashString = `${key}|${txnid}|${amount}|${productinfo}|${firstname}|${email}|||||||||||${salt}`;
+  const hash = crypto.createHash("sha512").update(hashString).digest("hex");
+
+  req.session.workPassPending = { txnid, userId: user.id, amount };
+
+  const payuUrl = process.env.PAYU_MODE === "live" ? "https://secure.payu.in/_payment" : "https://test.payu.in/_payment";
+
+  return res.render("payuCheckout", {
+    title: "Buy Monthly Work Pass (₹150 via PayU) | SV Personnels",
+    pageClass: "page-payu",
+    key,
+    txnid,
+    amount,
+    productinfo,
+    firstname,
+    email,
+    phone,
+    surl,
+    furl,
+    hash,
+    payuUrl,
+    professional: { name: "SV Personnels Work Pass", photo: "/assets/gigconnect.logo.png" }
+  });
+});
+
+app.post("/work/pass/success", async (req, res) => {
+  const user = req.session.user;
+  if (user) {
+    user.workPassActive = true;
+    user.workPassExpiresAt = new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString();
+    try {
+      if (isDatabaseReady()) {
+        const { getSupabaseClient } = require("./lib/supabase");
+        const supabase = getSupabaseClient();
+        if (supabase) {
+          await supabase.from("clients").update({
+            work_pass_active: true,
+            work_pass_expires_at: user.workPassExpiresAt
+          }).eq("id", user.id);
+        }
+      }
+    } catch (err) {
+      console.warn("Could not save work pass to DB:", err.message);
+    }
+  }
+  req.session.workNotice = createFormNotice("success", "🎉 30-Day Work Pass activated successfully! You can now upload unlimited work requirements.");
+  return res.redirect("/work");
+});
+
+app.post("/work/pass/failure", async (req, res) => {
+  req.session.workNotice = createFormNotice("error", "Work Pass payment failed or was cancelled. Please try again.");
+  return res.redirect("/work");
+});
+
+app.post("/work/apply/:id", async (req, res) => {
+  try {
+    const user = req.session.user;
+    if (!user || user.role !== "professional") {
+      req.session.workNotice = createFormNotice("error", "Please log in as a professional to apply or negotiate on work requirements.");
+      return res.redirect("/work");
+    }
+
+    const { proposedRate, message } = req.body;
+    await applyOrNegotiateWorkRequirement(req.params.id, {
+      professionalId: user.id,
+      professionalName: user.name,
+      professionalPhone: user.phone || "",
+      professionalEmail: user.email || "",
+      proposedRate: Number(proposedRate) || 0,
+      message: message || ""
+    });
+
+    req.session.workNotice = createFormNotice("success", "Your rate proposal and application have been sent directly to the client!");
+    return res.redirect("/work");
+  } catch (error) {
+    req.session.workNotice = createFormNotice("error", `Failed to submit application: ${error.message}`);
+    return res.redirect("/work");
+  }
+});
+
 app.get("/terms", (req, res) =>
   res.render("terms", {
     title: "Terms & Conditions | SV Personnels",
@@ -659,6 +909,7 @@ app.get("/findHelpNow", (req, res) => {
     title: "Find trusted professionals | SV Personnels",
     pageClass: "page-discover",
     discoverContent: siteContent.discover,
+    ottCategories: siteContent.home.ottCategories,
     searchDefaults: createSearchDefaults(req.query),
     scripts: ["/javascript/findhelpnow.js"]
   });
@@ -895,6 +1146,12 @@ app.post(
 
       if (user.role === "admin") {
         return res.redirect("/admin/dashboard");
+      } else if (user.role === "partner") {
+        if (!user.isVerified && !user.panNumber && !user.id_document_url) {
+          // If the partner has not uploaded documents yet, send them to onboarding
+          return res.redirect("/partner/onboarding");
+        }
+        return res.redirect("/partner/dashboard");
       } else if (user.role === "professional") {
         return res.redirect("/professional/dashboard");
       } else {
@@ -919,6 +1176,8 @@ app.get("/register", (req, res) => {
   });
 });
 
+app.get(["/register/client", "/client/register"], (req, res) => renderSignupPage(res));
+
 app.get("/register/professional", async (req, res) => {
   await renderRegisterPage(res);
 });
@@ -930,9 +1189,9 @@ app.post(
     body("fullname").trim().isLength({ min: 2, max: 120 }).withMessage("Please enter your full name."),
     body("email").trim().isEmail().withMessage("Please enter a valid email address."),
     body("phone").trim().isLength({ min: 10, max: 20 }).withMessage("Please enter a valid phone number."),
-    body("primary-skill").trim().isLength({ min: 2, max: 120 }).withMessage("Please choose your primary service."),
-    body("city").trim().isLength({ min: 2, max: 120 }).withMessage("Please enter your city."),
-    body("experience").isInt({ min: 0, max: 60 }).withMessage("Please enter valid years of experience."),
+    body("primary-skill").optional({ checkFalsy: true }).trim().isLength({ min: 2, max: 120 }),
+    body("city").optional({ checkFalsy: true }).trim().isLength({ min: 2, max: 120 }),
+    body("experience").optional({ checkFalsy: true }),
     body("password")
       .trim()
       .isLength({ min: 8 }).withMessage("Password should be at least 8 characters.")
@@ -948,19 +1207,20 @@ app.post(
   async (req, res) => {
     const errors = validationResult(req);
     const photoPath = req.file ? `/uploads/${req.file.filename}` : "/assets/gigconnect.logo.png";
-    const primaryInput = req.body["primary-skill"] === "Other" ? (req.body["primary-skill-custom"] || "Other") : req.body["primary-skill"];
-    const secondaryInput = req.body["secondary-skills"] === "Other" ? (req.body["secondary-skills-custom"] || "Other") : req.body["secondary-skills"];
+    const primaryInput = req.body["primary-skill"] || "Guard & Security";
+    const secondaryInput = req.body["secondary-skills"] || "";
     const formData = {
       name: sanitizeText(req.body.fullname),
       email: sanitizeText(req.body.email),
       phone: sanitizeText(req.body.phone),
       primarySkill: sanitizeText(primaryInput),
       secondarySkills: normalizeSkills(secondaryInput),
-      city: sanitizeText(req.body.city),
+      city: sanitizeText(req.body.city || "All India"),
       area: sanitizeText(req.body.area || req.body.city || "Main"),
-      experience: sanitizeText(req.body.experience),
+      pincode: sanitizeText(req.body.pincode || ""),
+      experience: sanitizeText(req.body.experience || "0"),
       photo: photoPath,
-      description: sanitizeText(req.body.description)
+      description: sanitizeText(req.body.description || "Professional Profile")
     };
 
     if (!errors.isEmpty()) {
@@ -980,12 +1240,9 @@ app.post(
       });
     }
 
-    const serviceIds = await resolveServiceIdsFromInput(formData.primarySkill, formData.secondarySkills);
+    let serviceIds = await resolveServiceIdsFromInput(formData.primarySkill, formData.secondarySkills);
     if (!serviceIds.length) {
-      return await renderRegisterPage(res.status(422), {
-        formNotice: createFormNotice("error", "Please enter a skill that matches one of the platform service categories."),
-        registerFormData: formData
-      });
+      serviceIds = [1];
     }
 
     try {
@@ -996,7 +1253,8 @@ app.post(
         phone: formData.phone,
         city: formData.city,
         area: formData.area,
-        experience: Number(formData.experience),
+        pincode: formData.pincode,
+        experience: Number(formData.experience) || 0,
         photoUrl: formData.photo || undefined,
         description: formData.description || undefined,
         password: req.body.password,
@@ -1008,7 +1266,7 @@ app.post(
       }
 
       req.session.user = user;
-      return res.redirect("/professional/dashboard");
+      return res.redirect("/professional/onboarding");
     } catch (error) {
       return await renderRegisterPage(res.status(error.statusCode || 500), {
         formNotice: createFormNotice("error", error.message || "Could not create the professional profile right now."),
@@ -1017,6 +1275,475 @@ app.post(
     }
   }
 );
+
+app.get("/professional/onboarding", requireRole("professional"), async (req, res) => {
+  const content = siteContent;
+  res.render("professionalOnboarding", {
+    title: "Complete Your Professional Onboarding | SV Personnels",
+    pageClass: "page-onboarding",
+    bridgeNote: null,
+    ottCategories: content.home.ottCategories || [],
+    user: req.session.user
+  });
+});
+
+app.post(
+  "/professional/onboarding",
+  requireRole("professional"),
+  upload.fields([
+    { name: "governmentIdDocument", maxCount: 1 },
+    { name: "liveSelfiePhoto", maxCount: 1 },
+    { name: "portfolioImages", maxCount: 10 },
+    { name: "portfolioVideos", maxCount: 5 },
+    { name: "certificates", maxCount: 10 }
+  ]),
+  async (req, res) => {
+    try {
+      const user = req.session.user;
+      const { 
+        username,
+        city,
+        jobType,
+        experience,
+        languages,
+        workingRadiusKm,
+        pincode,
+        area,
+        bankName,
+        bankAccountNo,
+        bankIfsc,
+        upiHandle,
+        panNumber,
+        gstNumber,
+        skills
+      } = req.body;
+
+      const selectedSkills = skills ? (Array.isArray(skills) ? skills : [skills]) : [];
+      const formattedCity = sanitizeText(city || "All India");
+      const formattedJobType = sanitizeText(jobType || "Both / Flexible");
+
+      // File URLs
+      const idDocUrl = req.files && req.files.governmentIdDocument ? "/uploads/" + req.files.governmentIdDocument[0].filename : "";
+      const selfieUrl = req.files && req.files.liveSelfiePhoto ? "/uploads/" + req.files.liveSelfiePhoto[0].filename : "";
+      const portfolioImgs = req.files && req.files.portfolioImages ? req.files.portfolioImages.map(f => "/uploads/" + f.filename) : [];
+      const portfolioVids = req.files && req.files.portfolioVideos ? req.files.portfolioVideos.map(f => "/uploads/" + f.filename) : [];
+      const certsUrls = req.files && req.files.certificates ? req.files.certificates.map(f => "/uploads/" + f.filename) : [];
+
+      let finalDailyRate = 0;
+      let finalProjectRate = 0;
+      let totalPtRate = 0;
+      let ptRateCount = 0;
+      let totalFtRate = 0;
+      let ftRateCount = 0;
+
+      for (const skillName of selectedSkills) {
+        const safeKey = encodeURIComponent(skillName);
+        const ptVal = Number(req.body[`customSubRate_${safeKey}`]);
+        const ftVal = Number(req.body[`customSubFullRate_${safeKey}`]);
+        if (ptVal) {
+          totalPtRate += ptVal;
+          ptRateCount++;
+        }
+        if (ftVal) {
+          totalFtRate += ftVal;
+          ftRateCount++;
+        }
+      }
+
+      finalDailyRate = ptRateCount > 0 ? Math.round(totalPtRate / ptRateCount) : 500;
+      finalProjectRate = ftRateCount > 0 ? Math.round(totalFtRate / ftRateCount) : 25000;
+
+      let bioAppend = `\n[Work Type: ${formattedJobType}] [Price Negotiable by Client: YES]`;
+      if (selectedSkills.length > 0) {
+        bioAppend += ` [Skills: ${selectedSkills.join(", ")}]`;
+      }
+      const wmTag = formattedJobType.includes("Both") || (formattedJobType.includes("Full") && formattedJobType.includes("Part")) ? "Part Time,Full Time" : (formattedJobType.includes("Full") ? "Full Time" : "Part Time");
+      bioAppend += ` [workModes:${wmTag}] [partTimeRate:${finalDailyRate}] [fullTimeRate:${finalProjectRate}]`;
+
+      const formattedPan = (panNumber || "").trim().toUpperCase();
+      if (!formattedPan || !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(formattedPan)) {
+        req.session.onboardingNotice = createFormNotice("error", "Invalid PAN Card format. Must be 5 letters, 4 digits, 1 letter (e.g. ABCDE1234F).");
+        return res.redirect("/professional/onboarding");
+      }
+
+      await updateProfessionalProfile(user.id, {
+        fullName: user.name,
+        username: sanitizeText(username || ""),
+        city: formattedCity,
+        area: sanitizeText(area || formattedCity || "Main"),
+        pincode: sanitizeText(pincode || ""),
+        experience: Number(experience) || 0,
+        description: (user.bio || "") + bioAppend,
+        dailyRateInr: finalDailyRate,
+        projectRateInr: finalProjectRate,
+        languages: sanitizeText(languages || ""),
+        workingRadiusKm: Number(workingRadiusKm) || 15,
+        bankName: sanitizeText(bankName || ""),
+        bankAccountNo: sanitizeText(bankAccountNo || ""),
+        bankIfsc: sanitizeText(bankIfsc || ""),
+        upiHandle: sanitizeText(upiHandle || ""),
+        panNumber: formattedPan,
+        gstNumber: sanitizeText(gstNumber || ""),
+        portfolioImages: portfolioImgs,
+        portfolioVideos: portfolioVids,
+        certificatesUrls: certsUrls,
+        aadhaarPanUrl: idDocUrl,
+        livePhotoUrl: selfieUrl
+      });
+
+      req.session.user.username = username;
+      req.session.user.city = formattedCity;
+      req.session.user.pincode = pincode;
+      req.session.user.area = area;
+      req.session.user.onboarding_complete = true;
+
+      // Try to resolve exact service IDs or custom services from selected skills
+      const serviceIds = [];
+      for (const skillName of selectedSkills) {
+        const resolved = await resolveServiceIdsFromInput(skillName, []);
+        if (resolved && resolved.length > 0) {
+          resolved.forEach(id => { if (!serviceIds.includes(id)) serviceIds.push(id); });
+        } else {
+          const customService = await addCustomServiceOption(skillName.trim());
+          if (customService && customService.id && !serviceIds.includes(Number(customService.id))) {
+            serviceIds.push(Number(customService.id));
+          }
+        }
+      }
+      if (serviceIds.length > 0) {
+        await updateProfessionalServices(user.id, serviceIds, finalDailyRate);
+      }
+
+      req.session.professionalProfileNotice = createFormNotice("success", "Onboarding completed successfully! Your application is submitted for verification.");
+      return res.redirect("/professional/dashboard");
+    } catch (error) {
+      console.error("Onboarding error:", error);
+      req.session.professionalProfileNotice = createFormNotice("error", `Onboarding failed: ${error.message}`);
+      return res.redirect("/professional/dashboard");
+    }
+  }
+);
+
+
+// ==========================================
+// SV AGENCY PARTNERS, WALLET & JOB POSTINGS ROUTES
+// ==========================================
+
+app.get(["/register/partner", "/partner/register"], async (req, res) => {
+  return res.render("partnerRegister", {
+    title: "Join as SV Partner | SV Personnels",
+    pageClass: "page-register-partner",
+    formData: { fullname: "", businessName: "", email: "", phone: "", username: "", city: "" },
+    formNotice: consumeSessionNotice(req, "partnerRegisterNotice")
+  });
+});
+
+app.post(
+  "/register/partner",
+  [
+    body("fullname").trim().isLength({ min: 2, max: 120 }).withMessage("Please enter your full name."),
+    body("businessName").trim().isLength({ min: 2, max: 120 }).withMessage("Please enter your business name."),
+    body("email").trim().isEmail().withMessage("Please enter a valid email address."),
+    body("phone").trim().isLength({ min: 10, max: 20 }).withMessage("Please enter a valid phone number."),
+    body("username").trim().isLength({ min: 3, max: 50 }).withMessage("Please enter a username (3-50 chars)."),
+    body("city").trim().isLength({ min: 2, max: 100 }).withMessage("Please enter your city."),
+    body("password").trim().isLength({ min: 8 }).withMessage("Password should be at least 8 characters."),
+    body("confirmPassword").custom((value, { req }) => value === req.body.password).withMessage("Passwords do not match.")
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    const formData = {
+      fullname: req.body.fullname,
+      businessName: req.body.businessName,
+      email: req.body.email,
+      phone: req.body.phone,
+      username: req.body.username,
+      city: req.body.city
+    };
+
+    if (!errors.isEmpty()) {
+      return res.render("partnerRegister", {
+        title: "Join as SV Partner | SV Personnels",
+        pageClass: "page-register-partner",
+        formData,
+        formNotice: createFormNotice("error", errors.array()[0].msg)
+      });
+    }
+
+    try {
+      const partner = await createPartnerAccount({
+        username: req.body.username,
+        fullName: req.body.fullname,
+        email: req.body.email,
+        phone: req.body.phone,
+        password: req.body.password,
+        businessName: req.body.businessName,
+        city: req.body.city,
+        area: req.body.area || ""
+      });
+
+      req.session.user = {
+        id: partner.id,
+        name: partner.fullName,
+        email: partner.email,
+        phone: partner.phone,
+        city: partner.city,
+        role: "partner",
+        isVerified: false
+      };
+
+      return res.redirect("/partner/onboarding");
+    } catch (error) {
+      return res.render("partnerRegister", {
+        title: "Join as SV Partner | SV Personnels",
+        pageClass: "page-register-partner",
+        formData,
+        formNotice: createFormNotice("error", error.message || "Failed to create partner account.")
+      });
+    }
+  }
+);
+
+app.get("/partner/onboarding", requireRole("partner"), async (req, res) => {
+  return res.render("partnerOnboarding", {
+    title: "Partner Verification | SV Personnels",
+    pageClass: "page-onboarding-partner",
+    formNotice: consumeSessionNotice(req, "partnerOnboardingNotice")
+  });
+});
+
+app.post(
+  "/partner/onboarding",
+  requireRole("partner"),
+  upload.fields([
+    { name: "idDocument", maxCount: 1 },
+    { name: "businessProof", maxCount: 1 },
+    { name: "livePhoto", maxCount: 1 }
+  ]),
+  async (req, res) => {
+    try {
+      const gstNumber = req.body.gstNumber || "";
+      const panNumber = (req.body.panNumber || "").trim().toUpperCase();
+      
+      const idDocFile = req.files && req.files["idDocument"] ? req.files["idDocument"][0] : null;
+      const bizProofFile = req.files && req.files["businessProof"] ? req.files["businessProof"][0] : null;
+      const livePhotoFile = req.files && req.files["livePhoto"] ? req.files["livePhoto"][0] : null;
+
+      if (!panNumber || !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(panNumber)) {
+        req.session.partnerOnboardingNotice = createFormNotice("error", "Invalid PAN Card format. Must be 5 letters, 4 digits, 1 letter (e.g. ABCDE1234F).");
+        return res.redirect("/partner/onboarding");
+      }
+
+      if (!idDocFile || !bizProofFile || !livePhotoFile) {
+        req.session.partnerOnboardingNotice = createFormNotice("error", "All verification document files must be uploaded.");
+        return res.redirect("/partner/onboarding");
+      }
+
+      const idDocUrl = `/uploads/${idDocFile.filename}`;
+      const bizProofUrl = `/uploads/${bizProofFile.filename}`;
+      const livePhotoUrl = `/uploads/${livePhotoFile.filename}`;
+
+      const dbClient = getClient();
+      const { error } = await dbClient
+        .from("partners")
+        .update({
+          gst_number: gstNumber,
+          pan_number: panNumber,
+          id_document_url: idDocUrl,
+          business_proof_url: bizProofUrl,
+          live_photo_url: livePhotoUrl
+        })
+        .eq("id", req.session.user.id);
+
+      if (error) throw error;
+
+      req.session.partnerDashboardNotice = createFormNotice("success", "Safety verification files submitted successfully for review!");
+      return res.redirect("/partner/dashboard");
+    } catch (err) {
+      req.session.partnerOnboardingNotice = createFormNotice("error", `Submission failed: ${err.message}`);
+      return res.redirect("/partner/onboarding");
+    }
+  }
+);
+
+app.get("/partner/dashboard", requireRole("partner"), async (req, res) => {
+  try {
+    const dashboardData = await getPartnerDashboardData(req.session.user.id);
+    const services = await getServiceOptions();
+
+    req.session.user.isVerified = dashboardData.partner.is_verified;
+
+    return res.render("partnerDashboard", {
+      title: "Partner Agency Dashboard | SV Personnels",
+      pageClass: "page-dashboard-partner",
+      dashboardData,
+      services,
+      formNotice: consumeSessionNotice(req, "partnerDashboardNotice")
+    });
+  } catch (err) {
+    req.session.loginNotice = createFormNotice("error", `Failed to load partner dashboard: ${err.message}`);
+    return res.redirect("/login");
+  }
+});
+
+app.post("/partner/professionals/create", requireRole("partner"), async (req, res) => {
+  try {
+    const {
+      fullname,
+      username,
+      email,
+      phone,
+      city,
+      area,
+      experience,
+      password,
+      workSchedule,
+      partTimeRate,
+      fullTimeRate,
+      assignedSkillsJson,
+      serviceIds,
+      selectedSubskills
+    } = req.body;
+    
+    let parsedSkills = [];
+    try {
+      if (assignedSkillsJson) parsedSkills = JSON.parse(assignedSkillsJson);
+    } catch (e) {}
+
+    await createPartnerManagedProfessional(req.session.user.id, {
+      fullName: fullname,
+      username,
+      email: (email && email.trim()) ? email.trim() : "",
+      phone,
+      city,
+      area,
+      experience,
+      password,
+      workSchedule: Array.isArray(workSchedule) ? workSchedule : (workSchedule ? [workSchedule] : ["Part Time", "Full Time"]),
+      partTimeRate: Number(partTimeRate) || 0,
+      fullTimeRate: Number(fullTimeRate) || 0,
+      assignedSkills: parsedSkills,
+      serviceIds: Array.isArray(serviceIds) ? serviceIds : (serviceIds ? [serviceIds] : []),
+      selectedSubskills: Array.isArray(selectedSubskills) ? selectedSubskills : (selectedSubskills ? [selectedSubskills] : [])
+    });
+
+    req.session.partnerDashboardNotice = createFormNotice("success", `Staff member ${fullname} registered successfully under agency!`);
+    return res.redirect("/partner/dashboard");
+  } catch (err) {
+    req.session.partnerDashboardNotice = createFormNotice("error", `Failed to add staff: ${err.message}`);
+    return res.redirect("/partner/dashboard");
+  }
+});
+
+app.post("/partner/withdraw", requireRole("partner"), async (req, res) => {
+  try {
+    const { amount, bankDetails } = req.body;
+    await requestWithdrawal("partner", req.session.user.id, amount, bankDetails);
+
+    req.session.partnerDashboardNotice = createFormNotice("success", "Bank withdrawal request submitted successfully for processing!");
+    return res.redirect("/partner/dashboard");
+  } catch (err) {
+    req.session.partnerDashboardNotice = createFormNotice("error", `Withdrawal request failed: ${err.message}`);
+    return res.redirect("/partner/dashboard");
+  }
+});
+
+app.get("/professional/revenue", requireRole("professional"), async (req, res) => {
+  try {
+    const userId = req.session.user.id;
+    const wallet = await getWalletBalance("professional", userId);
+    const earnings = await getEarnings("professional", userId);
+    const withdrawals = await getWithdrawals("professional", userId);
+
+    return res.render("professionalRevenue", {
+      title: "My Earnings Wallet | SV Personnels",
+      pageClass: "page-revenue-professional",
+      wallet,
+      earnings,
+      withdrawals,
+      user: req.session.user,
+      formNotice: consumeSessionNotice(req, "professionalRevenueNotice")
+    });
+  } catch (err) {
+    req.session.professionalDashboardNotice = createFormNotice("error", `Failed to load revenue workspace: ${err.message}`);
+    return res.redirect("/professional/dashboard");
+  }
+});
+
+app.post("/professional/withdraw", requireRole("professional"), async (req, res) => {
+  try {
+    const { amount, bankDetails } = req.body;
+    await requestWithdrawal("professional", req.session.user.id, amount, bankDetails);
+
+    req.session.professionalRevenueNotice = createFormNotice("success", "Bank withdrawal request submitted successfully!");
+    return res.redirect("/professional/revenue");
+  } catch (err) {
+    req.session.professionalRevenueNotice = createFormNotice("error", `Withdrawal failed: ${err.message}`);
+    return res.redirect("/professional/revenue");
+  }
+});
+
+app.get("/professional/jobs", requireRole("professional"), async (req, res) => {
+  try {
+    const mappedServices = await getProfessionalServiceOptions(req.session.user.id);
+    const skills = mappedServices.map(s => s.name);
+
+    const allJobs = await getAllWorkRequirements();
+    let jobs = allJobs.filter(j => j.status === "open");
+    if (skills.length > 0) {
+      jobs = jobs.filter(j => skills.includes(j.category));
+    }
+
+    return res.render("professionalJobs", {
+      title: "Open Job Postings | SV Personnels",
+      pageClass: "page-jobs-feed",
+      jobs,
+      formNotice: consumeSessionNotice(req, "professionalJobsNotice")
+    });
+  } catch (err) {
+    req.session.professionalDashboardNotice = createFormNotice("error", `Failed to load job listings feed: ${err.message}`);
+    return res.redirect("/professional/dashboard");
+  }
+});
+
+app.get("/client/work-requirements/new", requireRole("client"), async (req, res) => {
+  try {
+    const services = await getServiceOptions();
+    return res.render("clientWorkRequirements", {
+      title: "Post a Job | SV Personnels",
+      pageClass: "page-create-requirement",
+      services,
+      formNotice: consumeSessionNotice(req, "clientWorkNotice")
+    });
+  } catch (err) {
+    req.session.clientDashboardNotice = createFormNotice("error", `Failed to load job posting form: ${err.message}`);
+    return res.redirect("/client/dashboard");
+  }
+});
+
+app.post("/client/work-requirements/new", requireRole("client"), async (req, res) => {
+  try {
+    const { category, subCategory, location, budget, jobType, description } = req.body;
+    
+    await createWorkRequirement(req.session.user.id, {
+      clientName: req.session.user.name,
+      clientContact: req.session.user.phone || req.session.user.email,
+      category,
+      subCategory,
+      location,
+      budget,
+      jobType,
+      description
+    });
+
+    req.session.clientDashboardNotice = createFormNotice("success", "Job requirement posted successfully! Matching professionals will contact you.");
+    return res.redirect("/client/dashboard");
+  } catch (err) {
+    req.session.clientWorkNotice = createFormNotice("error", `Failed to post job requirement: ${err.message}`);
+    return res.redirect("/client/work-requirements/new");
+  }
+});
+
 
 app.get("/client/dashboard", requireRole("client"), async (req, res) => {
   if (!isDatabaseReady()) {
@@ -1048,6 +1775,12 @@ app.get("/client/dashboard", requireRole("client"), async (req, res) => {
   }
 
   const dashboardData = await getClientDashboardData(req.session.user.id);
+  try {
+    dashboardData.workRequirements = await getWorkRequirementsByClient(req.session.user.id);
+  } catch (workErr) {
+    console.error("Failed to fetch client work requirements:", workErr.message);
+    dashboardData.workRequirements = [];
+  }
   return res.render("clientDashboard", {
     title: "Client dashboard | SV Personnels",
     pageClass: "page-dashboard",
@@ -1166,16 +1899,38 @@ app.get("/client/profile", requireRole("client"), async (req, res) => {
 
   try {
     const profile = await getClientProfile(req.session.user.id);
+    const clientAddresses = await getAddressesByClient(req.session.user.id || req.session.user.email);
     return res.render("clientProfile", {
       title: "My Profile | SV Personnels",
       pageClass: "page-profile",
       profile,
+      clientAddresses,
       formNotice: consumeSessionNotice(req, "clientProfileNotice")
     });
   } catch (error) {
     req.session.clientDashboardNotice = createFormNotice("error", `Profile load error: ${error.message}`);
     return res.redirect("/client/dashboard");
   }
+});
+
+app.post("/client/addresses/add", requireRole("client"), async (req, res) => {
+  try {
+    await addClientAddress(req.session.user.id || req.session.user.email, req.body);
+    req.session.clientProfileNotice = createFormNotice("success", "Address saved successfully!");
+  } catch (error) {
+    req.session.clientProfileNotice = createFormNotice("error", `Failed to save address: ${error.message}`);
+  }
+  return res.redirect("/client/profile");
+});
+
+app.post("/client/addresses/delete/:id", requireRole("client"), async (req, res) => {
+  try {
+    await deleteClientAddress(req.params.id, req.session.user.id || req.session.user.email);
+    req.session.clientProfileNotice = createFormNotice("success", "Address deleted.");
+  } catch (error) {
+    req.session.clientProfileNotice = createFormNotice("error", `Failed to delete address: ${error.message}`);
+  }
+  return res.redirect("/client/profile");
 });
 
 app.post(
@@ -1255,6 +2010,13 @@ app.get("/professional/dashboard", requireRole("professional"), async (req, res)
   }
 
   const dashboardData = await getProfessionalDashboardData(req.session.user.id);
+  if (dashboardData && dashboardData.profile && req.session && req.session.user) {
+    req.session.user = {
+      ...req.session.user,
+      ...dashboardData.profile,
+      role: "professional"
+    };
+  }
   return res.render("professionalDashboard", {
     title: "Professional dashboard | SV Personnels",
     pageClass: "page-dashboard",
@@ -1280,6 +2042,8 @@ app.get("/professional/profile", requireRole("professional"), async (req, res) =
       profile: dashboardData.profile,
       services,
       mappedServiceIds,
+      mappedServices,
+      ottCategories: siteContent.home.ottCategories || [],
       formNotice: consumeSessionNotice(req, "professionalProfileNotice")
     });
   } catch (error) {
@@ -1317,22 +2081,17 @@ app.post(
     }
 
     try {
-      const profileData = {
-        fullName: sanitizeText(req.body.fullname),
-        phone: sanitizeText(req.body.phone),
-        city: sanitizeText(req.body.city),
-        area: sanitizeText(req.body.area || req.body.city || "Main"),
-        experience: Number(req.body.experience) || 0,
-        description: sanitizeText(req.body.description || "")
-      };
+      let selectedWorkModes = req.body.workModes;
+      if (!selectedWorkModes) selectedWorkModes = ["Part Time", "Full Time"];
+      if (!Array.isArray(selectedWorkModes)) selectedWorkModes = [selectedWorkModes];
+      const wmString = selectedWorkModes.join(",");
 
-      if (req.file) {
-        profileData.photoUrl = `/uploads/${req.file.filename}`;
-      }
+      const partTimeRateVal = Number(req.body.partTimeRate) || Number(req.session.user.hourlyRateInr) || 500;
+      const fullTimeRateVal = Number(req.body.fullTimeRate) || 25000;
 
-      await updateProfessionalProfile(req.session.user.id, profileData);
+      const rawSub = req.body.subcategorySkills;
+      const subcategorySkills = rawSub ? (Array.isArray(rawSub) ? rawSub : [rawSub]) : [];
 
-      // Update service mappings
       const rawServiceIds = req.body.serviceIds;
       const serviceIds = rawServiceIds ? (Array.isArray(rawServiceIds) ? rawServiceIds.map(Number) : [Number(rawServiceIds)]) : [];
       if (req.body.customSkillName && req.body.customSkillName.trim().length > 0) {
@@ -1341,14 +2100,78 @@ app.post(
           serviceIds.push(Number(customService.id));
         }
       }
-      await updateProfessionalServices(req.session.user.id, serviceIds);
 
-      // Update session details
+      const customRatesMap = {};
+      serviceIds.forEach(id => {
+        const pt = req.body[`customRate_${id}`];
+        if (pt && !isNaN(pt) && Number(pt) > 0) customRatesMap[`pt_${id}`] = Number(pt);
+        else customRatesMap[`pt_${id}`] = partTimeRateVal;
+
+        const ft = req.body[`customFullRate_${id}`];
+        if (ft && !isNaN(ft) && Number(ft) > 0) customRatesMap[`ft_${id}`] = Number(ft);
+        else customRatesMap[`ft_${id}`] = fullTimeRateVal;
+
+        customRatesMap[id] = customRatesMap[`pt_${id}`];
+      });
+
+      subcategorySkills.forEach(subName => {
+        const safeKey = encodeURIComponent(subName);
+        const pt = req.body[`customSubRate_${safeKey}`];
+        if (pt && !isNaN(pt) && Number(pt) > 0) customRatesMap[`sub_pt_${subName}`] = Number(pt);
+        else customRatesMap[`sub_pt_${subName}`] = partTimeRateVal;
+
+        const ft = req.body[`customSubFullRate_${safeKey}`];
+        if (ft && !isNaN(ft) && Number(ft) > 0) customRatesMap[`sub_ft_${subName}`] = Number(ft);
+        else customRatesMap[`sub_ft_${subName}`] = fullTimeRateVal;
+      });
+
+      let cleanDesc = sanitizeText(req.body.description || "");
+      cleanDesc = cleanDesc
+        .replace(/\[workModes?:[^\]]+\]/gi, "")
+        .replace(/\[Work Type:[^\]]+\]/gi, "")
+        .replace(/\[partTimeRate:[^\]]+\]/gi, "")
+        .replace(/\[fullTimeRate:[^\]]+\]/gi, "")
+        .replace(/\[subcategories:[^\]]+\]/gi, "")
+        .replace(/\[customRates:[^\]]+\]/gi, "")
+        .replace(/\[aadhaarPanUrl:[^\]]+\]/gi, "")
+        .replace(/\[livePhotoUrl:[^\]]+\]/gi, "")
+        .trim();
+
+      const panUrl = req.session.user.aadhaarPanUrl || "";
+      const photoUrl = req.session.user.livePhotoUrl || "";
+      let verificationTags = "";
+      if (panUrl) verificationTags += ` [aadhaarPanUrl:${panUrl}]`;
+      if (photoUrl) verificationTags += ` [livePhotoUrl:${photoUrl}]`;
+
+      const newBio = `${cleanDesc}\n[workModes:${wmString}] [partTimeRate:${partTimeRateVal}] [fullTimeRate:${fullTimeRateVal}] [subcategories:${JSON.stringify(subcategorySkills)}] [customRates:${JSON.stringify(customRatesMap)}]${verificationTags}`;
+
+      const profileData = {
+        fullName: sanitizeText(req.body.fullname),
+        phone: sanitizeText(req.body.phone),
+        city: sanitizeText(req.body.city),
+        area: sanitizeText(req.body.area || req.body.city || "Main"),
+        pincode: sanitizeText(req.body.pincode || ""),
+        experience: Number(req.body.experience) || 0,
+        description: newBio,
+        hourlyRateInr: partTimeRateVal
+      };
+
+      if (req.file) {
+        profileData.photoUrl = `/uploads/${req.file.filename}`;
+      }
+
+      await updateProfessionalProfile(req.session.user.id, profileData);
+      await updateProfessionalServices(req.session.user.id, serviceIds, customRatesMap);
+
       req.session.user.name = profileData.fullName;
       req.session.user.city = profileData.city;
       if (profileData.phone) req.session.user.phone = profileData.phone;
+      req.session.user.hourlyRateInr = partTimeRateVal;
+      req.session.user.workModes = selectedWorkModes;
+      req.session.user.customRates = customRatesMap;
+      req.session.user.subcategorySkills = subcategorySkills;
 
-      req.session.professionalProfileNotice = createFormNotice("success", "Profile updated successfully!");
+      req.session.professionalProfileNotice = createFormNotice("success", "Profile & custom pricing updated successfully!");
     } catch (error) {
       req.session.professionalProfileNotice = createFormNotice("error", `Failed to update profile: ${error.message}`);
     }
@@ -1469,17 +2292,36 @@ app.post(
       const livePhotoUrl = `/uploads/${liveFile.filename}`;
 
       const dbClient = getClient();
-      const { error } = await dbClient
-        .from("professionals")
-        .update({
-          aadhaar_pan_url: idDocumentUrl,
-          live_photo_url: livePhotoUrl
-        })
-        .eq("id", req.session.user.id);
-
-      if (error) {
-        throw error;
+      let updateError = null;
+      try {
+        const { error } = await dbClient
+          .from("professionals")
+          .update({
+            aadhaar_pan_url: idDocumentUrl,
+            live_photo_url: livePhotoUrl
+          })
+          .eq("id", req.session.user.id);
+        if (error) updateError = error;
+      } catch (e) {
+        updateError = e;
       }
+
+      // ALWAYS update bio fallback so verification is 100% saved even if columns don't exist in Supabase
+      const { data: proData } = await dbClient.from("professionals").select("bio").eq("id", req.session.user.id).maybeSingle();
+      let cleanBio = proData && proData.bio ? proData.bio : (req.session.user.bio || "");
+      cleanBio = cleanBio
+        .replace(/\[aadhaarPanUrl:[^\]]+\]/gi, "")
+        .replace(/\[livePhotoUrl:[^\]]+\]/gi, "")
+        .trim();
+      const newBio = `${cleanBio}\n[aadhaarPanUrl:${idDocumentUrl}] [livePhotoUrl:${livePhotoUrl}]`;
+      await dbClient.from("professionals").update({ bio: newBio }).eq("id", req.session.user.id);
+
+      if (updateError && !String(updateError.message || "").includes("42703") && !String(updateError.message || "").toLowerCase().includes("column")) {
+        console.warn("Verification update note:", updateError.message);
+      }
+
+      req.session.user.aadhaarPanUrl = idDocumentUrl;
+      req.session.user.livePhotoUrl = livePhotoUrl;
 
       req.session.professionalDashboardNotice = createFormNotice(
         "success",
@@ -1710,10 +2552,12 @@ app.get("/book-service/:professionalId", requireRole("client"), async (req, res)
 
   const serviceOptions = await getProfessionalServiceOptions(professionalId);
   const user = req.session.user || {};
+  const clientAddresses = await getAddressesByClient(user.id || user.email);
 
   return renderBookingPage(res, {
     professional,
     serviceOptions,
+    clientAddresses,
     formData: {
       fullName: user.name || "",
       email: user.email || "",
@@ -1731,121 +2575,231 @@ app.get("/book-service/:professionalId", requireRole("client"), async (req, res)
 app.post(
   "/book-service/:professionalId",
   requireRole("client"),
-  [
-    body("fullName").trim().isLength({ min: 2, max: 120 }).withMessage("Please enter your full name."),
-    body("email").trim().isEmail().withMessage("Please enter a valid email address."),
-    body("phone").trim().isLength({ min: 10, max: 20 }).withMessage("Please enter a valid phone number."),
-    body("preferredDate").isISO8601().withMessage("Please select a valid preferred date."),
-    body("preferredTimeSlot").trim().isLength({ min: 1, max: 80 }).withMessage("Please choose a time slot."),
-    body("addressArea").trim().isLength({ min: 3, max: 180 }).withMessage("Please enter your area or city."),
-    body("serviceAddress").optional().trim(),
-    body("serviceId").isInt({ min: 1 }).withMessage("Please select a service.")
-  ],
   async (req, res) => {
     const professionalId = Number(req.params.professionalId);
     if (Number.isNaN(professionalId)) {
       return renderBookingPage(res.status(400), {
-        formNotice: createFormNotice("error", "Invalid professional ID format."),
-        professional: null,
-        serviceOptions: [],
-        formData: {
-          fullName: sanitizeText(req.body.fullName),
-          email: sanitizeText(req.body.email),
-          phone: sanitizeText(req.body.phone),
-          preferredDate: sanitizeText(req.body.preferredDate),
-          preferredTimeSlot: sanitizeText(req.body.preferredTimeSlot),
-          addressArea: sanitizeText(req.body.addressArea),
-          serviceAddress: sanitizeText(req.body.serviceAddress || ""),
-          serviceId: sanitizeText(req.body.serviceId),
-          details: sanitizeText(req.body.details)
-        }
+        formNotice: createFormNotice("error", "Invalid professional ID format.")
       });
     }
     const professional = isDatabaseReady() ? await getProfessionalById(professionalId) : null;
-    const serviceOptions = isDatabaseReady() ? await getProfessionalServiceOptions(professionalId) : [];
-    const errors = validationResult(req);
-    const formData = {
-      fullName: sanitizeText(req.body.fullName),
-      email: sanitizeText(req.body.email),
-      phone: sanitizeText(req.body.phone),
-      preferredDate: sanitizeText(req.body.preferredDate),
-      preferredTimeSlot: sanitizeText(req.body.preferredTimeSlot),
-      addressArea: sanitizeText(req.body.addressArea),
-      serviceAddress: sanitizeText(req.body.serviceAddress || ""),
-      serviceId: sanitizeText(req.body.serviceId),
-      details: sanitizeText(req.body.details)
-    };
-
     if (!professional) {
       return renderBookingPage(res.status(404), {
-        formNotice: createFormNotice("error", "That professional could not be found."),
-        professional,
-        serviceOptions,
-        formData
+        formNotice: createFormNotice("error", "That professional could not be found.")
       });
     }
 
-    if (!errors.isEmpty()) {
-      return renderBookingPage(res.status(422), {
-        formNotice: createFormNotice("error", errors.array()[0].msg),
-        professional,
-        serviceOptions,
-        formData
-      });
-    }
+    const user = req.session.user || {};
+    const clientAddresses = await getAddressesByClient(user.id || user.email);
 
-    if (!isDatabaseReady()) {
-      return renderBookingPage(res.status(503), {
-        formNotice: createFormNotice("error", "Supabase is not connected yet, so booking is unavailable."),
-        professional,
-        serviceOptions,
-        formData
-      });
-    }
-
-    const selectedServiceObj = serviceOptions.find(s => String(s.id) === String(formData.serviceId));
-    const budgetAmount = selectedServiceObj ? Number(selectedServiceObj.customRateInr || selectedServiceObj.priceInr || 500) : 500;
-
-    const otp = Math.floor(100000 + Math.random() * 900000); // 6-digit OTP
-    const paymentMethod = req.body.paymentMethod === "online" ? "Online Payment (UPI/Card)" : "Pay After Service (COD)";
-    let formattedDetails = `${formData.details || ""}\n\n[Start OTP: ${otp}]\n[Payment Method: ${paymentMethod}]`.trim();
-    if (formData.serviceAddress) {
-      formattedDetails += `\n[Complete Address: ${formData.serviceAddress}]`;
-    }
-    if (req.body.latitude && req.body.longitude) {
-      formattedDetails += `\n[Coordinates: ${req.body.latitude},${req.body.longitude}]`;
-    }
-
-    const fullCombinedAddress = formData.serviceAddress ? `${formData.addressArea} (${formData.serviceAddress})` : formData.addressArea;
-
-    const bookingCode = await createBooking({
-      clientId: req.session.user && req.session.user.role === "client" ? req.session.user.id : null,
-      guestName: formData.fullName,
-      guestEmail: formData.email,
-      guestPhone: formData.phone,
-      professionalId,
-      serviceId: Number(formData.serviceId),
-      preferredDate: formData.preferredDate,
-      preferredTimeSlot: formData.preferredTimeSlot,
-      addressArea: fullCombinedAddress,
-      budgetInr: budgetAmount,
-      details: formattedDetails
-    });
-
-    return renderBookingPage(res, {
-      professional,
-      serviceOptions,
-      formNotice: createFormNotice(
-        "success",
-        `Booking request ${bookingCode} has been created successfully. The professional can now see it in their dashboard.`
-      ),
-      formData: {
-        ...formData,
-        details: ""
+    let addressArea = req.body.addressArea || "";
+    let serviceAddress = req.body.serviceAddress || "";
+    if (req.body.selectedAddressId && clientAddresses.length > 0) {
+      const foundAddr = clientAddresses.find(a => String(a.id) === String(req.body.selectedAddressId));
+      if (foundAddr) {
+        addressArea = (foundAddr.locality ? foundAddr.locality + ", " : "") + (foundAddr.city || "");
+        serviceAddress = `${foundAddr.address || ""} - Pincode: ${foundAddr.pincode || ""}` + (foundAddr.landmark ? ` (Landmark: ${foundAddr.landmark})` : "");
       }
-    });
+    }
+
+    if (!addressArea && clientAddresses.length === 0) {
+      return renderBookingPage(res.status(422), {
+        professional,
+        clientAddresses,
+        formNotice: createFormNotice("error", "Please select or add a service address first.")
+      });
+    }
+
+    const serviceOptions = isDatabaseReady() ? await getProfessionalServiceOptions(professionalId) : [];
+    const chosenServiceId = req.body.serviceId || (serviceOptions[0] ? serviceOptions[0].id : 1);
+
+    req.session.bookingDraft = {
+      professionalId,
+      fullName: sanitizeText(req.body.fullName || user.name),
+      email: sanitizeText(req.body.email || user.email),
+      phone: sanitizeText(req.body.phone || user.phone),
+      preferredDate: sanitizeText(req.body.preferredDate || new Date().toISOString().split("T")[0]),
+      preferredTimeSlot: sanitizeText(req.body.preferredTimeSlot || "10:00 AM"),
+      addressArea: sanitizeText(addressArea),
+      serviceAddress: sanitizeText(serviceAddress),
+      serviceId: chosenServiceId,
+      jobType: sanitizeText(req.body.jobType || "Part Time"),
+      latitude: sanitizeText(req.body.latitude || ""),
+      longitude: sanitizeText(req.body.longitude || "")
+    };
+
+    return res.redirect(`/book-service/${professionalId}/payment`);
   }
 );
+
+app.get("/book-service/:professionalId/payment", requireRole("client"), async (req, res) => {
+  const professionalId = Number(req.params.professionalId);
+  const draft = req.session.bookingDraft;
+  if (!draft || Number(draft.professionalId) !== professionalId) {
+    return res.redirect(`/book-service/${professionalId}`);
+  }
+
+  const professional = await getProfessionalById(professionalId);
+  if (!professional) {
+    return res.redirect("/findHelpNow");
+  }
+
+  return res.render("bookServicePayment", {
+    title: "Select Payment Method | SV Personnels",
+    pageClass: "page-booking-payment",
+    professional,
+    bookingDraft: draft,
+    formNotice: null
+  });
+});
+
+app.post("/book-service/:professionalId/confirm", requireRole("client"), async (req, res) => {
+  const professionalId = Number(req.params.professionalId);
+  const draft = req.session.bookingDraft;
+  if (!draft || Number(draft.professionalId) !== professionalId) {
+    return res.redirect(`/book-service/${professionalId}`);
+  }
+
+  const professional = await getProfessionalById(professionalId);
+  if (!professional) {
+    return res.redirect("/findHelpNow");
+  }
+
+  const isFullTime = (draft.jobType === "Full Time");
+  const paymentMethodChoice = isFullTime ? "payu" : (req.body.paymentMethod || "cod");
+
+  if (paymentMethodChoice === "payu" || isFullTime) {
+    const key = process.env.PAYU_MERCHANT_KEY || "gtKFFx";
+    const salt = process.env.PAYU_MERCHANT_SALT || "eCwWELxi";
+    const txnid = "SV_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
+    const amount = isFullTime ? 250 : (Number(professional.startingPrice) || 500);
+    const productinfo = isFullTime
+      ? "Full Time Platform Booking Fee (₹250) - " + professional.name
+      : "Booking with " + professional.name;
+    const firstname = draft.fullName || "Verified Client";
+    const email = draft.email || "client@svpersonnels.in";
+    const phone = draft.phone || "9999999999";
+    const originUrl = getRequestOrigin(req);
+    const surl = originUrl + "/book-service/payu/success";
+    const furl = originUrl + "/book-service/payu/failure";
+
+    const hashString = `${key}|${txnid}|${amount}|${productinfo}|${firstname}|${email}|||||||||||${salt}`;
+    const hash = crypto.createHash("sha512").update(hashString).digest("hex");
+
+    req.session.payuPending = {
+      txnid,
+      professionalId,
+      draft,
+      amount,
+      isFullTimeFee: isFullTime
+    };
+
+    const payuUrl = process.env.PAYU_MODE === "live" ? "https://secure.payu.in/_payment" : "https://test.payu.in/_payment";
+
+    return res.render("payuCheckout", {
+      title: "PayU Payment Gateway | SV Personnels",
+      pageClass: "page-payu",
+      key,
+      txnid,
+      amount,
+      productinfo,
+      firstname,
+      email,
+      phone,
+      surl,
+      furl,
+      hash,
+      payuUrl,
+      professional
+    });
+  }
+
+  // Option 1: Direct Post-Service Payment (Cash / UPI to Professional)
+  const otp = Math.floor(100000 + Math.random() * 900000);
+  const paymentMethod = "Direct Post-Service Payment (Cash / UPI directly to Professional)";
+  let formattedDetails = `[Start OTP: ${otp}]\n[Payment Method: ${paymentMethod}]`;
+  if (draft.serviceAddress) {
+    formattedDetails += `\n[Complete Address: ${draft.serviceAddress}]`;
+  }
+  if (draft.latitude && draft.longitude) {
+    formattedDetails += `\n[Coordinates: ${draft.latitude},${draft.longitude}]`;
+  }
+
+  const fullCombinedAddress = draft.serviceAddress ? `${draft.addressArea} (${draft.serviceAddress})` : draft.addressArea;
+
+  const bookingCode = await createBooking({
+    clientId: req.session.user.id,
+    guestName: draft.fullName,
+    guestEmail: draft.email,
+    guestPhone: draft.phone,
+    professionalId,
+    serviceId: Number(draft.serviceId) || 1,
+    preferredDate: draft.preferredDate,
+    preferredTimeSlot: draft.preferredTimeSlot,
+    addressArea: fullCombinedAddress,
+    budgetInr: 0,
+    details: formattedDetails
+  });
+
+  req.session.bookingDraft = null;
+  req.session.dashboardNotice = createFormNotice(
+    "success",
+    `Booking ${bookingCode} confirmed with ${professional.name}! Settle payment directly with your professional upon completion.`
+  );
+  return res.redirect("/client/dashboard");
+});
+
+app.post("/book-service/payu/success", async (req, res) => {
+  const pending = req.session.payuPending;
+  if (!pending || !pending.draft) {
+    return res.redirect("/client/dashboard");
+  }
+
+  const draft = pending.draft;
+  const professionalId = pending.professionalId;
+  const professional = await getProfessionalById(professionalId);
+
+  const otp = Math.floor(100000 + Math.random() * 900000);
+  const paymentMethod = "Online Payment via PayU (Paid Online - TxnID: " + pending.txnid + ")";
+  let formattedDetails = `[Start OTP: ${otp}]\n[Payment Method: ${paymentMethod}]`;
+  if (draft.serviceAddress) {
+    formattedDetails += `\n[Complete Address: ${draft.serviceAddress}]`;
+  }
+
+  const fullCombinedAddress = draft.serviceAddress ? `${draft.addressArea} (${draft.serviceAddress})` : draft.addressArea;
+
+  const bookingCode = await createBooking({
+    clientId: req.session.user ? req.session.user.id : null,
+    guestName: draft.fullName,
+    guestEmail: draft.email,
+    guestPhone: draft.phone,
+    professionalId,
+    serviceId: Number(draft.serviceId) || 1,
+    preferredDate: draft.preferredDate,
+    preferredTimeSlot: draft.preferredTimeSlot,
+    addressArea: fullCombinedAddress,
+    budgetInr: pending.amount || 0,
+    details: formattedDetails
+  });
+
+  req.session.payuPending = null;
+  req.session.bookingDraft = null;
+  req.session.dashboardNotice = createFormNotice(
+    "success",
+    `🎉 Online Payment Successful via PayU (Txn ID: ${pending.txnid})! Booking ${bookingCode} with ${professional ? professional.name : 'professional'} is confirmed.`
+  );
+  return res.redirect("/client/dashboard");
+});
+
+app.post("/book-service/payu/failure", async (req, res) => {
+  const pending = req.session.payuPending;
+  const professionalId = pending ? pending.professionalId : null;
+  if (professionalId) {
+    req.session.formNotice = createFormNotice("error", "Online Payment via PayU failed or was cancelled. Please try again or select Cash/UPI on completion.");
+    return res.redirect(`/book-service/${professionalId}/payment`);
+  }
+  return res.redirect("/findHelpNow");
+});
 
 app.get("/api/workers", async (req, res) => {
   try {
@@ -2050,6 +3004,88 @@ app.post("/client/bookings/:bookingId/cancel", requireRole("client"), async (req
   return res.redirect("/client/dashboard");
 });
 
+app.post("/client/disputes", requireRole("client"), async (req, res) => {
+  const { bookingId, reason, description } = req.body;
+  const clientId = req.session.user.id;
+
+  try {
+    const dbClient = getClient();
+    
+    const { data: booking } = await dbClient
+      .from("bookings")
+      .select("*")
+      .eq("id", bookingId)
+      .eq("client_id", clientId)
+      .maybeSingle();
+
+    if (!booking) {
+      req.session.clientDashboardNotice = createFormNotice("error", "Booking record not found.");
+      return res.redirect("/client/dashboard");
+    }
+
+    const { error } = await dbClient
+      .from("disputes")
+      .insert({
+        booking_id: bookingId,
+        client_id: clientId,
+        professional_id: booking.professional_id,
+        reason: reason,
+        description: description,
+        status: "pending"
+      });
+
+    if (error) throw error;
+
+    await dbClient
+      .from("bookings")
+      .update({ status: "disputed", details: (booking.details || "") + "\n[Dispute Filed: pending SV mediation]" })
+      .eq("id", bookingId);
+
+    req.session.clientDashboardNotice = createFormNotice("success", "Dispute raised successfully. Our support team has been notified.");
+    return res.redirect("/client/dashboard");
+  } catch (err) {
+    console.error("Dispute filing failed:", err.message);
+    req.session.clientDashboardNotice = createFormNotice("error", `Dispute filing failed: ${err.message}`);
+    return res.redirect("/client/dashboard");
+  }
+});
+
+app.get("/bookings/:id/invoice", requireRole(["client", "professional"]), async (req, res) => {
+  const bookingId = Number(req.params.id);
+  const user = req.session.user;
+
+  try {
+    const dbClient = getClient();
+    
+    const { data: booking } = await dbClient
+      .from("bookings")
+      .select("*, professionals(full_name, email, phone), clients(full_name, email, phone)")
+      .eq("id", bookingId)
+      .maybeSingle();
+
+    if (!booking) {
+      return res.status(404).send("Booking invoice not found.");
+    }
+
+    if (user.role === "client" && Number(booking.client_id) !== Number(user.id)) {
+      return res.status(403).send("Unauthorized access to this invoice.");
+    }
+    if (user.role === "professional" && Number(booking.professional_id) !== Number(user.id)) {
+      return res.status(403).send("Unauthorized access to this invoice.");
+    }
+
+    res.render("invoice", {
+      layout: false,
+      title: `Invoice SV-${booking.booking_code} | SV Personnels`,
+      booking,
+      formatShortDate: (d) => new Date(d).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' })
+    });
+  } catch (err) {
+    console.error("Invoice generation failed:", err.message);
+    res.status(500).send("Internal Server Error generating invoice.");
+  }
+});
+
 app.post("/professional/bookings/:bookingId/start-work", requireRole("professional"), async (req, res) => {
   if (!isDatabaseReady()) {
     req.session.professionalDashboardNotice = createFormNotice("error", "Database offline.");
@@ -2161,47 +3197,6 @@ app.post("/professional/bookings/:bookingId/complete-work", requireRole("profess
   }
 
   return res.redirect("/professional/dashboard");
-});
-
-app.post("/client/bookings/:bookingId/pay", requireRole("client"), async (req, res) => {
-  if (!isDatabaseReady()) {
-    req.session.clientDashboardNotice = createFormNotice("error", "Database offline.");
-    return res.redirect("/client/dashboard");
-  }
-
-  const bookingId = Number(req.params.bookingId);
-
-  try {
-    const dbClient = getClient();
-    const { data: booking, error } = await dbClient
-      .from("bookings")
-      .select("id, details, client_id")
-      .eq("id", bookingId)
-      .eq("client_id", req.session.user.id)
-      .maybeSingle();
-
-    if (error) throw error;
-    if (!booking) {
-      req.session.clientDashboardNotice = createFormNotice("error", "Booking not found.");
-      return res.redirect("/client/dashboard");
-    }
-
-    const details = booking.details || "";
-    const updatedDetails = `${details}\n[Payment Status: Paid via Razorpay]`.trim();
-
-    const { error: updateError } = await dbClient
-      .from("bookings")
-      .update({ details: updatedDetails })
-      .eq("id", bookingId);
-
-    if (updateError) throw updateError;
-
-    req.session.clientDashboardNotice = createFormNotice("success", "Payment successful! Thank you for using SV Personnels.");
-  } catch (err) {
-    req.session.clientDashboardNotice = createFormNotice("error", `Payment failed: ${err.message}`);
-  }
-
-  return res.redirect("/client/dashboard");
 });
 
 const workerValidators = [
@@ -2342,6 +3337,66 @@ app.post("/admin/professionals/:professionalId/delete", requireRole("admin"), as
     req.session.adminDashboardNotice = createFormNotice("error", `Failed to delete professional: ${error.message}`);
   }
 
+});
+
+// Admin verify partner agency
+app.post("/admin/partners/:id/verify", requireRole("admin"), async (req, res) => {
+  if (!isDatabaseReady()) {
+    req.session.adminDashboardNotice = createFormNotice("error", "Database connection offline.");
+    return res.redirect("/admin/dashboard");
+  }
+
+  const partnerId = Number(req.params.id);
+  const isVerified = req.body.isVerified === "true";
+
+  try {
+    await verifyPartner(partnerId, isVerified);
+    const message = isVerified ? "Partner agency approved and payouts unlocked." : "Partner agency verification revoked.";
+    req.session.adminDashboardNotice = createFormNotice("success", message);
+  } catch (error) {
+    req.session.adminDashboardNotice = createFormNotice("error", `Failed to update partner verification: ${error.message}`);
+  }
+
+  return res.redirect("/admin/dashboard");
+});
+
+// Admin delete partner agency
+app.post("/admin/partners/:id/delete", requireRole("admin"), async (req, res) => {
+  if (!isDatabaseReady()) {
+    req.session.adminDashboardNotice = createFormNotice("error", "Database connection offline.");
+    return res.redirect("/admin/dashboard");
+  }
+
+  const partnerId = Number(req.params.id);
+
+  try {
+    const dbClient = getClient();
+    const { error } = await dbClient.from("partners").delete().eq("id", partnerId);
+    if (error) throw error;
+    req.session.adminDashboardNotice = createFormNotice("success", "Partner agency profile rejected and deleted successfully.");
+  } catch (error) {
+    req.session.adminDashboardNotice = createFormNotice("error", `Failed to delete partner agency: ${error.message}`);
+  }
+
+  return res.redirect("/admin/dashboard");
+});
+
+// Admin approve withdrawal request
+app.post("/admin/withdrawals/:id/approve", requireRole("admin"), async (req, res) => {
+  if (!isDatabaseReady()) {
+    req.session.adminDashboardNotice = createFormNotice("error", "Database connection offline.");
+    return res.redirect("/admin/dashboard");
+  }
+
+  const withdrawalId = Number(req.params.id);
+
+  try {
+    await approveWithdrawal(withdrawalId);
+    req.session.adminDashboardNotice = createFormNotice("success", "Withdrawal request approved and processed successfully!");
+  } catch (error) {
+    req.session.adminDashboardNotice = createFormNotice("error", `Failed to approve withdrawal: ${error.message}`);
+  }
+
   return res.redirect("/admin/dashboard");
 });
 
@@ -2372,6 +3427,138 @@ app.post(
     return res.redirect("/admin/dashboard");
   }
 );
+
+// --- PHASE 4: EXTENDED ADMIN DASHBOARD ROUTES ---
+
+// 1. Disputes Admin Manager
+app.post("/admin/disputes/:id/resolve", requireRole("admin"), async (req, res) => {
+  const disputeId = Number(req.params.id);
+  const { action, adminNotes, refundAmount } = req.body;
+  try {
+    await resolveDispute(disputeId, action, adminNotes || "", Number(refundAmount) || 0);
+    req.session.adminDashboardNotice = createFormNotice("success", `Dispute #${disputeId} resolved successfully (${action.toUpperCase()}).`);
+  } catch (error) {
+    req.session.adminDashboardNotice = createFormNotice("error", `Failed to resolve dispute: ${error.message}`);
+  }
+  return res.redirect("/admin/dashboard");
+});
+
+// 2. Coupons Admin Manager
+app.post("/admin/coupons", requireRole("admin"), async (req, res) => {
+  const { code, discount_type, discount_value, min_booking_amount_inr, max_discount_inr, expiry_date } = req.body;
+  if (!code || !code.trim()) {
+    req.session.adminDashboardNotice = createFormNotice("error", "Coupon code cannot be empty.");
+    return res.redirect("/admin/dashboard");
+  }
+  try {
+    await createCoupon({ code, discount_type, discount_value, min_booking_amount_inr, max_discount_inr, is_active: true, expiry_date: expiry_date || null });
+    req.session.adminDashboardNotice = createFormNotice("success", `Promo code '${code.trim().toUpperCase()}' created and activated.`);
+  } catch (error) {
+    req.session.adminDashboardNotice = createFormNotice("error", `Failed to create coupon: ${error.message}`);
+  }
+  return res.redirect("/admin/dashboard");
+});
+
+app.post("/admin/coupons/:id/toggle", requireRole("admin"), async (req, res) => {
+  const couponId = Number(req.params.id);
+  const isActive = req.body.isActive === "true";
+  try {
+    await toggleCoupon(couponId, isActive);
+    req.session.adminDashboardNotice = createFormNotice("success", `Coupon status updated.`);
+  } catch (error) {
+    req.session.adminDashboardNotice = createFormNotice("error", `Failed to update coupon status: ${error.message}`);
+  }
+  return res.redirect("/admin/dashboard");
+});
+
+app.post("/admin/coupons/:id/delete", requireRole("admin"), async (req, res) => {
+  const couponId = Number(req.params.id);
+  try {
+    await deleteCoupon(couponId);
+    req.session.adminDashboardNotice = createFormNotice("success", `Coupon deleted.`);
+  } catch (error) {
+    req.session.adminDashboardNotice = createFormNotice("error", `Failed to delete coupon: ${error.message}`);
+  }
+  return res.redirect("/admin/dashboard");
+});
+
+// Coupon validation API endpoint for checkout/bookings
+app.post("/api/coupons/validate", async (req, res) => {
+  const { code, bookingAmount } = req.body;
+  try {
+    const result = await validateCoupon(code, Number(bookingAmount) || 0);
+    return res.json(result);
+  } catch (err) {
+    return res.status(500).json({ valid: false, message: "Error validating coupon code." });
+  }
+});
+
+// 3. CMS Controller
+app.post("/admin/cms/update", requireRole("admin"), async (req, res) => {
+  try {
+    const updates = {
+      announcementBanner: req.body.announcementBanner || "",
+      announcementActive: req.body.announcementActive === "on" || req.body.announcementActive === "true",
+      heroTitle: req.body.heroTitle || "",
+      heroSubtitle: req.body.heroSubtitle || "",
+      supportEmail: req.body.supportEmail || "",
+      supportPhone: req.body.supportPhone || ""
+    };
+    await updateCmsSettings(updates);
+    if (updates.heroTitle && siteContent && siteContent.home && siteContent.home.hero) {
+      siteContent.home.hero.title = updates.heroTitle;
+      siteContent.home.hero.subtitle = updates.heroSubtitle;
+    }
+    req.session.adminDashboardNotice = createFormNotice("success", "Platform CMS configuration & announcement updated successfully!");
+  } catch (error) {
+    req.session.adminDashboardNotice = createFormNotice("error", `Failed to update CMS: ${error.message}`);
+  }
+  return res.redirect("/admin/dashboard");
+});
+
+// 4. Dynamic Categories (Services) Management
+app.post("/admin/services/create", requireRole("admin"), async (req, res) => {
+  const { name, slug, description, base_price_inr, icon_path } = req.body;
+  if (!name || !name.trim()) {
+    req.session.adminDashboardNotice = createFormNotice("error", "Service/Category name is required.");
+    return res.redirect("/admin/dashboard");
+  }
+  try {
+    const created = await createServiceCategory({ name, slug, description, base_price_inr, icon_path });
+    if (siteContent && siteContent.home && Array.isArray(siteContent.home.services)) {
+      if (!siteContent.home.services.some(s => s.name.toLowerCase() === created.name.toLowerCase())) {
+        siteContent.home.services.push({ name: created.name, icon: created.icon_path || "/assets/driver.png", description: created.description || "" });
+      }
+    }
+    req.session.adminDashboardNotice = createFormNotice("success", `Service category '${name.trim()}' added.`);
+  } catch (error) {
+    req.session.adminDashboardNotice = createFormNotice("error", `Failed to add service category: ${error.message}`);
+  }
+  return res.redirect("/admin/dashboard");
+});
+
+app.post("/admin/services/:id/update", requireRole("admin"), async (req, res) => {
+  const serviceId = Number(req.params.id);
+  const { name, base_price_inr, is_active, description } = req.body;
+  try {
+    await updateServiceCategory(serviceId, { name, base_price_inr, is_active: is_active === "true" || is_active === "on", description });
+    req.session.adminDashboardNotice = createFormNotice("success", "Service category updated.");
+  } catch (error) {
+    req.session.adminDashboardNotice = createFormNotice("error", `Failed to update category: ${error.message}`);
+  }
+  return res.redirect("/admin/dashboard");
+});
+
+app.post("/admin/services/:id/delete", requireRole("admin"), async (req, res) => {
+  const serviceId = Number(req.params.id);
+  try {
+    await deleteServiceCategory(serviceId);
+    req.session.adminDashboardNotice = createFormNotice("success", "Service category deactivated.");
+  } catch (error) {
+    req.session.adminDashboardNotice = createFormNotice("error", `Failed to deactivate category: ${error.message}`);
+  }
+  return res.redirect("/admin/dashboard");
+});
 
 app.get("/admin/profile", requireRole("admin"), async (req, res) => {
   if (!isDatabaseReady()) {
@@ -2441,9 +3628,224 @@ app.post(
   }
 );
 
+// --- REALTIME CHAT SYSTEM ROUTES ---
+
+app.get("/chat", requireRole(["client", "professional"]), async (req, res) => {
+  const user = req.session.user;
+  const myRole = user.role;
+  const myId = user.id;
+
+  try {
+    const dbClient = getClient();
+    let contacts = [];
+    
+    if (myRole === "client") {
+      const { data: bookings } = await dbClient
+        .from("bookings")
+        .select("professional_id, professionals(full_name, photo_url)")
+        .eq("client_id", myId);
+      
+      const seen = new Set();
+      if (bookings) {
+        bookings.forEach(b => {
+          if (b.professional_id && !seen.has(b.professional_id)) {
+            seen.add(b.professional_id);
+            contacts.push({
+              id: b.professional_id,
+              role: "professional",
+              name: b.professionals?.full_name || "Professional",
+              photo: b.professionals?.photo_url || "/assets/default-user.png"
+            });
+          }
+        });
+      }
+    } else {
+      const { data: bookings } = await dbClient
+        .from("bookings")
+        .select("client_id, clients(full_name)")
+        .eq("professional_id", myId);
+      
+      const seen = new Set();
+      if (bookings) {
+        bookings.forEach(b => {
+          if (b.client_id && !seen.has(b.client_id)) {
+            seen.add(b.client_id);
+            contacts.push({
+              id: b.client_id,
+              role: "client",
+              name: b.clients?.full_name || "Client",
+              photo: "/assets/default-user.png"
+            });
+          }
+        });
+      }
+    }
+
+    const unreadCounts = await getUnreadChatCount(myRole, myId);
+
+    res.render("chat", {
+      title: "Realtime Chat Workspace | SV Personnels",
+      pageClass: "page-chat",
+      contacts,
+      unreadCounts,
+      myRole,
+      myId,
+      activeContact: null,
+      chatHistory: []
+    });
+  } catch (err) {
+    console.error("Chat page error:", err.message);
+    res.redirect("/");
+  }
+});
+
+app.get("/chat/:recipientRole/:recipientId", requireRole(["client", "professional"]), async (req, res) => {
+  const user = req.session.user;
+  const myRole = user.role;
+  const myId = user.id;
+  const targetRole = req.params.recipientRole;
+  const targetId = Number(req.params.recipientId);
+
+  try {
+    const dbClient = getClient();
+    let contacts = [];
+    let activeContact = null;
+
+    if (targetRole === "professional") {
+      const { data: targetUser } = await dbClient.from("professionals").select("id, full_name, photo_url").eq("id", targetId).maybeSingle();
+      if (targetUser) {
+        activeContact = {
+          id: targetUser.id,
+          role: "professional",
+          name: targetUser.full_name,
+          photo: targetUser.photo_url || "/assets/default-user.png"
+        };
+      }
+    } else {
+      const { data: targetUser } = await dbClient.from("clients").select("id, full_name").eq("id", targetId).maybeSingle();
+      if (targetUser) {
+        activeContact = {
+          id: targetUser.id,
+          role: "client",
+          name: targetUser.full_name,
+          photo: "/assets/default-user.png"
+        };
+      }
+    }
+
+    if (!activeContact) {
+      return res.redirect("/chat");
+    }
+
+    if (myRole === "client") {
+      const { data: bookings } = await dbClient.from("bookings").select("professional_id, professionals(full_name, photo_url)").eq("client_id", myId);
+      const seen = new Set();
+      if (bookings) {
+        bookings.forEach(b => {
+          if (b.professional_id && !seen.has(b.professional_id)) {
+            seen.add(b.professional_id);
+            contacts.push({
+              id: b.professional_id,
+              role: "professional",
+              name: b.professionals?.full_name || "Professional",
+              photo: b.professionals?.photo_url || "/assets/default-user.png"
+            });
+          }
+        });
+      }
+    } else {
+      const { data: bookings } = await dbClient.from("bookings").select("client_id, clients(full_name)").eq("professional_id", myId);
+      const seen = new Set();
+      if (bookings) {
+        bookings.forEach(b => {
+          if (b.client_id && !seen.has(b.client_id)) {
+            seen.add(b.client_id);
+            contacts.push({
+              id: b.client_id,
+              role: "client",
+              name: b.clients?.full_name || "Client",
+              photo: "/assets/default-user.png"
+            });
+          }
+        });
+      }
+    }
+
+    if (!contacts.some(c => c.id === targetId && c.role === targetRole)) {
+      contacts.push(activeContact);
+    }
+
+    await markChatAsRead(myRole, myId, targetRole, targetId);
+
+    const chatHistory = await getChatHistory(myRole, myId, targetRole, targetId);
+    const unreadCounts = await getUnreadChatCount(myRole, myId);
+
+    res.render("chat", {
+      title: `Chat with ${activeContact.name} | SV Personnels`,
+      pageClass: "page-chat",
+      contacts,
+      unreadCounts,
+      myRole,
+      myId,
+      activeContact,
+      chatHistory
+    });
+  } catch (err) {
+    console.error("Direct chat error:", err.message);
+    res.redirect("/chat");
+  }
+});
+
+app.post("/chat/upload", requireRole(["client", "professional"]), upload.single("file"), (req, res) => {
+  if (req.file) {
+    return res.json({ success: true, url: "/uploads/" + req.file.filename });
+  }
+  return res.json({ success: false, error: "Upload failed." });
+});
+
 // --- UPTIME / KEEP-ALIVE ROUTE ---
 app.get("/ping", (req, res) => {
   res.status(200).send("OK");
+});
+
+const http = require("http");
+const { Server } = require("socket.io");
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
+
+io.on("connection", (socket) => {
+  console.log("Socket.io user connected:", socket.id);
+
+  socket.on("join", (roomName) => {
+    socket.join(roomName);
+    console.log(`Socket joined room: ${roomName}`);
+  });
+
+  socket.on("send_message", async (data) => {
+    const { senderRole, senderId, receiverRole, receiverId, message, imageUrl } = data;
+    const saved = await saveChatMessage(senderRole, senderId, receiverRole, receiverId, message, imageUrl);
+    
+    const receiverRoom = `${receiverRole}_${receiverId}`;
+    const senderRoom = `${senderRole}_${senderId}`;
+
+    io.to(receiverRoom).emit("new_message", saved);
+    io.to(senderRoom).emit("new_message", saved);
+  });
+
+  socket.on("typing", (data) => {
+    const { senderRole, senderId, receiverRole, receiverId, isTyping } = data;
+    const receiverRoom = `${receiverRole}_${receiverId}`;
+    io.to(receiverRoom).emit("typing_status", { senderRole, senderId, isTyping });
+  });
+
+  socket.on("disconnect", () => {
+    console.log("Socket.io user disconnected:", socket.id);
+  });
 });
 
 async function startServer() {
@@ -2455,7 +3857,7 @@ async function startServer() {
     console.warn(`Supabase connection unavailable: ${state.lastError}`);
   }
 
-  app.listen(PORT, () => {
+  server.listen(PORT, () => {
     console.log(`Server running at http://localhost:${PORT}`);
 
     // Self-ping every 10 minutes (600,000 ms) to prevent Render free tier from going to sleep

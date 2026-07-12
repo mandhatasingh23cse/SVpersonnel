@@ -1,8 +1,8 @@
 <section class="page-hero">
   <div class="shell page-hero-content">
-    <p class="eyebrow">Super Admin Dashboard</p>
-    <h1>Welcome, Administrator</h1>
-    <p>Manage support tickets, review partner registrations, and oversee site metrics.</p>
+    <p class="eyebrow">Platform Control Center</p>
+    <h1>Super Administrator Dashboard</h1>
+    <p>Verify independent professionals & partners, process payouts, and audit platform service revenue.</p>
   </div>
 </section>
 
@@ -11,48 +11,95 @@
 
   <!-- Overview Stats Grid -->
   <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem; margin-bottom: 3rem;">
-    <div style="padding: 1.5rem; border-radius: var(--radius-lg); background: rgba(139, 92, 246, 0.12); border: 1px solid rgba(139, 92, 246, 0.3); text-align: center;">
+    <!-- Total Clients -->
+    <div style="padding: 1.5rem; border-radius: var(--radius-lg); background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.25); text-align: center;">
       <strong style="display: block; font-size: 2.5rem; font-family: 'Outfit', sans-serif; color: #a78bfa; margin-bottom: 0.25rem;"><%= dashboardData.metrics.totalClients %></strong>
       <p style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin: 0;">Total Clients</p>
     </div>
-    <div style="padding: 1.5rem; border-radius: var(--radius-lg); background: rgba(6, 182, 212, 0.1); border: 1px solid rgba(6, 182, 212, 0.3); text-align: center;">
+    
+    <!-- Active Professionals -->
+    <div style="padding: 1.5rem; border-radius: var(--radius-lg); background: rgba(6, 182, 212, 0.08); border: 1px solid rgba(6, 182, 212, 0.25); text-align: center;">
       <strong style="display: block; font-size: 2.5rem; font-family: 'Outfit', sans-serif; color: #22d3ee; margin-bottom: 0.25rem;"><%= dashboardData.metrics.totalProfessionals %></strong>
-      <p style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin: 0;">Active Partners</p>
+      <p style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin: 0;">Professionals</p>
     </div>
-    <div style="padding: 1.5rem; border-radius: var(--radius-lg); background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); text-align: center;">
+
+    <!-- Active Partners -->
+    <div style="padding: 1.5rem; border-radius: var(--radius-lg); background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); text-align: center;">
+      <strong style="display: block; font-size: 2.5rem; font-family: 'Outfit', sans-serif; color: #fbbf24; margin-bottom: 0.25rem;"><%= dashboardData.partners.length %></strong>
+      <p style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin: 0;">Agency Partners</p>
+    </div>
+
+    <!-- Total Bookings -->
+    <div style="padding: 1.5rem; border-radius: var(--radius-lg); background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); text-align: center;">
       <strong style="display: block; font-size: 2.5rem; font-family: 'Outfit', sans-serif; color: #34d399; margin-bottom: 0.25rem;"><%= dashboardData.metrics.totalBookings %></strong>
       <p style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin: 0;">Total Bookings</p>
     </div>
-    <div style="padding: 1.5rem; border-radius: var(--radius-lg); background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.3); text-align: center;">
-      <strong style="display: block; font-size: 2.5rem; font-family: 'Outfit', sans-serif; color: #fb7185; margin-bottom: 0.25rem;"><%= dashboardData.metrics.pendingSupport %></strong>
-      <p style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin: 0;">Pending Tickets</p>
+
+    <!-- Platform Fee Revenue -->
+    <div style="padding: 1.5rem; border-radius: var(--radius-lg); background: rgba(236, 72, 153, 0.08); border: 1px solid rgba(236, 72, 153, 0.25); text-align: center;">
+      <strong style="display: block; font-size: 2.5rem; font-family: 'Outfit', sans-serif; color: #f472b6; margin-bottom: 0.25rem;">₹<%= dashboardData.platformWallet.available_inr %></strong>
+      <p style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin: 0;">Platform Fees</p>
     </div>
   </div>
 
-  <div style="display: grid; gap: 3rem;">
+  <!-- Tabbed Navigation Bar -->
+  <div style="display: flex; gap: 0.5rem; border-bottom: 2px solid var(--line-strong); margin-bottom: 2.5rem; flex-wrap: wrap;">
+    <button onclick="switchTab('support')" id="tab-btn-support" class="admin-tab-btn active-tab">📩 Support Inbox (<%= dashboardData.metrics.pendingSupport %>)</button>
+    <button onclick="switchTab('pros')" id="tab-btn-pros" class="admin-tab-btn">💼 Verify Professionals (<%= dashboardData.professionals.filter(p => !p.isVerified).length %>)</button>
+    <button onclick="switchTab('partners')" id="tab-btn-partners" class="admin-tab-btn">🏢 Verify Partners (<%= dashboardData.partners.filter(p => !p.is_verified).length %>)</button>
+    <button onclick="switchTab('withdrawals')" id="tab-btn-withdrawals" class="admin-tab-btn">💰 Withdrawal Requests (<%= dashboardData.withdrawals.filter(w => w.status === 'pending').length %>)</button>
+    <button onclick="switchTab('disputes')" id="tab-btn-disputes" class="admin-tab-btn">⚖️ Dispute Manager (<%= (dashboardData.disputes || []).filter(d => d.status === 'pending').length %>)</button>
+    <button onclick="switchTab('coupons')" id="tab-btn-coupons" class="admin-tab-btn">🎟️ Promo &amp; Coupons (<%= (dashboardData.coupons || []).length %>)</button>
+    <button onclick="switchTab('cms')" id="tab-btn-cms" class="admin-tab-btn">📢 Platform CMS &amp; Banner</button>
+    <button onclick="switchTab('services')" id="tab-btn-services" class="admin-tab-btn">🛠️ Service Categories (<%= (dashboardData.services || []).length %>)</button>
+    <button onclick="switchTab('revenue')" id="tab-btn-revenue" class="admin-tab-btn">📈 Platform Revenue</button>
+  </div>
 
-    <!-- SECTION 1: Support Inbox -->
-    <div style="padding: 2rem; border-radius: var(--radius-xl); background: rgba(22, 32, 58, 0.9); border: 1px solid var(--line-strong); backdrop-filter: blur(20px);">
-      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line-strong); padding-bottom: 1.25rem; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
-        <div>
-          <h2 style="font-family: 'Outfit', sans-serif; color: var(--text); margin: 0 0 0.25rem;">Support &amp; Inquiry Inbox</h2>
-          <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0;">Answer queries and review platform support requests.</p>
-        </div>
-      </div>
+  <!-- Styling for Tab Buttons -->
+  <style>
+    .admin-tab-btn {
+      padding: 0.85rem 1.5rem;
+      background: none;
+      border: none;
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--text-soft);
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      transition: all 0.2s ease-in-out;
+    }
+    .admin-tab-btn:hover {
+      color: #fff;
+      background: rgba(255,255,255,0.03);
+    }
+    .admin-tab-btn.active-tab {
+      color: var(--accent);
+      border-bottom: 3px solid var(--accent);
+    }
+    .admin-tab-content {
+      display: none;
+    }
+  </style>
 
+  <!-- TAB CONTENT 1: Support Inbox -->
+  <div id="tab-support" class="admin-tab-content" style="display: block;">
+    <div style="padding: 2.5rem; border-radius: var(--radius-xl); background: rgba(22, 32, 58, 0.85); border: 1px solid var(--line-strong); backdrop-filter: blur(20px);">
+      <h2 style="font-family: 'Outfit', sans-serif; color: #fff; margin-bottom: 1.5rem;">Support &amp; Inquiries</h2>
+      
       <% if (!dashboardData.supportMessages.length) { %>
         <p style="text-align: center; color: var(--text-soft); padding: 3rem 0;">No support inquiries found in the database.</p>
       <% } else { %>
         <div style="display: flex; flex-direction: column; gap: 1.5rem;">
           <% dashboardData.supportMessages.forEach(function (msg) { %>
-            <div style="padding: 1.5rem; border-radius: var(--radius-md); background: rgba(15, 23, 42, 0.7); border: 1px solid var(--line-strong); display: flex; flex-direction: column; gap: 1rem;">
+            <div style="padding: 1.5rem; border-radius: var(--radius-md); background: rgba(15, 23, 42, 0.6); border: 1px solid var(--line-strong); display: flex; flex-direction: column; gap: 1rem;">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
                 <div>
                   <span style="display: inline-block; padding: 0.2rem 0.65rem; font-size: 0.75rem; font-weight: 700; border-radius: 99px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;
                     <%= msg.status === 'resolved' ? 'background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3);' : 'background: rgba(244,63,94,0.15); color: #fb7185; border: 1px solid rgba(244,63,94,0.3);' %>">
                     <%= msg.status === 'resolved' ? 'Resolved' : 'Pending Action' %>
                   </span>
-                  <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.1rem; color: var(--text); margin: 0 0 0.25rem;"><%= msg.subject || "No Subject" %></h3>
+                  <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.1rem; color: #fff; margin: 0 0 0.25rem;"><%= msg.subject || "No Subject" %></h3>
                   <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">
                     From: <strong style="color: var(--text);"><%= msg.full_name %></strong> (<%= msg.email %>)
                     <% if (msg.phone) { %> | Phone: <%= msg.phone %><% } %>
@@ -61,7 +108,7 @@
                 <span style="font-size: 0.8rem; color: var(--text-soft); white-space: nowrap;"><%= formatShortDate(msg.created_at) %></span>
               </div>
 
-              <div style="padding: 1rem; border-radius: var(--radius-sm); background: rgba(255,255,255,0.04); border-left: 3px solid var(--accent); font-size: 0.9rem; color: var(--text-muted); line-height: 1.6;">
+              <div style="padding: 1rem; border-radius: var(--radius-sm); background: rgba(255,255,255,0.02); border-left: 3px solid var(--accent); font-size: 0.9rem; color: var(--text-muted); line-height: 1.6;">
                 <%= msg.message %>
               </div>
 
@@ -72,9 +119,9 @@
                 </div>
               <% } else { %>
                 <form action="/admin/support/<%= msg.id %>/reply" method="POST" style="display: flex; flex-direction: column; gap: 0.75rem;">
-                  <label class="field-group" style="margin-bottom: 0;">
-                    <span style="font-weight: 600; font-size: 0.85rem; color: var(--text-muted);">Write official reply:</span>
-                    <textarea name="replyText" rows="3" placeholder="Write response to user..." required style="padding: 1rem; border-radius: var(--radius-sm); resize: vertical;"></textarea>
+                  <label class="field-group" style="margin-bottom: 0; display: flex; flex-direction: column; gap: 0.4rem;">
+                    <span style="font-weight: 600; font-size: 0.85rem; color: var(--text-soft);">Write official reply:</span>
+                    <textarea name="replyText" rows="3" placeholder="Write response to user..." required style="padding: 1rem; border-radius: 8px; background: rgba(255,255,255,0.03); border: 1px solid var(--line); color: #fff; resize: vertical;"></textarea>
                   </label>
                   <button type="submit" class="button button-primary" style="align-self: flex-end;">Save &amp; Resolve Ticket</button>
                 </form>
@@ -84,36 +131,33 @@
         </div>
       <% } %>
     </div>
+  </div>
 
-    <!-- SECTION 2: Professional Partner Registrations -->
-    <div style="padding: 2rem; border-radius: var(--radius-xl); background: rgba(22, 32, 58, 0.9); border: 1px solid var(--line-strong); backdrop-filter: blur(20px);">
-      <div style="border-bottom: 1px solid var(--line-strong); padding-bottom: 1.25rem; margin-bottom: 2rem;">
-        <h2 style="font-family: 'Outfit', sans-serif; color: var(--text); margin: 0 0 0.25rem;">Partner Registrations</h2>
-        <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0;">Review, verify, or remove registered service professionals.</p>
-      </div>
-
+  <!-- TAB CONTENT 2: Verify Professionals -->
+  <div id="tab-pros" class="admin-tab-content">
+    <div style="padding: 2.5rem; border-radius: var(--radius-xl); background: rgba(22, 32, 58, 0.85); border: 1px solid var(--line-strong); backdrop-filter: blur(20px);">
+      <h2 style="font-family: 'Outfit', sans-serif; color: #fff; margin-bottom: 1.5rem;">Verify Independent Professionals</h2>
+      
       <% if (!dashboardData.professionals.length) { %>
-        <p style="text-align: center; color: var(--text-soft); padding: 3rem 0;">No professional applications or profiles registered yet.</p>
+        <p style="text-align: center; color: var(--text-soft); padding: 3rem 0;">No registered professionals found.</p>
       <% } else { %>
         <div style="display: flex; flex-direction: column; gap: 1.5rem;">
           <% dashboardData.professionals.forEach(function (pro) { %>
-            <div style="padding: 1.75rem; border-radius: var(--radius-lg); background: rgba(15, 23, 42, 0.7); border: 1px solid var(--line-strong); display: grid; grid-template-columns: auto 1fr; gap: 1.5rem; align-items: start;">
+            <div style="padding: 1.75rem; border-radius: var(--radius-lg); background: rgba(15, 23, 42, 0.6); border: 1px solid var(--line-strong); display: grid; grid-template-columns: auto 1fr; gap: 1.5rem; align-items: start;">
               <img src="<%= encodeURI(pro.photo) %>" alt="<%= pro.name %>" style="width: 72px; height: 72px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent-soft);">
               
               <div style="display: flex; flex-direction: column; gap: 1rem; min-width: 0;">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.75rem;">
-                  <div>
-                    <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.25rem;">
-                      <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.2rem; color: var(--text); margin: 0;"><%= pro.name %></h3>
-                      <span style="font-size: 0.7rem; padding: 0.15rem 0.55rem; border-radius: 99px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
-                        <%= pro.isVerified ? 'background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3);' : 'background: rgba(244,63,94,0.15); color: #fb7185; border: 1px solid rgba(244,63,94,0.3);' %>">
-                        <%= pro.isVerified ? 'Verified Partner' : 'Pending Verification' %>
-                      </span>
-                    </div>
-                    <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">
-                      Email: <%= pro.email %> | Phone: <%= pro.phone %> | City: <%= pro.city %> (<%= pro.area %>)
-                    </p>
+                <div>
+                  <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.25rem;">
+                    <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.2rem; color: #fff; margin: 0;"><%= pro.name %></h3>
+                    <span style="font-size: 0.7rem; padding: 0.15rem 0.55rem; border-radius: 99px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+                      <%= pro.isVerified ? 'background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3);' : 'background: rgba(244,63,94,0.15); color: #fb7185; border: 1px solid rgba(244,63,94,0.3);' %>">
+                      <%= pro.isVerified ? 'Verified Professional' : 'Pending Verification' %>
+                    </span>
                   </div>
+                  <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">
+                    Email: <%= pro.email %> | Phone: <%= pro.phone %> | City: <%= pro.city %> (<%= pro.area %>)
+                  </p>
                 </div>
 
                 <div style="display: flex; gap: 1.5rem; font-size: 0.85rem; color: var(--text-muted); border-top: 1px solid var(--line-strong); border-bottom: 1px solid var(--line-strong); padding: 0.6rem 0;">
@@ -121,40 +165,21 @@
                   <span><strong style="color: var(--text);">Starting rate:</strong> <%= formatCurrency(pro.startingPrice) %></span>
                 </div>
 
-                <div>
-                  <h4 style="font-size: 0.8rem; font-weight: 700; margin: 0 0 0.5rem; color: var(--text-soft); text-transform: uppercase; letter-spacing: 0.05em;">Skills / Categories:</h4>
-                  <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
-                    <% pro.skills.forEach(function (skill) { %>
-                      <span style="font-size: 0.78rem; padding: 0.2rem 0.65rem; border-radius: 99px; background: var(--accent-soft); border: 1px solid rgba(139,92,246,0.25); color: #c4b5fd; font-weight: 600;"><%= skill %></span>
-                    <% }) %>
-                  </div>
-                </div>
-
-                <% if (pro.description) { %>
-                  <div>
-                    <h4 style="font-size: 0.8rem; font-weight: 700; margin: 0 0 0.35rem; color: var(--text-soft); text-transform: uppercase; letter-spacing: 0.05em;">Bio:</h4>
-                    <p style="font-size: 0.9rem; line-height: 1.6; color: var(--text-muted); margin: 0;"><%= pro.description %></p>
-                  </div>
-                <% } %>
-
                 <% if (pro.aadhaarPanUrl || pro.livePhotoUrl) { %>
                   <div style="border-top: 1px dashed var(--line-strong); padding-top: 1rem;">
                     <h4 style="font-size: 0.85rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--text);">Identity Verification Documents:</h4>
                     <div style="display: flex; gap: 2rem; align-items: flex-start; flex-wrap: wrap;">
                       <% if (pro.aadhaarPanUrl) { %>
-                        <div style="display: grid; gap: 0.5rem;">
+                        <div style="display: grid; gap: 0.6rem; background: rgba(255,255,255,0.03); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--line-strong);">
                           <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-soft); text-transform: uppercase;">ID Document (Aadhaar/PAN)</span>
-                          <% if (pro.aadhaarPanUrl.toLowerCase().endsWith('.pdf')) { %>
-                            <a href="<%= pro.aadhaarPanUrl %>" target="_blank" class="button button-secondary" style="min-height: 38px; padding: 0 14px; font-size: 0.82rem;">View ID Document (PDF)</a>
-                          <% } else { %>
-                            <a href="<%= pro.aadhaarPanUrl %>" target="_blank">
-                              <img src="<%= pro.aadhaarPanUrl %>" alt="Aadhaar/PAN" style="max-width: 220px; max-height: 140px; border-radius: var(--radius-sm); border: 1px solid var(--line-strong); object-fit: contain;">
-                            </a>
-                          <% } %>
+                          <a href="<%= pro.aadhaarPanUrl %>" target="_blank">
+                            <img src="<%= pro.aadhaarPanUrl %>" alt="Aadhaar/PAN Document" style="max-width: 220px; max-height: 140px; border-radius: var(--radius-sm); border: 1px solid var(--line-strong); object-fit: contain;">
+                          </a>
                         </div>
                       <% } %>
+
                       <% if (pro.livePhotoUrl) { %>
-                        <div style="display: grid; gap: 0.5rem;">
+                        <div style="display: grid; gap: 0.6rem; background: rgba(255,255,255,0.03); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--line-strong);">
                           <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-soft); text-transform: uppercase;">Live Photo</span>
                           <a href="<%= pro.livePhotoUrl %>" target="_blank">
                             <img src="<%= pro.livePhotoUrl %>" alt="Live Photo" style="width: 140px; height: 140px; border-radius: var(--radius-sm); border: 1px solid var(--line-strong); object-fit: cover;">
@@ -165,7 +190,7 @@
                   </div>
                 <% } %>
 
-                <div style="display: flex; justify-content: flex-end; gap: 0.75rem; border-top: 1px solid var(--line-strong); padding-top: 1rem; margin-top: 0.25rem; flex-wrap: wrap;">
+                <div style="display: flex; justify-content: flex-end; gap: 0.75rem; border-top: 1px solid var(--line-strong); padding-top: 1rem; margin-top: 0.25rem;">
                   <form action="/admin/professionals/<%= pro.id %>/verify" method="POST">
                     <input type="hidden" name="isVerified" value="<%= pro.isVerified ? 'false' : 'true' %>">
                     <button type="submit" class="button <%= pro.isVerified ? 'button-secondary' : 'button-primary' %>" style="min-height: 40px; padding: 0 18px; font-size: 0.88rem;">
@@ -173,7 +198,7 @@
                     </button>
                   </form>
                   <form action="/admin/professionals/<%= pro.id %>/delete" method="POST" onsubmit="return confirm('Are you sure you want to permanently delete this professional profile?');">
-                    <button type="submit" style="min-height: 40px; padding: 0 18px; font-size: 0.88rem; border-radius: 999px; background: rgba(244,63,94,0.1); color: #fb7185; border: 1px solid rgba(244,63,94,0.3); cursor: pointer; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='rgba(244,63,94,0.2)'" onmouseout="this.style.background='rgba(244,63,94,0.1)'">
+                    <button type="submit" style="min-height: 40px; padding: 0 18px; font-size: 0.88rem; border-radius: 999px; background: rgba(244,63,94,0.1); color: #fb7185; border: 1px solid rgba(244,63,94,0.3); cursor: pointer; font-weight: 600;">
                       Reject / Delete
                     </button>
                   </form>
@@ -184,31 +209,532 @@
         </div>
       <% } %>
     </div>
-
-    <!-- SECTION 3: Department / Service Costs -->
-    <div style="padding: 2rem; border-radius: var(--radius-xl); background: rgba(22, 32, 58, 0.9); border: 1px solid var(--line-strong); backdrop-filter: blur(20px);">
-      <div style="border-bottom: 1px solid var(--line-strong); padding-bottom: 1.25rem; margin-bottom: 2rem;">
-        <h2 style="font-family: 'Outfit', sans-serif; color: var(--text); margin: 0 0 0.25rem;">Department / Service Costs</h2>
-        <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0;">Set the standard price for each platform service category.</p>
-      </div>
-      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.25rem;">
-        <% dashboardData.services.forEach(function (service) { %>
-          <div style="padding: 1.5rem; border-radius: var(--radius-md); background: rgba(15, 23, 42, 0.7); border: 1px solid var(--line-strong); display: flex; flex-direction: column; justify-content: space-between; gap: 1rem;">
-            <div>
-              <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.05rem; color: var(--text); margin: 0 0 0.2rem;"><%= service.name %></h3>
-              <p style="font-size: 0.8rem; color: var(--text-soft); margin: 0;">Slug: <%= service.slug %></p>
-            </div>
-            <form action="/admin/services/<%= service.id %>/price" method="POST" style="display: flex; flex-direction: column; gap: 0.5rem;">
-              <label class="field-group" style="margin-bottom: 0;">
-                <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Base price (INR):</span>
-                <input type="number" name="basePrice" value="<%= service.basePriceInr %>" min="0" max="100000" required>
-              </label>
-              <button type="submit" class="button button-primary" style="font-size: 0.85rem; width: 100%; min-height: 40px;">Update Price</button>
-            </form>
-          </div>
-        <% }) %>
-      </div>
-    </div>
-
   </div>
+
+  <!-- TAB CONTENT 3: Verify Partners -->
+  <div id="tab-partners" class="admin-tab-content">
+    <div style="padding: 2.5rem; border-radius: var(--radius-xl); background: rgba(22, 32, 58, 0.85); border: 1px solid var(--line-strong); backdrop-filter: blur(20px);">
+      <h2 style="font-family: 'Outfit', sans-serif; color: #fff; margin-bottom: 1.5rem;">Verify Service Agency Partners</h2>
+      
+      <% if (!dashboardData.partners.length) { %>
+        <p style="text-align: center; color: var(--text-soft); padding: 3rem 0;">No registered partner agencies found.</p>
+      <% } else { %>
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+          <% dashboardData.partners.forEach(function (partner) { %>
+            <div style="padding: 1.75rem; border-radius: var(--radius-lg); background: rgba(15, 23, 42, 0.6); border: 1px solid var(--line-strong); display: flex; flex-direction: column; gap: 1.25rem;">
+              
+              <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 1rem; border-bottom: 1px solid var(--line-strong); padding-bottom: 0.85rem;">
+                <div>
+                  <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.25rem; color: #fff; margin: 0 0 0.25rem;"><%= partner.business_name %></h3>
+                  <p style="color: var(--text-muted); font-size: 0.88rem; margin: 0;">
+                    Representative: <%= partner.full_name %> (<%= partner.username %>) | Email: <%= partner.email %> | Phone: <%= partner.phone %> | City: <%= partner.city %>
+                  </p>
+                </div>
+                <span style="font-size: 0.72rem; padding: 0.2rem 0.65rem; border-radius: 99px; font-weight: 700; text-transform: uppercase;
+                  <%= partner.is_verified ? 'background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3);' : 'background: rgba(245,158,11,0.15); color: #fb7185; border: 1px solid rgba(245,158,11,0.3);' %>">
+                  <%= partner.is_verified ? 'Verified Agency' : 'Pending Verification' %>
+                </span>
+              </div>
+
+              <!-- Government documents details -->
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; font-size: 0.88rem; color: var(--text-soft);">
+                <span><strong>PAN Number:</strong> <code style="color: #60a5fa;"><%= partner.pan_number %></code></span>
+                <% if (partner.gst_number) { %>
+                  <span><strong>GSTIN:</strong> <code style="color: #60a5fa;"><%= partner.gst_number %></code></span>
+                <% } %>
+              </div>
+
+              <!-- Documents uploads review -->
+              <div style="display: flex; gap: 1.5rem; flex-wrap: wrap; margin-top: 0.5rem;">
+                <% if (partner.id_document_url) { %>
+                  <div style="display: grid; gap: 0.5rem; background: rgba(255,255,255,0.02); padding: 0.75rem; border-radius: 8px; border: 1px solid var(--line);">
+                    <span style="font-size: 0.75rem; font-weight: bold; color: var(--text-soft);">Representative ID</span>
+                    <a href="<%= partner.id_document_url %>" target="_blank" style="font-size: 0.8rem; color: #38bdf8;">📄 Open ID Document</a>
+                  </div>
+                <% } %>
+                
+                <% if (partner.business_proof_url) { %>
+                  <div style="display: grid; gap: 0.5rem; background: rgba(255,255,255,0.02); padding: 0.75rem; border-radius: 8px; border: 1px solid var(--line);">
+                    <span style="font-size: 0.75rem; font-weight: bold; color: var(--text-soft);">Business Proof</span>
+                    <a href="<%= partner.business_proof_url %>" target="_blank" style="font-size: 0.8rem; color: #38bdf8;">📄 Open Business Proof</a>
+                  </div>
+                <% } %>
+
+                <% if (partner.live_photo_url) { %>
+                  <div style="display: grid; gap: 0.5rem; background: rgba(255,255,255,0.02); padding: 0.75rem; border-radius: 8px; border: 1px solid var(--line);">
+                    <span style="font-size: 0.75rem; font-weight: bold; color: var(--text-soft);">Selfie Verification</span>
+                    <a href="<%= partner.live_photo_url %>" target="_blank" style="font-size: 0.8rem; color: #38bdf8;">📸 Open Selfie photo</a>
+                  </div>
+                <% } %>
+              </div>
+
+              <!-- Action buttons -->
+              <div style="display: flex; justify-content: flex-end; gap: 0.75rem; border-top: 1px solid var(--line-strong); padding-top: 1rem; margin-top: 0.5rem;">
+                <form action="/admin/partners/<%= partner.id %>/verify" method="POST">
+                  <input type="hidden" name="isVerified" value="<%= partner.is_verified ? 'false' : 'true' %>">
+                  <button type="submit" class="button <%= partner.is_verified ? 'button-secondary' : 'button-primary' %>" style="min-height: 40px; padding: 0 18px; font-size: 0.88rem;">
+                    <%= partner.is_verified ? 'Revoke Agency Payouts' : 'Verify & Approve Agency' %>
+                  </button>
+                </form>
+                <form action="/admin/partners/<%= partner.id %>/delete" method="POST" onsubmit="return confirm('Are you sure you want to permanently delete this partner agency?');">
+                  <button type="submit" style="min-height: 40px; padding: 0 18px; font-size: 0.88rem; border-radius: 999px; background: rgba(244,63,94,0.1); color: #fb7185; border: 1px solid rgba(244,63,94,0.3); cursor: pointer; font-weight: 600;">
+                    Reject / Delete
+                  </button>
+                </form>
+              </div>
+
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+    </div>
+  </div>
+
+  <!-- TAB CONTENT 4: Withdrawals Requests -->
+  <div id="tab-withdrawals" class="admin-tab-content">
+    <div style="padding: 2.5rem; border-radius: var(--radius-xl); background: rgba(22, 32, 58, 0.85); border: 1px solid var(--line-strong); backdrop-filter: blur(20px);">
+      <h2 style="font-family: 'Outfit', sans-serif; color: #fff; margin-bottom: 1.5rem;">Withdrawal Requests</h2>
+
+      <% if (!dashboardData.withdrawals.length) { %>
+        <p style="text-align: center; color: var(--text-soft); padding: 3rem 0;">No withdrawal requests currently registered.</p>
+      <% } else { %>
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; min-width: 600px; text-align: left;">
+            <thead>
+              <tr style="border-bottom: 2px solid var(--line-strong);">
+                <th style="padding: 12px; color: var(--text-soft); font-size: 0.85rem; text-transform: uppercase;">Recipient</th>
+                <th style="padding: 12px; color: var(--text-soft); font-size: 0.85rem; text-transform: uppercase;">Owner ID</th>
+                <th style="padding: 12px; color: var(--text-soft); font-size: 0.85rem; text-transform: uppercase;">Amount</th>
+                <th style="padding: 12px; color: var(--text-soft); font-size: 0.85rem; text-transform: uppercase;">Bank Account Details</th>
+                <th style="padding: 12px; color: var(--text-soft); font-size: 0.85rem; text-transform: uppercase;">Submitted</th>
+                <th style="padding: 12px; color: var(--text-soft); font-size: 0.85rem; text-transform: uppercase;">Status</th>
+                <th style="padding: 12px; color: var(--text-soft); font-size: 0.85rem; text-transform: uppercase; text-align: right;">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% dashboardData.withdrawals.forEach(function (w) { %>
+                <tr style="border-bottom: 1px solid var(--line);">
+                  <td style="padding: 12px; font-weight: bold; color: #fff; text-transform: capitalize;"><%= w.owner_type %></td>
+                  <td style="padding: 12px; color: var(--text-muted);">#<%= w.owner_id %></td>
+                  <td style="padding: 12px; color: #34d399; font-weight: bold; font-size: 1.05rem;">₹<%= w.amount_inr %></td>
+                  <td style="padding: 12px; color: var(--text-soft); font-size: 0.82rem; white-space: pre-line; line-height: 1.4;"><%= w.bank_details %></td>
+                  <td style="padding: 12px; color: var(--text-muted); font-size: 0.82rem;"><%= formatShortDate(w.created_at) %></td>
+                  <td style="padding: 12px;">
+                    <span style="padding: 0.15rem 0.55rem; border-radius: 99px; font-size: 0.72rem; font-weight: bold; text-transform: uppercase;
+                      <%= w.status === 'completed' ? 'background: rgba(16, 185, 129, 0.15); color: #34d399;' : 'background: rgba(245, 158, 11, 0.15); color: #fb9e0b;' %>">
+                      <%= w.status %>
+                    </span>
+                  </td>
+                  <td style="padding: 12px; text-align: right;">
+                    <% if (w.status === 'pending') { %>
+                      <form action="/admin/withdrawals/<%= w.id %>/approve" method="POST" style="margin: 0;">
+                        <button type="submit" class="button button-primary" style="padding: 6px 14px; font-size: 0.8rem; min-height: 32px; background: linear-gradient(135deg, #10b981, #059669); border: none;">
+                          Approve &amp; Payout
+                        </button>
+                      </form>
+                    <% } else { %>
+                      <span style="color: var(--text-muted); font-size: 0.85rem;">Processed</span>
+                    <% } %>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </div>
+  </div>
+
+  <!-- TAB CONTENT 5: Platform Revenue Ledger -->
+  <div id="tab-revenue" class="admin-tab-content">
+    <div style="padding: 2.5rem; border-radius: var(--radius-xl); background: rgba(22, 32, 58, 0.85); border: 1px solid var(--line-strong); backdrop-filter: blur(20px);">
+      <h2 style="font-family: 'Outfit', sans-serif; color: #fff; margin-bottom: 1.5rem;">Platform Revenue Ledger (15% platform split fee)</h2>
+
+      <!-- Wallet indicators -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2.5rem;">
+        <div style="padding: 1.5rem; border-radius: 12px; background: rgba(236, 72, 153, 0.05); border: 1px solid rgba(236, 72, 153, 0.2); text-align: center;">
+          <span style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-soft); font-weight: 700;">Available Admin Cash balance</span>
+          <strong style="display: block; font-size: 2rem; color: #ec4899; margin-top: 0.35rem;">₹<%= dashboardData.platformWallet.available_inr %></strong>
+        </div>
+        <div style="padding: 1.5rem; border-radius: 12px; background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); text-align: center;">
+          <span style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-soft); font-weight: 700;">Total platform commission collected</span>
+          <strong style="display: block; font-size: 2rem; color: #10b981; margin-top: 0.35rem;">₹<%= dashboardData.platformWallet.total_earned_inr %></strong>
+        </div>
+      </div>
+
+      <% if (!dashboardData.earnings.length) { %>
+        <p style="text-align: center; color: var(--text-soft); padding: 3rem 0;">No platform commission records logged in database ledger.</p>
+      <% } else { %>
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; min-width: 500px; text-align: left;">
+            <thead>
+              <tr style="border-bottom: 2px solid var(--line-strong);">
+                <th style="padding: 12px; color: var(--text-soft); font-size: 0.85rem; text-transform: uppercase;">Booking Code</th>
+                <th style="padding: 12px; color: var(--text-soft); font-size: 0.85rem; text-transform: uppercase;">Professional</th>
+                <th style="padding: 12px; color: var(--text-soft); font-size: 0.85rem; text-transform: uppercase;">Gross Amount</th>
+                <th style="padding: 12px; color: var(--text-soft); font-size: 0.85rem; text-transform: uppercase;">Platform Fee (15%)</th>
+                <th style="padding: 12px; color: var(--text-soft); font-size: 0.85rem; text-transform: uppercase;">Net Payout</th>
+                <th style="padding: 12px; color: var(--text-soft); font-size: 0.85rem; text-transform: uppercase;">Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% dashboardData.earnings.forEach(function (earn) { %>
+                <tr style="border-bottom: 1px solid var(--line);">
+                  <td style="padding: 12px; font-weight: bold; color: #60a5fa;"><%= earn.bookings ? earn.bookings.booking_code : 'GC Booking' %></td>
+                  <td style="padding: 12px; color: #fff;">
+                    <%= earn.professionals ? earn.professionals.full_name : 'Staff' %><br>
+                    <span style="font-size: 0.78rem; color: var(--text-muted);"><%= earn.professionals ? earn.professionals.email : '' %></span>
+                  </td>
+                  <td style="padding: 12px; color: var(--text-soft);">₹<%= earn.gross_amount_inr %></td>
+                  <td style="padding: 12px; color: #fb7185; font-weight: bold;">₹<%= earn.platform_fee_inr %></td>
+                  <td style="padding: 12px; color: #34d399; font-weight: bold;">₹<%= earn.net_amount_inr %></td>
+                  <td style="padding: 12px; color: var(--text-muted); font-size: 0.82rem;"><%= formatShortDate(earn.created_at) %></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </div>
+  </div>
+
+  <!-- TAB CONTENT 6: Dispute Manager -->
+  <div id="tab-disputes" class="admin-tab-content" style="display: none;">
+    <div style="padding: 2.5rem; border-radius: var(--radius-xl); background: rgba(22, 32, 58, 0.85); border: 1px solid var(--line-strong); backdrop-filter: blur(20px);">
+      <h2 style="font-family: 'Outfit', sans-serif; color: #fff; margin-bottom: 0.5rem;">Dispute Management System</h2>
+      <p style="color: var(--text-muted); margin-bottom: 2rem;">Review escalation tickets filed by clients or professionals and enforce binding platform resolutions.</p>
+
+      <% if (!dashboardData.disputes || !dashboardData.disputes.length) { %>
+        <p style="text-align: center; color: var(--text-soft); padding: 3rem 0;">No active or resolved disputes recorded.</p>
+      <% } else { %>
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+          <% dashboardData.disputes.forEach(function (dispute) { %>
+            <div style="padding: 1.5rem; border-radius: var(--radius-md); background: rgba(15, 23, 42, 0.6); border: 1px solid var(--line-strong); display: flex; flex-direction: column; gap: 1.25rem;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+                <div>
+                  <span style="display: inline-block; padding: 0.2rem 0.65rem; font-size: 0.75rem; font-weight: 700; border-radius: 99px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;
+                    <%= dispute.status === 'pending' ? 'background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3);' : (dispute.status === 'resolved_refunded' ? 'background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3);' : 'background: rgba(148,163,184,0.15); color: #94a3b8; border: 1px solid rgba(148,163,184,0.3);') %>">
+                    <%= dispute.status.replace('_', ' ').toUpperCase() %>
+                  </span>
+                  <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; color: #fff; margin: 0 0 0.25rem;">
+                    Dispute #<%= dispute.id %> | Booking <%= dispute.bookings ? dispute.bookings.booking_code : ('#' + dispute.booking_id) %>
+                  </h3>
+                  <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">
+                    Initiated by: <strong style="color: #60a5fa;"><%= dispute.raised_by %></strong> | Reason: <strong style="color: #fff;"><%= dispute.reason %></strong> | Date: <%= formatShortDate(dispute.created_at) %>
+                  </p>
+                </div>
+                <% if (dispute.bookings && dispute.bookings.gross_amount_inr) { %>
+                  <div style="text-align: right;">
+                    <span style="font-size: 0.8rem; color: var(--text-soft); display: block;">Booking Value</span>
+                    <strong style="font-size: 1.25rem; color: #34d399;">₹<%= dispute.bookings.gross_amount_inr %></strong>
+                  </div>
+                <% } %>
+              </div>
+
+              <div style="padding: 1rem; border-radius: var(--radius-sm); background: rgba(255,255,255,0.02); border-left: 3px solid #fb7185; font-size: 0.9rem; color: var(--text-muted); line-height: 1.6;">
+                <strong style="color: #fff; display: block; margin-bottom: 0.25rem;">Dispute Description / Statement:</strong>
+                <%= dispute.description || "No detailed description provided." %>
+              </div>
+
+              <% if (dispute.status !== 'pending') { %>
+                <div style="padding: 1rem; border-radius: var(--radius-sm); background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2);">
+                  <strong style="color: #34d399; font-size: 0.85rem; display: block; margin-bottom: 0.25rem;">ADMIN RESOLUTION NOTE (<%= formatShortDate(dispute.resolved_at) %>)</strong>
+                  <p style="margin: 0; font-size: 0.9rem; color: #e2e8f0;"><%= dispute.admin_notes || "Resolved by system/admin." %></p>
+                  <% if (dispute.refund_amount_inr > 0) { %>
+                    <p style="margin: 0.5rem 0 0; font-size: 0.85rem; color: #fbbf24;">Refund Issued to Client: <strong>₹<%= dispute.refund_amount_inr %></strong></p>
+                  <% } %>
+                </div>
+              <% } else { %>
+                <!-- Resolution Form -->
+                <form action="/admin/disputes/<%= dispute.id %>/resolve" method="POST" style="background: rgba(0,0,0,0.25); padding: 1.25rem; border-radius: var(--radius-sm); border: 1px dashed var(--line-strong);">
+                  <h4 style="font-size: 0.95rem; color: #fff; margin: 0 0 1rem;">Take Official Action on Ticket #<%= dispute.id %></h4>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                      <label style="display: block; font-size: 0.8rem; color: var(--text-soft); margin-bottom: 0.4rem;">Resolution Action</label>
+                      <select name="action" required style="width: 100%; padding: 0.65rem 0.8rem; border-radius: 6px; border: 1px solid var(--line-strong); background: rgba(15, 23, 42, 0.9); color: #fff; font-size: 0.88rem;">
+                        <option value="dismiss">Dismiss Dispute (Release Funds to Professional)</option>
+                        <option value="refund">Issue Full / Partial Refund to Client</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style="display: block; font-size: 0.8rem; color: var(--text-soft); margin-bottom: 0.4rem;">Refund Amount (₹, if applicable)</label>
+                      <input type="number" name="refundAmount" placeholder="0" min="0" step="1" style="width: 100%; padding: 0.65rem 0.8rem; border-radius: 6px; border: 1px solid var(--line-strong); background: rgba(15, 23, 42, 0.9); color: #fff; font-size: 0.88rem;" />
+                    </div>
+                  </div>
+                  <div style="margin-bottom: 1rem;">
+                    <label style="display: block; font-size: 0.8rem; color: var(--text-soft); margin-bottom: 0.4rem;">Admin Notes &amp; Rationale (Visible on Booking Timeline)</label>
+                    <textarea name="adminNotes" rows="2" required placeholder="Enter clear explanation for the resolution..." style="width: 100%; padding: 0.65rem 0.8rem; border-radius: 6px; border: 1px solid var(--line-strong); background: rgba(15, 23, 42, 0.9); color: #fff; font-size: 0.88rem; resize: vertical;"></textarea>
+                  </div>
+                  <button type="submit" class="btn btn-primary btn-sm" style="background: var(--accent); color: #fff; border: none; padding: 0.65rem 1.4rem; border-radius: 6px; font-weight: 700; cursor: pointer;">
+                    Finalize &amp; Close Dispute
+                  </button>
+                </form>
+              <% } %>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+    </div>
+  </div>
+
+  <!-- TAB CONTENT 7: Promo & Coupons -->
+  <div id="tab-coupons" class="admin-tab-content" style="display: none;">
+    <div style="padding: 2.5rem; border-radius: var(--radius-xl); background: rgba(22, 32, 58, 0.85); border: 1px solid var(--line-strong); backdrop-filter: blur(20px);">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem; margin-bottom: 2rem;">
+        <div>
+          <h2 style="font-family: 'Outfit', sans-serif; color: #fff; margin: 0 0 0.4rem;">Promo Codes &amp; Coupons</h2>
+          <p style="color: var(--text-muted); margin: 0;">Create and manage platform discount vouchers for client checkouts and special promotions.</p>
+        </div>
+      </div>
+
+      <!-- Create New Coupon Form -->
+      <form action="/admin/coupons" method="POST" style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--line-strong); border-radius: var(--radius-md); padding: 1.75rem; margin-bottom: 2.5rem;">
+        <h3 style="font-size: 1.1rem; color: #fff; margin: 0 0 1.25rem;">Generate New Promo Code</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
+          <div>
+            <label style="display: block; font-size: 0.8rem; color: var(--text-soft); margin-bottom: 0.4rem;">Coupon Code *</label>
+            <input type="text" name="code" required placeholder="e.g. WELCOME100, DIWALI20" style="width: 100%; padding: 0.65rem 0.8rem; border-radius: 6px; border: 1px solid var(--line-strong); background: rgba(0,0,0,0.3); color: #fff; text-transform: uppercase; font-weight: 700;" />
+          </div>
+          <div>
+            <label style="display: block; font-size: 0.8rem; color: var(--text-soft); margin-bottom: 0.4rem;">Discount Type</label>
+            <select name="discount_type" style="width: 100%; padding: 0.65rem 0.8rem; border-radius: 6px; border: 1px solid var(--line-strong); background: rgba(0,0,0,0.3); color: #fff;">
+              <option value="percentage">Percentage (%)</option>
+              <option value="flat">Flat Discount (₹)</option>
+            </select>
+          </div>
+          <div>
+            <label style="display: block; font-size: 0.8rem; color: var(--text-soft); margin-bottom: 0.4rem;">Discount Value *</label>
+            <input type="number" name="discount_value" required placeholder="10" min="1" step="any" style="width: 100%; padding: 0.65rem 0.8rem; border-radius: 6px; border: 1px solid var(--line-strong); background: rgba(0,0,0,0.3); color: #fff;" />
+          </div>
+          <div>
+            <label style="display: block; font-size: 0.8rem; color: var(--text-soft); margin-bottom: 0.4rem;">Min Order Amount (₹)</label>
+            <input type="number" name="min_booking_amount_inr" placeholder="499" min="0" step="1" style="width: 100%; padding: 0.65rem 0.8rem; border-radius: 6px; border: 1px solid var(--line-strong); background: rgba(0,0,0,0.3); color: #fff;" />
+          </div>
+          <div>
+            <label style="display: block; font-size: 0.8rem; color: var(--text-soft); margin-bottom: 0.4rem;">Max Discount Cap (₹)</label>
+            <input type="number" name="max_discount_inr" placeholder="200" min="0" step="1" style="width: 100%; padding: 0.65rem 0.8rem; border-radius: 6px; border: 1px solid var(--line-strong); background: rgba(0,0,0,0.3); color: #fff;" />
+          </div>
+          <div>
+            <label style="display: block; font-size: 0.8rem; color: var(--text-soft); margin-bottom: 0.4rem;">Expiry Date</label>
+            <input type="date" name="expiry_date" style="width: 100%; padding: 0.65rem 0.8rem; border-radius: 6px; border: 1px solid var(--line-strong); background: rgba(0,0,0,0.3); color: #fff;" />
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary" style="background: var(--accent); color: #fff; border: none; padding: 0.75rem 1.75rem; border-radius: 6px; font-weight: 700; cursor: pointer;">
+          + Create &amp; Activate Voucher
+        </button>
+      </form>
+
+      <!-- Coupons Table -->
+      <% if (!dashboardData.coupons || !dashboardData.coupons.length) { %>
+        <p style="text-align: center; color: var(--text-soft); padding: 3rem 0;">No active promo vouchers created yet.</p>
+      <% } else { %>
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; min-width: 650px; text-align: left;">
+            <thead>
+              <tr style="border-bottom: 2px solid var(--line-strong);">
+                <th style="padding: 12px; color: var(--text-soft); font-size: 0.85rem; text-transform: uppercase;">Code</th>
+                <th style="padding: 12px; color: var(--text-soft); font-size: 0.85rem; text-transform: uppercase;">Type / Value</th>
+                <th style="padding: 12px; color: var(--text-soft); font-size: 0.85rem; text-transform: uppercase;">Min Order</th>
+                <th style="padding: 12px; color: var(--text-soft); font-size: 0.85rem; text-transform: uppercase;">Max Cap</th>
+                <th style="padding: 12px; color: var(--text-soft); font-size: 0.85rem; text-transform: uppercase;">Status</th>
+                <th style="padding: 12px; color: var(--text-soft); font-size: 0.85rem; text-transform: uppercase;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% dashboardData.coupons.forEach(function (c) { %>
+                <tr style="border-bottom: 1px solid var(--line);">
+                  <td style="padding: 12px; font-weight: 800; color: #f472b6; letter-spacing: 0.05em;"><%= c.code %></td>
+                  <td style="padding: 12px; color: #fff; font-weight: 700;">
+                    <%= c.discount_type === 'flat' ? ('₹' + c.discount_value + ' FLAT') : (c.discount_value + '% OFF') %>
+                  </td>
+                  <td style="padding: 12px; color: var(--text-soft);">₹<%= c.min_booking_amount_inr || 0 %></td>
+                  <td style="padding: 12px; color: var(--text-soft);"><%= c.max_discount_inr ? ('₹' + c.max_discount_inr) : 'No Cap' %></td>
+                  <td style="padding: 12px;">
+                    <span style="display: inline-block; padding: 0.2rem 0.6rem; border-radius: 99px; font-size: 0.75rem; font-weight: 700;
+                      <%= c.is_active ? 'background: rgba(16,185,129,0.15); color: #34d399;' : 'background: rgba(244,63,94,0.15); color: #fb7185;' %>">
+                      <%= c.is_active ? 'ACTIVE' : 'DISABLED' %>
+                    </span>
+                  </td>
+                  <td style="padding: 12px; display: flex; gap: 0.5rem; align-items: center;">
+                    <form action="/admin/coupons/<%= c.id %>/toggle" method="POST" style="margin: 0;">
+                      <input type="hidden" name="isActive" value="<%= !c.is_active %>" />
+                      <button type="submit" style="background: rgba(255,255,255,0.08); border: 1px solid var(--line-strong); color: #fff; padding: 0.35rem 0.7rem; border-radius: 4px; font-size: 0.78rem; cursor: pointer;">
+                        <%= c.is_active ? 'Deactivate' : 'Activate' %>
+                      </button>
+                    </form>
+                    <form action="/admin/coupons/<%= c.id %>/delete" method="POST" style="margin: 0;" onsubmit="return confirm('Are you sure you want to permanently delete this coupon code?');">
+                      <button type="submit" style="background: rgba(244,63,94,0.15); border: 1px solid rgba(244,63,94,0.3); color: #fb7185; padding: 0.35rem 0.7rem; border-radius: 4px; font-size: 0.78rem; cursor: pointer;">
+                        Delete
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </div>
+  </div>
+
+  <!-- TAB CONTENT 8: Platform CMS & Banner -->
+  <div id="tab-cms" class="admin-tab-content" style="display: none;">
+    <div style="padding: 2.5rem; border-radius: var(--radius-xl); background: rgba(22, 32, 58, 0.85); border: 1px solid var(--line-strong); backdrop-filter: blur(20px);">
+      <h2 style="font-family: 'Outfit', sans-serif; color: #fff; margin-bottom: 0.5rem;">Platform CMS &amp; Announcement Banner</h2>
+      <p style="color: var(--text-muted); margin-bottom: 2rem;">Configure sitewide notifications, primary hero headings, and support contact details instantly without code deploys.</p>
+
+      <form action="/admin/cms/update" method="POST" style="max-width: 800px; display: flex; flex-direction: column; gap: 1.5rem;">
+        <div style="padding: 1.5rem; border-radius: var(--radius-md); background: rgba(15, 23, 42, 0.6); border: 1px solid var(--line-strong);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3 style="font-size: 1.05rem; color: #fff; margin: 0;">Sitewide Top Announcement Banner</h3>
+            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--text-soft); font-size: 0.9rem;">
+              <input type="checkbox" name="announcementActive" <%= (dashboardData.cmsSettings && dashboardData.cmsSettings.announcementActive) ? 'checked' : '' %> style="width: 18px; height: 18px;" />
+              Show Banner on All Pages
+            </label>
+          </div>
+          <input type="text" name="announcementBanner" value="<%= dashboardData.cmsSettings ? dashboardData.cmsSettings.announcementBanner : '' %>" placeholder="e.g. 🎉 Diwali Special: Get 15% OFF on all electrician & plumbing services with promo DIWALI15!" style="width: 100%; padding: 0.75rem 1rem; border-radius: 6px; border: 1px solid var(--line-strong); background: rgba(0,0,0,0.3); color: #fff; font-size: 0.92rem;" />
+        </div>
+
+        <div style="padding: 1.5rem; border-radius: var(--radius-md); background: rgba(15, 23, 42, 0.6); border: 1px solid var(--line-strong);">
+          <h3 style="font-size: 1.05rem; color: #fff; margin: 0 0 1rem;">Homepage Hero Section Customization</h3>
+          <div style="margin-bottom: 1.25rem;">
+            <label style="display: block; font-size: 0.82rem; color: var(--text-soft); margin-bottom: 0.4rem;">Primary Hero Title (H1)</label>
+            <input type="text" name="heroTitle" value="<%= dashboardData.cmsSettings ? dashboardData.cmsSettings.heroTitle : '' %>" style="width: 100%; padding: 0.75rem 1rem; border-radius: 6px; border: 1px solid var(--line-strong); background: rgba(0,0,0,0.3); color: #fff; font-size: 0.95rem; font-weight: 700;" />
+          </div>
+          <div>
+            <label style="display: block; font-size: 0.82rem; color: var(--text-soft); margin-bottom: 0.4rem;">Hero Subtitle / Description</label>
+            <textarea name="heroSubtitle" rows="2" style="width: 100%; padding: 0.75rem 1rem; border-radius: 6px; border: 1px solid var(--line-strong); background: rgba(0,0,0,0.3); color: #fff; font-size: 0.92rem; resize: vertical;"><%= dashboardData.cmsSettings ? dashboardData.cmsSettings.heroSubtitle : '' %></textarea>
+          </div>
+        </div>
+
+        <div style="padding: 1.5rem; border-radius: var(--radius-md); background: rgba(15, 23, 42, 0.6); border: 1px solid var(--line-strong);">
+          <h3 style="font-size: 1.05rem; color: #fff; margin: 0 0 1rem;">Helpdesk &amp; Support Contacts</h3>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div>
+              <label style="display: block; font-size: 0.82rem; color: var(--text-soft); margin-bottom: 0.4rem;">Official Support Email</label>
+              <input type="email" name="supportEmail" value="<%= dashboardData.cmsSettings ? dashboardData.cmsSettings.supportEmail : 'support@svpersonnel.com' %>" style="width: 100%; padding: 0.75rem 1rem; border-radius: 6px; border: 1px solid var(--line-strong); background: rgba(0,0,0,0.3); color: #fff; font-size: 0.92rem;" />
+            </div>
+            <div>
+              <label style="display: block; font-size: 0.82rem; color: var(--text-soft); margin-bottom: 0.4rem;">Helpline Phone Number</label>
+              <input type="text" name="supportPhone" value="<%= dashboardData.cmsSettings ? dashboardData.cmsSettings.supportPhone : '+91 98765 43210' %>" style="width: 100%; padding: 0.75rem 1rem; border-radius: 6px; border: 1px solid var(--line-strong); background: rgba(0,0,0,0.3); color: #fff; font-size: 0.92rem;" />
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <button type="submit" class="btn btn-primary" style="background: var(--accent); color: #fff; border: none; padding: 0.85rem 2rem; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 1rem;">
+            Save &amp; Publish Sitewide Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- TAB CONTENT 9: Dynamic Service Categories & Pricing -->
+  <div id="tab-services" class="admin-tab-content" style="display: none;">
+    <div style="padding: 2.5rem; border-radius: var(--radius-xl); background: rgba(22, 32, 58, 0.85); border: 1px solid var(--line-strong); backdrop-filter: blur(20px);">
+      <h2 style="font-family: 'Outfit', sans-serif; color: #fff; margin-bottom: 0.5rem;">Service Categories &amp; Base Price Controller</h2>
+      <p style="color: var(--text-muted); margin-bottom: 2rem;">Add new professional service categories or adjust base rates for existing manpower classifications dynamically.</p>
+
+      <!-- Add New Category Form -->
+      <form action="/admin/services/create" method="POST" style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--line-strong); border-radius: var(--radius-md); padding: 1.75rem; margin-bottom: 2.5rem;">
+        <h3 style="font-size: 1.1rem; color: #fff; margin: 0 0 1.25rem;">+ Add New Service Classification</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
+          <div>
+            <label style="display: block; font-size: 0.8rem; color: var(--text-soft); margin-bottom: 0.4rem;">Category Name *</label>
+            <input type="text" name="name" required placeholder="e.g. Solar Panel Technicians" style="width: 100%; padding: 0.65rem 0.8rem; border-radius: 6px; border: 1px solid var(--line-strong); background: rgba(0,0,0,0.3); color: #fff; font-weight: 700;" />
+          </div>
+          <div>
+            <label style="display: block; font-size: 0.8rem; color: var(--text-soft); margin-bottom: 0.4rem;">Base Price (₹/day or visit) *</label>
+            <input type="number" name="base_price_inr" required placeholder="699" min="1" step="1" style="width: 100%; padding: 0.65rem 0.8rem; border-radius: 6px; border: 1px solid var(--line-strong); background: rgba(0,0,0,0.3); color: #fff;" />
+          </div>
+          <div>
+            <label style="display: block; font-size: 0.8rem; color: var(--text-soft); margin-bottom: 0.4rem;">Icon URL / Asset Path</label>
+            <input type="text" name="icon_path" placeholder="/assets/driver.png" value="/assets/driver.png" style="width: 100%; padding: 0.65rem 0.8rem; border-radius: 6px; border: 1px solid var(--line-strong); background: rgba(0,0,0,0.3); color: #fff;" />
+          </div>
+        </div>
+        <div style="margin-bottom: 1.25rem;">
+          <label style="display: block; font-size: 0.8rem; color: var(--text-soft); margin-bottom: 0.4rem;">Description / Scope of Work</label>
+          <input type="text" name="description" placeholder="Short summary of work covered under this category..." style="width: 100%; padding: 0.65rem 0.8rem; border-radius: 6px; border: 1px solid var(--line-strong); background: rgba(0,0,0,0.3); color: #fff;" />
+        </div>
+        <button type="submit" class="btn btn-primary" style="background: var(--accent); color: #fff; border: none; padding: 0.75rem 1.75rem; border-radius: 6px; font-weight: 700; cursor: pointer;">
+          Create Category &amp; Make Discoverable
+        </button>
+      </form>
+
+      <!-- Existing Categories List -->
+      <% if (!dashboardData.services || !dashboardData.services.length) { %>
+        <p style="text-align: center; color: var(--text-soft); padding: 3rem 0;">No active services configured.</p>
+      <% } else { %>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.25rem;">
+          <% dashboardData.services.forEach(function (s) { %>
+            <div style="padding: 1.5rem; border-radius: var(--radius-md); background: rgba(15, 23, 42, 0.6); border: 1px solid <%= s.isActive ? 'var(--line-strong)' : 'rgba(244,63,94,0.3)' %>; display: flex; flex-direction: column; justify-content: space-between; gap: 1rem;">
+              <div>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                  <h4 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; color: #fff; margin: 0;"><%= s.name %></h4>
+                  <span style="font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: 99px; font-weight: 700;
+                    <%= s.isActive ? 'background: rgba(16,185,129,0.15); color: #34d399;' : 'background: rgba(244,63,94,0.15); color: #fb7185;' %>">
+                    <%= s.isActive ? 'ACTIVE' : 'INACTIVE' %>
+                  </span>
+                </div>
+                <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0 0 1rem;"><%= s.description || "General category mapping." %></p>
+              </div>
+
+              <!-- Update Price / Details Form -->
+              <form action="/admin/services/<%= s.id %>/update" method="POST" style="display: flex; gap: 0.5rem; align-items: center; margin: 0;">
+                <input type="hidden" name="is_active" value="<%= s.isActive %>" />
+                <input type="hidden" name="name" value="<%= s.name %>" />
+                <div style="flex: 1;">
+                  <label style="display: block; font-size: 0.72rem; color: var(--text-soft); margin-bottom: 0.2rem;">Base Rate (₹)</label>
+                  <input type="number" name="base_price_inr" value="<%= s.basePriceInr %>" min="1" required style="width: 100%; padding: 0.5rem 0.6rem; border-radius: 4px; border: 1px solid var(--line-strong); background: rgba(0,0,0,0.4); color: #fff; font-weight: 700; font-size: 0.9rem;" />
+                </div>
+                <div style="padding-top: 1.25rem;">
+                  <button type="submit" style="background: rgba(96,165,250,0.15); border: 1px solid rgba(96,165,250,0.3); color: #60a5fa; padding: 0.52rem 0.9rem; border-radius: 4px; font-weight: 700; font-size: 0.82rem; cursor: pointer;">
+                    Update
+                  </button>
+                </div>
+              </form>
+
+              <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--line); padding-top: 0.75rem;">
+                <form action="/admin/services/<%= s.id %>/update" method="POST" style="margin: 0;">
+                  <input type="hidden" name="base_price_inr" value="<%= s.basePriceInr %>" />
+                  <input type="hidden" name="name" value="<%= s.name %>" />
+                  <input type="hidden" name="is_active" value="<%= !s.isActive %>" />
+                  <button type="submit" style="background: none; border: none; color: <%= s.isActive ? '#fbbf24' : '#34d399' %>; font-size: 0.8rem; font-weight: 700; cursor: pointer; padding: 0;">
+                    <%= s.isActive ? '⏸️ Deactivate Category' : '▶️ Reactivate Category' %>
+                  </button>
+                </form>
+                <% if (s.isActive) { %>
+                  <form action="/admin/services/<%= s.id %>/delete" method="POST" style="margin: 0;" onsubmit="return confirm('Archive/disable this service?');">
+                    <button type="submit" style="background: none; border: none; color: #fb7185; font-size: 0.8rem; font-weight: 700; cursor: pointer; padding: 0;">
+                      🗑️ Delete
+                    </button>
+                  </form>
+                <% } %>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+    </div>
+  </div>
+
 </section>
+
+<!-- Tab Switcher Script -->
+<script>
+  function switchTab(tabName) {
+    // Hide all tab contents
+    document.querySelectorAll(".admin-tab-content").forEach(content => {
+      content.style.display = "none";
+    });
+    // Remove active state from all buttons
+    document.querySelectorAll(".admin-tab-btn").forEach(btn => {
+      btn.classList.remove("active-tab");
+    });
+    // Show current tab content
+    document.getElementById("tab-" + tabName).style.display = "block";
+    // Mark current button as active
+    document.getElementById("tab-btn-" + tabName).classList.add("active-tab");
+  }
+</script>

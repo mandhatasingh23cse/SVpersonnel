@@ -955,9 +955,12 @@ select[multiple] option {
 
 .hero-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(340px, 0.85fr);
+  grid-template-columns: minmax(0, 1.15fr) minmax(min(340px, 100%), 0.85fr);
   gap: 24px;
   align-items: stretch;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .hero-copy,
@@ -1375,11 +1378,18 @@ select[multiple] option {
   display: grid;
   gap: 22px;
   padding: 6px 0 56px;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 .discover-search-panel,
 .results-topbar {
   padding: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .discover-sidebar-copy h2,
@@ -1399,12 +1409,33 @@ select[multiple] option {
 
 .discover-form {
   margin-top: 18px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .discover-form-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 16px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.discover-form-grid .field-group {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.discover-form-grid select,
+.discover-form-grid input {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  text-overflow: ellipsis;
+  overflow: hidden;
 }
 
 .discover-form-row {
@@ -2156,12 +2187,13 @@ select[multiple] option {
   }
 }
 
-@media (max-width: 960px) {
+@media (max-width: 1060px) {
   .hero-grid,
   .contact-layout,
   .auth-layout,
   .split-panel,
-  .booking-layout {
+  .booking-layout,
+  .dashboard-danger {
     grid-template-columns: 1fr;
   }
 
@@ -2595,4 +2627,389 @@ body::after {
   display: inline-flex;
   align-items: center;
 }
+
+/* =========================================================
+   HOTSTAR / OTT-STYLE CATEGORY TRAYS & CARDS (16 CATEGORIES)
+========================================================= */
+
+.ott-hub {
+  padding: 1rem 0 3rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.ott-section {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.ott-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  padding: 0 4px;
+}
+
+.ott-title-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ott-icon {
+  font-size: 1.8rem;
+  filter: drop-shadow(0 2px 8px rgba(255, 255, 255, 0.2));
+}
+
+.ott-title {
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ott-badge {
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 6px;
+  color: #fff;
+  letter-spacing: 0.05em;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+.ott-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ott-arrow {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(15, 23, 42, 0.85);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  font-size: 1.3rem;
+  line-height: 1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.ott-arrow:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  transform: scale(1.12);
+  box-shadow: 0 0 18px rgba(124, 58, 237, 0.6);
+}
+
+.ott-tray-container {
+  position: relative;
+  width: 100%;
+}
+
+.ott-tray {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  padding: 8px 6px 24px 6px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.ott-tray::-webkit-scrollbar {
+  display: none;
+}
+
+.ott-card {
+  flex: 0 0 240px;
+  min-width: 240px;
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(30, 41, 59, 0.75) 0%, rgba(15, 23, 42, 0.95) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 20px 16px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+  text-decoration: none;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+}
+
+.ott-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  background: radial-gradient(circle at top right, rgba(168, 85, 247, 0.15), transparent 70%);
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+}
+
+.ott-card:hover {
+  transform: translateY(-8px) scale(1.04);
+  z-index: 10;
+  border-color: rgba(168, 85, 247, 0.65);
+  box-shadow: 0 20px 42px rgba(124, 58, 237, 0.32), 0 0 24px rgba(236, 72, 153, 0.22);
+  background: linear-gradient(145deg, rgba(45, 61, 88, 0.9) 0%, rgba(18, 28, 49, 0.98) 100%);
+}
+
+.ott-card:hover::after {
+  opacity: 1;
+}
+
+.ott-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  z-index: 1;
+}
+
+.ott-card-tag {
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+  letter-spacing: 0.05em;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  transition: all 0.3s ease;
+}
+
+.ott-card:hover .ott-card-tag {
+  background: linear-gradient(135deg, #ec4899, #8b5cf6);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(236, 72, 153, 0.4);
+}
+
+.ott-card-icon-wrapper {
+  width: 68px;
+  height: 68px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.2rem;
+  margin: 0 auto 16px auto;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: inset 0 0 16px rgba(255, 255, 255, 0.04);
+  z-index: 1;
+}
+
+.ott-card:hover .ott-card-icon-wrapper {
+  transform: scale(1.15) rotate(5deg);
+  background: rgba(124, 58, 237, 0.22);
+  border-color: rgba(168, 85, 247, 0.5);
+  box-shadow: 0 0 28px rgba(168, 85, 247, 0.45);
+}
+
+.ott-card-content {
+  text-align: center;
+  margin-bottom: 16px;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  z-index: 1;
+}
+
+.ott-card-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 6px 0;
+  line-height: 1.35;
+  transition: color 0.2s ease;
+}
+
+.ott-card:hover .ott-card-title {
+  color: #f38020;
+}
+
+.ott-card-desc {
+  font-size: 0.82rem;
+  color: var(--text-soft);
+  line-height: 1.45;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.ott-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 12px;
+  margin-top: auto;
+  z-index: 1;
+}
+
+.ott-card-action {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--accent-soft);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+
+.ott-card:hover .ott-card-action {
+  color: #fff;
+  transform: translateX(4px);
+}
+
+.ott-card-pill {
+  font-size: 0.72rem;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  font-weight: 700;
+}
+
+@media (max-width: 768px) {
+  .ott-card {
+    flex: 0 0 200px;
+    min-width: 200px;
+    padding: 16px 12px 14px 12px;
+  }
+  .ott-title {
+    font-size: 1.2rem;
+  }
+}
+
+/* --- PREMIUM ANTIGRAVITY AESTHETICS OVERRIDES --- */
+
+/* Glassmorphism Panel styles */
+.glass-panel {
+  background: rgba(15, 23, 42, 0.45) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5) !important;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.glass-panel:hover {
+  transform: translateY(-6px) scale(1.01);
+  border-color: rgba(99, 102, 241, 0.3) !important;
+  box-shadow: 0 20px 40px -15px rgba(99, 102, 241, 0.15) !important;
+}
+
+/* Animations */
+.animate-fade-in {
+  animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.25);
+  border-radius: 99px;
+  border: 2px solid #0f172a;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.45);
+}
+
+/* Glow Border Focus Highlights */
+input:focus, select:focus, textarea:focus {
+  outline: none !important;
+  border-color: #f59e0b !important;
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.25) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Card Reveal Micro-transitions */
+.card-reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.card-reveal:nth-child(2) { animation-delay: 0.1s; }
+.card-reveal:nth-child(3) { animation-delay: 0.2s; }
+.card-reveal:nth-child(4) { animation-delay: 0.3s; }
+.card-reveal:nth-child(5) { animation-delay: 0.4s; }
+/* Responsive Admin Dashboard & Mobile Viewport Polish */
+@media (max-width: 768px) {
+  .admin-tab-content > div {
+    padding: 1.25rem !important;
+  }
+  .admin-tab-content table {
+    font-size: 0.82rem !important;
+  }
+  .admin-tab-content form {
+    padding: 1.25rem !important;
+  }
+  .admin-tab-content div[style*="grid-template-columns: repeat(auto-fit"] {
+    grid-template-columns: 1fr !important;
+  }
+  .admin-tab-content div[style*="grid-template-columns: 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+  .announcement-banner {
+    font-size: 0.8rem !important;
+    padding: 0.5rem !important;
+  }
+}
+
 

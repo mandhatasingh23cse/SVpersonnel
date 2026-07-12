@@ -4,6 +4,12 @@
   })();
 </script>
 
+<% if (typeof cmsSettings !== 'undefined' && cmsSettings && cmsSettings.announcementActive && cmsSettings.announcementBanner) { %>
+<div class="announcement-banner" style="background: linear-gradient(90deg, var(--accent), #f43f5e); color: #fff; text-align: center; padding: 0.55rem 1rem; font-size: 0.88rem; font-weight: 700; letter-spacing: 0.02em; position: relative; z-index: 10000; box-shadow: 0 2px 10px rgba(0,0,0,0.3);">
+  <span><%= cmsSettings.announcementBanner %></span>
+</div>
+<% } %>
+
 <header class="site-header">
   <div class="shell">
     <nav class="navbar glass-shell" aria-label="Primary navigation">
@@ -48,6 +54,11 @@
                 Dashboard
               </a>
             </li>
+            <li>
+              <a href="/chat" class="<%= currentPath === '/chat' ? 'is-active' : '' %>">
+                Messages 💬
+              </a>
+            </li>
           <% } %>
           <% if (sessionUser && sessionUser.role === "professional") { %>
             <li>
@@ -55,10 +66,22 @@
                 Dashboard
               </a>
             </li>
+            <li>
+              <a href="/chat" class="<%= currentPath === '/chat' ? 'is-active' : '' %>">
+                Messages 💬
+              </a>
+            </li>
           <% } %>
           <% if (sessionUser && sessionUser.role === "admin") { %>
             <li>
               <a href="/admin/dashboard" class="<%= currentPath === '/admin/dashboard' ? 'is-active' : '' %>">
+                Dashboard
+              </a>
+            </li>
+          <% } %>
+          <% if (sessionUser && sessionUser.role === "partner") { %>
+            <li>
+              <a href="/partner/dashboard" class="<%= currentPath === '/partner/dashboard' ? 'is-active' : '' %>">
                 Dashboard
               </a>
             </li>
@@ -79,9 +102,12 @@
                   <a href="/client/settings" class="<%= currentPath === '/client/settings' ? 'is-active' : '' %>">Account Settings</a>
                 <% } else if (sessionUser.role === "professional") { %>
                   <a href="/professional/profile" class="<%= currentPath === '/professional/profile' ? 'is-active' : '' %>">Profile</a>
+                  <a href="/professional/onboarding" class="<%= currentPath === '/professional/onboarding' ? 'is-active' : '' %>">Onboarding & Skills</a>
                   <a href="/professional/settings" class="<%= currentPath === '/professional/settings' ? 'is-active' : '' %>">Account Settings</a>
                 <% } else if (sessionUser.role === "admin") { %>
                   <a href="/admin/profile" class="<%= currentPath === '/admin/profile' ? 'is-active' : '' %>">Profile</a>
+                <% } else if (sessionUser.role === "partner") { %>
+                  <a href="/partner/dashboard" class="<%= currentPath === '/partner/dashboard' ? 'is-active' : '' %>">Partner Dashboard</a>
                 <% } %>
                 <a href="/logout" style="color: var(--error); border-top: 1px solid var(--line); margin-top: 6px; padding-top: 8px;">Log out</a>
               <% } %>
@@ -89,10 +115,20 @@
           </details>
 
           <% if (sessionUser) { %>
-            <span class="nav-user-badge"><%= sessionUser.name %></span>
+            <!-- User name next to settings removed as requested -->
           <% } else { %>
             <a href="/login" class="button button-secondary">Log in</a>
-            <a href="/register" class="button button-primary">Join us</a>
+            <details class="nav-dropdown" style="position: relative;">
+              <summary class="button button-primary" style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; list-style: none;">
+                <span>Join us</span>
+                <span style="font-size: 0.75rem; opacity: 0.9;">▼</span>
+              </summary>
+              <div class="nav-dropdown-menu" style="right: 0; left: auto; display: flex; flex-direction: column; min-width: 190px; z-index: 1100; box-shadow: 0 15px 30px rgba(0,0,0,0.6); border-radius: 12px; padding: 0.5rem 0; background: #1e293b; border: 1px solid rgba(255,255,255,0.15);">
+                <a href="/register/client" style="padding: 0.7rem 1.1rem; color: #fff; font-weight: 600; text-decoration: none; display: block; border-bottom: 1px solid rgba(255,255,255,0.08);">👔 Client</a>
+                <a href="/register/professional" style="padding: 0.7rem 1.1rem; color: #fff; font-weight: 600; text-decoration: none; display: block; border-bottom: 1px solid rgba(255,255,255,0.08);">🛠️ Professional</a>
+                <a href="/register/partner" style="padding: 0.7rem 1.1rem; color: #fff; font-weight: 600; text-decoration: none; display: block;">🤝 Partner</a>
+              </div>
+            </details>
           <% } %>
         </div>
       </div>

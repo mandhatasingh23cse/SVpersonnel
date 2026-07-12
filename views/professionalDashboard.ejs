@@ -9,11 +9,16 @@
 <section class="section shell dashboard-shell">
   <%- include("partials/notice") %>
 
+  <%
+    const liveRequests = dashboardData.bookings.filter(b => b.status !== 'completed' && b.status !== 'cancelled');
+    const historyRequests = dashboardData.bookings.filter(b => b.status === 'completed' || b.status === 'cancelled');
+  %>
+
   <div class="dashboard-metrics">
-    <article class="metric-card glass-panel" data-reveal>
+    <article class="metric-card glass-panel" data-reveal style="cursor: pointer;" onclick="toggleHistorySection(true)">
       <strong><%= dashboardData.summary.totalRequests %></strong>
-      <h3>Total requests</h3>
-      <p>All booking requests linked to your professional profile.</p>
+      <h3 style="color: #38bdf8;">Total Requests & History</h3>
+      <p>Click to view all past, completed & cancelled requests.</p>
     </article>
     <article class="metric-card glass-panel" data-reveal>
       <strong><%= dashboardData.summary.confirmedRequests %></strong>
@@ -42,6 +47,21 @@
         <span><%= formatCurrency(dashboardData.profile.startingPrice) %> starting rate</span>
         <span><%= Number(dashboardData.profile.ratings || 0).toFixed(1) %> / 5 rating</span>
       </div>
+
+      <div style="display: flex; gap: 1rem; margin-top: 1.25rem; flex-wrap: wrap; border-top: 1px solid var(--line); padding-top: 1.25rem;">
+        <a href="/professional/jobs" class="button button-primary" style="font-size: 0.85rem; display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #a78bfa, #7c3aed); border: none;">
+          💼 Find Open Jobs
+        </a>
+        <a href="/professional/revenue" class="button button-primary" style="font-size: 0.85rem; display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #10b981, #059669); border: none;">
+          💰 My Revenue &amp; Wallet
+        </a>
+        <a href="/professional/onboarding" class="button button-secondary" style="font-size: 0.85rem; display: inline-flex; align-items: center; gap: 6px;">
+          🚀 Edit Onboarding &amp; Skills
+        </a>
+        <a href="/professional/profile" class="button button-secondary" style="font-size: 0.85rem; display: inline-flex; align-items: center; gap: 6px;">
+          ✏️ Edit Profile
+        </a>
+      </div>
     </div>
 
     <% if (!dashboardData.profile.isVerified) { %>
@@ -49,17 +69,36 @@
         <p class="card-kicker" style="color: var(--accent);">Identity Verification</p>
         <h2 style="margin-bottom: 0.5rem;">Verify your Professional Account</h2>
         
-        <% if (dashboardData.profile.aadhaarPanUrl && dashboardData.profile.livePhotoUrl) { %>
-          <div style="margin-top: 1rem; padding: 1.25rem; border-radius: var(--radius-md); background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.15); display: flex; align-items: center; gap: 1rem;">
-            <div style="font-size: 1.5rem; color: var(--success);">✓</div>
-            <div>
-              <span style="font-weight: 700; color: var(--text); display: block;">Verification Documents Submitted</span>
-              <span style="font-size: 0.9rem; color: var(--text-muted);">Our administrators are reviewing your Aadhaar/PAN and Live Photo. Your profile will be verified shortly.</span>
+        <% const hasRealId = (dashboardData.profile.aadhaarPanUrl && (dashboardData.profile.aadhaarPanUrl.startsWith('/') || dashboardData.profile.aadhaarPanUrl.startsWith('http') || dashboardData.profile.aadhaarPanUrl.startsWith('data:'))) && dashboardData.profile.aadhaarPanUrl !== 'Aadhaar/PAN' && dashboardData.profile.aadhaarPanUrl !== 'Live Photo'; %>
+        <% if (hasRealId) { %>
+          <div style="margin-top: 1rem; padding: 1.25rem; border-radius: var(--radius-md); background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.15); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+              <div style="font-size: 1.5rem; color: var(--success);">✓</div>
+              <div>
+                <span style="font-weight: 700; color: var(--text); display: block;">Verification Documents Submitted</span>
+                <span style="font-size: 0.9rem; color: var(--text-muted);">Our administrators are reviewing your Aadhaar/PAN and Live Photo.</span>
+              </div>
             </div>
+            <button type="button" onclick="document.getElementById('reupload-docs-form').style.display='grid'; this.style.display='none';" class="button button-secondary" style="font-size: 0.85rem;">🔄 Re-upload / Update Documents</button>
           </div>
+          <form id="reupload-docs-form" method="POST" action="/professional/upload-verification" enctype="multipart/form-data" class="auth-form" style="display: none; grid-template-columns: 1fr; gap: 1.5rem; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line-strong);">
+            <p style="color: var(--accent); font-weight: 700; margin: 0;">Upload New Documents to replace current files:</p>
+            <div class="form-row">
+              <label class="field-group">
+                <span>Aadhaar or PAN Card (PDF or Image)</span>
+                <input type="file" name="idDocument" accept="image/*,application/pdf" required>
+              </label>
+              
+              <label class="field-group">
+                <span>Live Photo (Take now or Upload)</span>
+                <input type="file" name="livePhoto" accept="image/*" capture="user" required>
+              </label>
+            </div>
+            <button type="submit" class="button button-primary" style="justify-self: start;">Upload & Update Verification</button>
+          </form>
         <% } else { %>
           <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.95rem;">
-            To receive bookings, please upload your verification documents. An admin will review them to verify your profile.
+            To receive bookings, please upload your verification documents right away. An admin will review them to verify your profile.
           </p>
 
           <form method="POST" action="/professional/upload-verification" enctype="multipart/form-data" class="auth-form" style="display: grid; gap: 1.5rem;">
@@ -81,20 +120,35 @@
     <% } %>
   <% } %>
 
+  <div style="margin: 2.5rem 0 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem;">
+    <div>
+      <span style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 0.75rem; font-weight: 800; padding: 3px 10px; border-radius: 6px; text-transform: uppercase;">Active Leads</span>
+      <h2 style="font-size: 1.6rem; margin: 0.35rem 0 0; color: #fff;">🔥 Live & Uncompleted Requests (<%= liveRequests.length %>)</h2>
+    </div>
+    <button type="button" id="history-toggle-btn" onclick="toggleHistorySection()" style="color: #38bdf8; font-weight: 700; cursor: pointer; font-size: 0.92rem; background: rgba(56, 189, 248, 0.12); padding: 0.6rem 1.2rem; border-radius: 12px; border: 1px solid rgba(56, 189, 248, 0.35); display: inline-flex; align-items: center; gap: 0.4rem;">
+      📜 View Total Requests & History (<%= historyRequests.length %>) ›
+    </button>
+  </div>
+
   <div class="dashboard-list">
-    <% if (!dashboardData.bookings.length) { %>
-      <div class="empty-state">
-        <h3>No booking requests yet.</h3>
-        <p>As clients create requests from the live marketplace, they will appear here automatically.</p>
+    <% if (!liveRequests.length) { %>
+      <div class="empty-state" style="padding: 3rem 2rem; border: 1px dashed rgba(255,255,255,0.2); border-radius: 20px;">
+        <h3>No live uncompleted requests right now.</h3>
+        <p>As clients book you or send inquiries, active jobs will appear here automatically. Past/completed work is stored in your <strong>Total Requests & History</strong> box below.</p>
       </div>
     <% } %>
 
-    <% dashboardData.bookings.forEach(function (booking) { %>
-      <article class="dashboard-card glass-panel" data-reveal>
+    <% liveRequests.forEach(function (booking) { %>
+      <article class="dashboard-card glass-panel" data-reveal style="width: 100%; box-sizing: border-box;">
         <div class="dashboard-card-top">
           <div class="dashboard-header-copy">
             <p class="card-kicker">Booking <%= booking.bookingCode %></p>
-            <h2><%= booking.clientName %></h2>
+            <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+              <h2 style="margin:0;"><%= booking.clientName %></h2>
+              <a href="/chat/client/<%= booking.clientId %>" class="button button-secondary" style="padding: 0.35rem 0.85rem; font-size: 0.85rem; border-radius: 8px; font-weight: 700; display: inline-flex; align-items: center; gap: 0.25rem;">
+                💬 Chat Now
+              </a>
+            </div>
           </div>
           <span class="result-badge status-badge-<%= booking.status %>"><%= formatStatusLabel(booking.status) %></span>
         </div>
@@ -167,10 +221,16 @@
 
         <div class="dashboard-actions" style="margin-top: 1rem; width: 100%;">
           <% if (booking.status === "pending") { %>
-            <form method="POST" action="/professional/bookings/<%= booking.id %>/status" style="width: 100%;">
-              <input type="hidden" name="status" value="confirmed">
-              <button type="submit" class="button button-primary button-block">Accept request</button>
-            </form>
+            <div style="display: flex; gap: 1rem; width: 100%;">
+              <form method="POST" action="/professional/bookings/<%= booking.id %>/status" style="flex: 1;">
+                <input type="hidden" name="status" value="confirmed">
+                <button type="submit" class="button button-primary button-block" style="padding: 10px;">Accept request</button>
+              </form>
+              <form method="POST" action="/professional/bookings/<%= booking.id %>/status" style="flex: 1;" onsubmit="return confirm('Are you sure you want to reject this booking request?');">
+                <input type="hidden" name="status" value="cancelled">
+                <button type="submit" class="button button-block" style="padding: 10px; background: rgba(239, 68, 68, 0.1); color: #fb7185; border: 1px solid rgba(239, 68, 68, 0.25);">Reject request</button>
+              </form>
+            </div>
           <% } %>
 
           <% if (booking.status === "confirmed" && !workStartedAt) { %>
@@ -207,6 +267,83 @@
         </div>
       </article>
     <% }) %>
+  </div>
+
+  <!-- Total Requests & History Box (Hidden by default, shown on click) -->
+  <script>
+    function toggleHistorySection(show) {
+      const sec = document.getElementById('history-section');
+      const btn = document.getElementById('history-toggle-btn');
+      if (!sec) return;
+      const isHidden = sec.style.display === 'none' || sec.style.display === '';
+      if (show !== undefined ? show : isHidden) {
+        sec.style.display = 'block';
+        sec.scrollIntoView({ behavior: 'smooth' });
+        if (btn) btn.innerHTML = '🙈 Hide Total Requests & History (<%= historyRequests.length %>) ›';
+      } else {
+        sec.style.display = 'none';
+        if (btn) btn.innerHTML = '📜 View Total Requests & History (<%= historyRequests.length %>) ›';
+      }
+    }
+  </script>
+  <div id="history-section" style="display: none; margin-top: 3rem; padding-top: 2.5rem; border-top: 2px solid rgba(255, 255, 255, 0.15);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <span style="background: rgba(168, 85, 247, 0.18); color: #d8b4fe; border: 1px solid rgba(168, 85, 247, 0.3); padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase;">Archived Records</span>
+        <h2 style="font-size: 1.8rem; margin: 0.35rem 0 0; color: #fff;">Total Requests & History (<%= historyRequests.length %>)</h2>
+      </div>
+      <p style="color: #94a3b8; font-size: 0.9rem; margin: 0;">Completed & Cancelled leads stored safely.</p>
+    </div>
+
+    <% if (!historyRequests.length) { %>
+      <div class="glass-panel" style="padding: 2.5rem; text-align: center; border-radius: 18px; border: 1px dashed rgba(255,255,255,0.15);">
+        <h3 style="color: #cbd5e1; margin: 0 0 0.5rem;">No past or completed requests yet.</h3>
+        <p style="color: #64748b; font-size: 0.9rem; margin: 0;">When your active jobs finish or get completed, they automatically move into this History section.</p>
+      </div>
+    <% } else { %>
+      <div class="dashboard-list">
+        <% historyRequests.forEach(function (booking) { %>
+          <article class="dashboard-card glass-panel" data-reveal style="width: 100%; box-sizing: border-box; opacity: 0.9;">
+            <div class="dashboard-card-top">
+              <div class="dashboard-header-copy">
+                <p class="card-kicker">Booking <%= booking.bookingCode %></p>
+                <h2><%= booking.clientName %></h2>
+              </div>
+              <span class="result-badge status-badge-<%= booking.status %>"><%= formatStatusLabel(booking.status) %></span>
+            </div>
+
+            <div class="dashboard-grid">
+              <div class="dashboard-detail">
+                <span class="dashboard-label">Service</span>
+                <strong><%= booking.serviceName %></strong>
+              </div>
+              <div class="dashboard-detail">
+                <span class="dashboard-label">Date</span>
+                <strong><%= formatShortDate(booking.preferredDate) %></strong>
+              </div>
+              <div class="dashboard-detail">
+                <span class="dashboard-label">Time</span>
+                <strong><%= formatTimeSlot(booking.preferredTimeSlot) %></strong>
+              </div>
+              <div class="dashboard-detail">
+                <span class="dashboard-label">Day Price</span>
+                <strong><%= formatCurrency(booking.budgetInr) %></strong>
+              </div>
+            </div>
+
+            <% if (booking.status === 'completed') { %>
+              <div style="margin-top: 1rem; padding: 1rem; border-radius: 12px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+                <span style="color: var(--success); font-weight: 700; font-size: 0.9rem;">✅ Work Completed Successfully</span>
+              </div>
+            <% } else if (booking.status === 'cancelled') { %>
+              <div style="margin-top: 1rem; padding: 1rem; border-radius: 12px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25);">
+                <span style="color: #f87171; font-weight: 700; font-size: 0.9rem;">🚫 Request Cancelled</span>
+              </div>
+            <% } %>
+          </article>
+        <% }) %>
+      </div>
+    <% } %>
   </div>
 
   <script>
