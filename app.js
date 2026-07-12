@@ -416,7 +416,10 @@ function sortFallbackWorkers(workers, sortKey = "relevance") {
 
 async function getWorkers({ queryText = "", cityQ = "", sortKey = "relevance", verifiedOnly = false }) {
   if (isDatabaseReady()) {
-    return searchProfessionals({ queryText, cityQ, sortKey, verifiedOnly });
+    const dbRows = await searchProfessionals({ queryText, cityQ, sortKey, verifiedOnly });
+    if (dbRows.length > 0) return dbRows;
+    const allDbRows = await searchProfessionals({ limit: 1 });
+    if (allDbRows.length > 0) return dbRows;
   }
 
   const fallbackWorkers = await getFallbackWorkers();

@@ -36,7 +36,7 @@
       <div class="nav-panel" id="primary-navigation-panel" data-nav-panel>
         <ul class="nav-links">
           <% navigation.forEach(function (item) { %>
-            <% if (item.href === "/findHelpNow" && sessionUser && sessionUser.role === "professional") { %>
+            <% if (item.href === "/findHelpNow" && (!sessionUser || sessionUser.role !== "client")) { %>
               <% return; %>
             <% } %>
             <% if (item.href === "/howitworks") { %>

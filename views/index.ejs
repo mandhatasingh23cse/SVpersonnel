@@ -6,7 +6,11 @@
       <p class="hero-description"><%= (typeof cmsSettings !== 'undefined' && cmsSettings && cmsSettings.heroSubtitle) ? cmsSettings.heroSubtitle : homeContent.hero.description %></p>
 
       <div class="hero-actions">
-        <a href="/findHelpNow" class="button button-primary">Find professionals</a>
+        <% if (sessionUser && sessionUser.role === "client") { %>
+          <a href="/findHelpNow" class="button button-primary">Find professionals</a>
+        <% } else { %>
+          <a href="/login?role=client" class="button button-primary">Client Login to Find Professionals</a>
+        <% } %>
         <a href="/register" class="button button-secondary">Register as a professional</a>
       </div>
 
@@ -185,7 +189,11 @@
 
         <div class="persona-actions">
           <% if (index === 0) { %>
-            <a href="/findHelpNow" class="button button-primary">Find professionals</a>
+            <% if (sessionUser && sessionUser.role === "client") { %>
+              <a href="/findHelpNow" class="button button-primary">Find professionals</a>
+            <% } else { %>
+              <a href="/login?role=client" class="button button-primary">Client Login to Hire</a>
+            <% } %>
           <% } else { %>
             <a href="/register" class="button button-primary">Join SV Personnels</a>
           <% } %>
