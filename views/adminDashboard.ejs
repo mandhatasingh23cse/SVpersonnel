@@ -351,7 +351,7 @@
       <h2 style="font-family: 'Outfit', sans-serif; color: #fff; margin-bottom: 1.5rem;">Platform Revenue Ledger (15% platform split fee)</h2>
 
       <!-- Wallet indicators -->
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2.5rem;">
+      <div class="rates-input-grid" style="margin-bottom: 2.5rem;">
         <div style="padding: 1.5rem; border-radius: 12px; background: rgba(236, 72, 153, 0.05); border: 1px solid rgba(236, 72, 153, 0.2); text-align: center;">
           <span style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-soft); font-weight: 700;">Available Admin Cash balance</span>
           <strong style="display: block; font-size: 2rem; color: #ec4899; margin-top: 0.35rem;">₹<%= dashboardData.platformWallet.available_inr %></strong>
@@ -609,7 +609,7 @@
 
         <div style="padding: 1.5rem; border-radius: var(--radius-md); background: rgba(15, 23, 42, 0.6); border: 1px solid var(--line-strong);">
           <h3 style="font-size: 1.05rem; color: #fff; margin: 0 0 1rem;">Helpdesk &amp; Support Contacts</h3>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="rates-input-grid">
             <div>
               <label style="display: block; font-size: 0.82rem; color: var(--text-soft); margin-bottom: 0.4rem;">Official Support Email</label>
               <input type="email" name="supportEmail" value="<%= dashboardData.cmsSettings ? dashboardData.cmsSettings.supportEmail : 'support@svpersonnel.com' %>" style="width: 100%; padding: 0.75rem 1rem; border-radius: 6px; border: 1px solid var(--line-strong); background: rgba(0,0,0,0.3); color: #fff; font-size: 0.92rem;" />
