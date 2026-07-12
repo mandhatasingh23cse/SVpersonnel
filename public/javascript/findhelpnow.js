@@ -188,6 +188,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
         return `
           <article class="result-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.5rem;">
+              <span style="background: linear-gradient(135deg, #f43f5e, #ec4899); color: #fff; font-weight: 800; font-size: 0.82rem; padding: 4px 10px; border-radius: 8px; letter-spacing: 0.04em; box-shadow: 0 2px 8px rgba(244, 63, 94, 0.4);">
+                PRO ID: #${worker.id || 'N/A'}
+              </span>
+              <span style="font-size: 0.8rem; color: #38bdf8; font-weight: 700;">Instant Booking Available</span>
+            </div>
             <div class="result-card-top">
               <div class="result-identity" style="cursor: pointer;" data-open-profile-btn data-pro-id="${worker.id}">
                 <img
