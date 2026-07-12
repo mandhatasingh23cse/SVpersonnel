@@ -1588,19 +1588,43 @@ app.get("/partner/dashboard", requireRole("partner"), async (req, res) => {
 
 app.post("/partner/professionals/create", requireRole("partner"), async (req, res) => {
   try {
-    const { fullname, username, email, phone, city, area, experience, hourlyRate, password, serviceIds } = req.body;
-    
-    await createPartnerManagedProfessional(req.session.user.id, {
-      fullName: fullname,
+    const {
+      fullname,
       username,
       email,
       phone,
       city,
       area,
       experience,
-      hourlyRate,
       password,
-      serviceIds: Array.isArray(serviceIds) ? serviceIds : (serviceIds ? [serviceIds] : [])
+      workSchedule,
+      partTimeRate,
+      fullTimeRate,
+      assignedSkillsJson,
+      serviceIds,
+      selectedSubskills
+    } = req.body;
+    
+    let parsedSkills = [];
+    try {
+      if (assignedSkillsJson) parsedSkills = JSON.parse(assignedSkillsJson);
+    } catch (e) {}
+
+    await createPartnerManagedProfessional(req.session.user.id, {
+      fullName: fullname,
+      username,
+      email: (email && email.trim()) ? email.trim() : "",
+      phone,
+      city,
+      area,
+      experience,
+      password,
+      workSchedule: Array.isArray(workSchedule) ? workSchedule : (workSchedule ? [workSchedule] : ["Part Time", "Full Time"]),
+      partTimeRate: Number(partTimeRate) || 0,
+      fullTimeRate: Number(fullTimeRate) || 0,
+      assignedSkills: parsedSkills,
+      serviceIds: Array.isArray(serviceIds) ? serviceIds : (serviceIds ? [serviceIds] : []),
+      selectedSubskills: Array.isArray(selectedSubskills) ? selectedSubskills : (selectedSubskills ? [selectedSubskills] : [])
     });
 
     req.session.partnerDashboardNotice = createFormNotice("success", `Staff member ${fullname} registered successfully under agency!`);

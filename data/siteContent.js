@@ -6,14 +6,21 @@ const navigation = [
 ];
 
 const services = [
-  { name: "Guard & Security", icon: "/assets/driver.png", description: "Trained security personnel, guards, and bouncers" },
-  { name: "Hospital Staff", icon: "/assets/home cleaning.png", description: "Nurses, ward boys, attendants, medical support" },
-  { name: "Hotel Staff", icon: "/assets/cooking.png", description: "Chefs, waiters, housekeeping, front desk" },
-  { name: "Outsourcing & Office", icon: "/assets/it support.png", description: "Office assistants, data entry, corporate staffing" },
-  { name: "Pandit Ji", icon: "/assets/connect.png", description: "Experienced Hindu priests for puja, havan, sanskars" },
-  { name: "Interior Designing", icon: "/assets/fitness.png", description: "Complete house & office interior design and execution" },
-  { name: "Plumbing", icon: "/assets/plumbing.png", description: "Leak repairs, bathroom fittings, pipe maintenance" },
-  { name: "Electricians", icon: "/assets/electrician.png", description: "Wiring, power backup, residential & industrial repairs" }
+  { name: "Security Services", slug: "security-services", icon: "/assets/driver.png", description: "Trained residential & commercial security, armed guards, bouncers, and supervisors" },
+  { name: "Housekeeping & Facility Management", slug: "housekeeping-facility-management", icon: "/assets/home cleaning.png", description: "Daily maintenance, office boys, janitors, deep cleaning, and waste management" },
+  { name: "Office & Corporate Staff", slug: "office-corporate-staff", icon: "/assets/it support.png", description: "Receptionists, front desk, data entry, telecallers, and administrative staff" },
+  { name: "Industrial & Factory Workforce", slug: "industrial-factory-workforce", icon: "/assets/connect.png", description: "Skilled/unskilled labour, factory workers, machine operators, and supervisors" },
+  { name: "Construction & Civil Workers", slug: "construction-civil-workers", icon: "/assets/plumbing.png", description: "Masons, carpenters, painters, welders, fabricators, tile fitters, and scaffolders" },
+  { name: "Technical & Maintenance Staff", slug: "technical-maintenance-staff", icon: "/assets/electrician.png", description: "Electricians, plumbers, AC technicians, lift servicing, solar, and mechanics" },
+  { name: "Healthcare & Hospital Staffing", slug: "healthcare-hospital-staffing", icon: "/assets/fitness.png", description: "Doctors, ICU/ward nurses, ward boys, pharmacists, OT/lab technicians, and caregivers" },
+  { name: "Hospitality & Hotel Staff", slug: "hospitality-hotel-staff", icon: "/assets/cooking.png", description: "Executive chefs, cooks, polished waiters, stewards, bartenders, and kitchen helpers" },
+  { name: "Domestic & Personal Staff", slug: "domestic-personal-staff", icon: "/assets/home cleaning.png", description: "Trusted maids, babysitters, live-in nannies, elder care, and personal drivers" },
+  { name: "Logistics & Transportation", slug: "logistics-transportation", icon: "/assets/driver.png", description: "Commercial drivers, delivery executives, truck drivers, and forklift operators" },
+  { name: "Retail & Sales Staff", slug: "retail-sales-staff", icon: "/assets/connect.png", description: "Target-driven sales executives, cashiers, store managers, and merchandisers" },
+  { name: "Event Management Staff", slug: "event-management-staff", icon: "/assets/fitness.png", description: "Event crew helpers, coordinators, registration staff, ushers, and stage crew" },
+  { name: "Education Staffing", slug: "education-staffing", icon: "/assets/it support.png", description: "Qualified teachers, professors, home tutors, and lab assistants" },
+  { name: "Agriculture & Farming Staff", slug: "agriculture-farming-staff", icon: "/assets/plumbing.png", description: "Farm workers, dairy operators, greenhouse staff, tractor drivers, and harvest crew" },
+  { name: "Pandit & Religious Services", slug: "pandit-religious-services", icon: "/assets/connect.png", description: "Vedic priests for wedding, satyanarayan katha, griha pravesh, vastu pooja, and rituals" }
 ];
 
 const ottCategories = [
@@ -335,9 +342,9 @@ module.exports = {
       title: "All-in-one manpower solutions across India — Pandit ji to Plumber, Home to Office.",
       description:
         "We are Govt. authorized professional job providers & hiring specialists. Outsourcing, Guard-Security, Hospital Staff, Hotel Staff, Interior Designing & all manpower segments. समस्या आपकी समाधान हमारा ❤️",
-      searchPlaceholder: "Search Security Guard, Hospital Staff, Plumber, Pandit ji...",
+      searchPlaceholder: "Search Security Guards, Healthcare Staff, Electricians, Pandit Ji...",
       locationPlaceholder: "Enter your city or state (All India)",
-      quickSearches: ["Security Guard", "Hospital Staff", "Hotel Staff", "Outsourcing", "Pandit ji", "Plumber"],
+      quickSearches: ["Security Services", "Healthcare Staffing", "Housekeeping", "Office Staff", "Electricians", "Pandit Ji"],
       trustPills: ["Govt. Authorized", "All India Verified", "Direct Hiring", "Outsourcing Specialists"],
       stats: [
         { value: "All India", label: "Verified Network" },
@@ -413,7 +420,7 @@ module.exports = {
     eyebrow: "Professionals",
     title: "Search verified professionals all over India.",
     description: "Search by skill, segment, or city across India. Compare ratings and experience transparently.",
-    quickFilters: ["Guard-Security", "Hospital Staff", "Hotel Staff", "Outsourcing", "Pandit Ji", "Plumber"]
+    quickFilters: ["Security Services", "Healthcare Staffing", "Housekeeping", "Office Staff", "Pandit & Religious Services", "Technical & Maintenance"]
   },
   howItWorks: {
     eyebrow: "How it works",
