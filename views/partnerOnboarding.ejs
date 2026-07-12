@@ -1,10 +1,10 @@
-<section class="section shell animate-fade-in" style="max-width: 800px; margin: 0 auto; padding: 3rem 1.5rem;">
+<section class="section shell animate-fade-in" style="max-width: 760px; margin: 0 auto; padding: 3rem 1.5rem;">
   
   <div class="glass-panel" style="padding: 2.5rem; border-radius: var(--radius-lg); background: rgba(15, 23, 42, 0.45); border: 1px solid var(--line-strong); text-align: center; margin-bottom: 2rem;">
-    <span class="eyebrow" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); padding: 3px 10px; border-radius: 6px; font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">Step 2: Partner Safety Verification</span>
+    <span class="eyebrow" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); padding: 4px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase;">One-Time Partner Setup</span>
     <h1 style="font-family: 'Outfit', sans-serif; font-size: 2.2rem; color: #fff; margin-top: 1rem;">Complete Partner Verification</h1>
-    <p style="color: var(--text-soft); font-size: 0.95rem; max-width: 600px; margin: 0.5rem auto 0;">
-      Provide your agency tax, identification, and proof documents so our admin team can verify your agency safely.
+    <p style="color: var(--text-soft); font-size: 0.95rem; max-width: 580px; margin: 0.5rem auto 0;">
+      Provide your representative name, contact details, ID/PAN numbers, and live verification photo to activate your partner agency dashboard.
     </p>
   </div>
 
@@ -13,63 +13,94 @@
 
     <form action="/partner/onboarding" method="POST" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 2rem;">
       
-      <!-- Section A: Government Details -->
+      <!-- Section 1: Representative & Contact Information -->
       <div style="border-bottom: 1px solid var(--line-strong); padding-bottom: 1.5rem;">
-        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.25rem; color: #fff; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.2rem; color: #fff; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+          <span>👤</span> Representative Contact & City
+        </h3>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+          <label class="field-group" style="display: flex; flex-direction: column; gap: 0.4rem;">
+            <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-soft);">Full Representative / Agency Name *</span>
+            <input type="text" name="fullName" required value="<%= user && user.name ? user.name : '' %>" placeholder="Enter full name or agency title" style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; color: #fff;">
+          </label>
+          
+          <label class="field-group" style="display: flex; flex-direction: column; gap: 0.4rem;">
+            <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-soft);">Phone Number *</span>
+            <input type="tel" name="phone" required value="<%= user && user.phone ? user.phone : '' %>" placeholder="e.g. 9876543210" style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; color: #fff;">
+          </label>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
+          <label class="field-group" style="display: flex; flex-direction: column; gap: 0.4rem;">
+            <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-soft);">City / Territory *</span>
+            <input type="text" name="city" required value="<%= user && user.city ? user.city : '' %>" placeholder="e.g. Jaipur, Delhi, Mumbai" style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; color: #fff;">
+          </label>
+
+          <label class="field-group" style="display: flex; flex-direction: column; gap: 0.4rem;">
+            <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-soft);">6-Digit Pincode *</span>
+            <input type="text" name="pincode" required pattern="[0-9]{6}" maxlength="6" value="<%= user && user.pincode ? user.pincode : '' %>" placeholder="e.g. 302001" style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; color: #fff; font-weight: bold;">
+          </label>
+        </div>
+      </div>
+
+      <!-- Section 2: Government Details -->
+      <div style="border-bottom: 1px solid var(--line-strong); padding-bottom: 1.5rem;">
+        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.2rem; color: #fff; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
           <span>📝</span> Government Identification Numbers
         </h3>
         
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
           <label class="field-group" style="display: flex; flex-direction: column; gap: 0.4rem;">
-            <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-soft);">GST Number (Optional)</span>
-            <input type="text" name="gstNumber" placeholder="15-digit GSTIN" style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; color: #fff;">
-          </label>
-          
-          <label class="field-group" style="display: flex; flex-direction: column; gap: 0.4rem;">
-            <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-soft);">Agency PAN Number</span>
+            <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-soft);">PAN Card Number *</span>
             <input type="text" name="panNumber" required maxlength="10" pattern="[A-Za-z]{5}[0-9]{4}[A-Za-z]{1}" title="Strict PAN card format: 5 letters, 4 digits, 1 letter (e.g. ABCDE1234F)" placeholder="e.g. ABCDE1234F" style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; color: #fff; text-transform: uppercase; font-weight: bold;">
+          </label>
+
+          <label class="field-group" style="display: flex; flex-direction: column; gap: 0.4rem;">
+            <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-soft);">GST Number (Optional)</span>
+            <input type="text" name="gstNumber" placeholder="15-digit GSTIN (if registered)" style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; color: #fff;">
           </label>
         </div>
       </div>
 
-      <!-- Section B: File Uploads -->
+      <!-- Section 3: File Uploads -->
       <div>
-        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.25rem; color: #fff; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
-          <span>📂</span> Upload Verification Documents
+        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.2rem; color: #fff; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+          <span>📂</span> Verification Document Images
         </h3>
         
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
           <!-- 1. Partner ID Document -->
           <div style="padding: 1.5rem; border-radius: 12px; border: 1px dashed var(--line); background: rgba(255,255,255,0.02); display: flex; flex-direction: column; gap: 0.8rem;">
-            <strong style="color: #fff; font-size: 0.95rem;">Representative ID Card (Aadhaar/PAN)</strong>
-            <p style="color: var(--text-muted); font-size: 0.78rem; margin: 0; line-height: 1.4;">Upload a clear JPEG, PNG, or PDF of your government ID.</p>
+            <strong style="color: #fff; font-size: 0.95rem;">PAN Card / Aadhaar Card Image *</strong>
+            <p style="color: var(--text-muted); font-size: 0.78rem; margin: 0; line-height: 1.4;">Upload a clear photo or scan of your PAN Card or Aadhaar Card.</p>
             <input type="file" name="idDocument" required style="font-size: 0.85rem; color: var(--text-soft); padding: 5px 0;">
           </div>
 
           <!-- 2. Business Registration Proof -->
           <div style="padding: 1.5rem; border-radius: 12px; border: 1px dashed var(--line); background: rgba(255,255,255,0.02); display: flex; flex-direction: column; gap: 0.8rem;">
-            <strong style="color: #fff; font-size: 0.95rem;">Business Registration Proof</strong>
-            <p style="color: var(--text-muted); font-size: 0.78rem; margin: 0; line-height: 1.4;">GST Certificate, MSME, or Incorporation license (PDF/Image).</p>
+            <strong style="color: #fff; font-size: 0.95rem;">Business / Address Proof *</strong>
+            <p style="color: var(--text-muted); font-size: 0.78rem; margin: 0; line-height: 1.4;">GST Certificate, MSME, Trade License, or Electricity/Rent Bill.</p>
             <input type="file" name="businessProof" required style="font-size: 0.85rem; color: var(--text-soft); padding: 5px 0;">
           </div>
 
           <!-- 3. Live Photo -->
           <div style="padding: 1.5rem; border-radius: 12px; border: 1px dashed var(--line); background: rgba(255,255,255,0.02); display: flex; flex-direction: column; gap: 0.8rem;">
-            <strong style="color: #fff; font-size: 0.95rem;">Live Selfie Photo</strong>
-            <p style="color: var(--text-muted); font-size: 0.78rem; margin: 0; line-height: 1.4;">A live selfie photo of the partner representative holding their ID card.</p>
+            <strong style="color: #fff; font-size: 0.95rem;">Live Selfie Photo *</strong>
+            <p style="color: var(--text-muted); font-size: 0.78rem; margin: 0; line-height: 1.4;">A live selfie photo of the partner representative holding their ID.</p>
             <input type="file" name="livePhoto" required style="font-size: 0.85rem; color: var(--text-soft); padding: 5px 0;">
           </div>
         </div>
       </div>
 
       <!-- Warning & Submit -->
-      <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 10px; padding: 1.25rem; font-size: 0.85rem; color: #fca5a5; line-height: 1.5;">
-        ⚠️ <strong>Important Safety Note:</strong> To prevent fraud, our administrator checks all uploaded proofs and numbers against governmental registries. Providing false documentation will result in permanent blacklist and legal referral.
+      <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 10px; padding: 1.25rem; font-size: 0.85rem; color: #fde68a; line-height: 1.5;">
+        🛡️ <strong>Safety Guarantee:</strong> Your information is securely encrypted. Once verified by our admin team, your Partner profile will be activated to onboard professionals across your city and earn 20% commission on bookings.
       </div>
 
       <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
-        <button type="submit" class="button button-primary" style="background: linear-gradient(135deg, #f59e0b, #d97706); border: none; font-weight: bold; border-radius: 8px; padding: 12px 30px; font-size: 1rem; cursor: pointer; color: #000;">
-          Submit for Verification ›
+        <button type="submit" class="button button-primary" style="background: linear-gradient(135deg, #f59e0b, #d97706); border: none; font-weight: bold; border-radius: 8px; padding: 14px 32px; font-size: 1rem; cursor: pointer; color: #000;">
+          Save Partner Profile & Verify ›
         </button>
       </div>
 

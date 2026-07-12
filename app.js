@@ -90,9 +90,16 @@ const {
   getAllWorkRequirements,
   getWorkRequirementById,
   getWorkRequirementsForProfessional,
+  getWorkRequirementsForPartner,
   getWorkRequirementsByClient,
   createWorkRequirement,
+  applyOrNegotiateWorkRequirement,
 } = require("./lib/workRequirementsStore");
+
+const {
+  getMessagesForConversation,
+  sendWorkMessage
+} = require("./lib/workMessagesStore");
 
 const {
   getAddressesByClient,
@@ -497,9 +504,18 @@ async function buildHomePageContent() {
 function requireRole(role) {
   return (req, res, next) => {
     if (!req.session.user || req.session.user.role !== role) {
-      if (role === "client") return res.redirect("/clientlogin");
+      if (role === "client") return res.redirect("/login?role=client");
       if (role === "admin") return res.redirect("/admin/login");
       return res.redirect("/professionallogin");
+    }
+
+    if (role !== "admin" && !req.session.user.onboarding_complete) {
+      const p = req.path || "";
+      if (!p.includes("/onboarding") && !p.includes("/logout") && !p.includes("/delete") && !p.includes("/api/")) {
+        if (role === "client") return res.redirect("/client/onboarding");
+        if (role === "professional") return res.redirect("/professional/onboarding");
+        if (role === "partner") return res.redirect("/partner/onboarding");
+      }
     }
 
     next();
@@ -719,11 +735,16 @@ app.get("/work", async (req, res) => {
   const allJobs = await getAllWorkRequirements();
   const user = req.session.user;
   let displayedJobs = allJobs;
+  let clientJobsCount = 0;
 
   if (user && user.role === "professional") {
     displayedJobs = await getWorkRequirementsForProfessional(user);
+  } else if (user && user.role === "partner") {
+    displayedJobs = await getWorkRequirementsForPartner(user);
   } else if (user && user.role === "client") {
     displayedJobs = allJobs;
+    const cJobs = await getWorkRequirementsByClient(user.id || user.email);
+    clientJobsCount = cJobs ? cJobs.length : 0;
   }
 
   const formNotice = req.session.workNotice || null;
@@ -737,6 +758,7 @@ app.get("/work", async (req, res) => {
     displayedJobs,
     allJobs,
     user,
+    clientJobsCount,
     formNotice
   });
 });
@@ -749,10 +771,14 @@ app.post("/work/post", async (req, res) => {
       return res.redirect("/clientlogin");
     }
 
+    const clientJobs = await getWorkRequirementsByClient(user.id || user.email);
+    const jobsCount = clientJobs ? clientJobs.length : 0;
+    const credits = Number(user.workCredits || 0);
     const isPassActive = user.workPassActive && (!user.workPassExpiresAt || new Date(user.workPassExpiresAt) > new Date());
-    if (!isPassActive) {
-      req.session.workNotice = createFormNotice("error", "🔒 You must have an active Monthly Work Pass (₹150 / 30 days) to upload job requirements. Please activate your pass above!");
-      return res.redirect("/work");
+
+    if (jobsCount >= 1 && credits <= 0 && !isPassActive) {
+      req.session.workNotice = createFormNotice("error", "⚡ You have used your 1st Free Work Upload! To post more custom jobs, please purchase a 5-Work Upload Bundle for just ₹250 via PayU.");
+      return res.redirect("/client/work-bundle/payu");
     }
 
     const { category, subCategory, location, budget, jobType, description } = req.body;
@@ -769,6 +795,10 @@ app.post("/work/post", async (req, res) => {
       description: description || ""
     });
 
+    if (jobsCount >= 1 && credits > 0 && !isPassActive) {
+      user.workCredits = Math.max(0, credits - 1);
+    }
+
     const displayCat = subCategory ? `${category} (${subCategory})` : category;
     req.session.workNotice = createFormNotice("success", `Work requirement posted successfully! Professionals under '${displayCat}' have been notified.`);
     return res.redirect("/work");
@@ -778,19 +808,19 @@ app.post("/work/post", async (req, res) => {
   }
 });
 
-// PayU 30-Day Monthly Work Pass (₹150)
-app.get("/work/pass/buy", async (req, res) => {
+// PayU 5-Work Upload Bundle (₹250) - First 1 Free, then ₹250 for 5 uploads
+app.get(["/work/pass/buy", "/client/work-bundle/payu"], async (req, res) => {
   const user = req.session.user;
   if (!user || user.role !== "client") {
-    req.session.loginNotice = createFormNotice("error", "Please login as a client first to buy a Work Pass.");
+    req.session.loginNotice = createFormNotice("error", "Please login as a client first to purchase work upload credits.");
     return res.redirect("/clientlogin");
   }
 
-  const key = process.env.PAYU_MERCHANT_KEY || "gtKFFx";
-  const salt = process.env.PAYU_MERCHANT_SALT || "eCwWELxi";
-  const txnid = "WP_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
-  const amount = 150;
-  const productinfo = "30-Day Client Work Pass (Unlimited Work Posts)";
+  const key = process.env.PAYU_MERCHANT_KEY || "owE3c7";
+  const salt = process.env.PAYU_MERCHANT_SALT || "murK9GVdBwy1JUraIKrw7iFHfLLqiV2k";
+  const txnid = "WB_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
+  const amount = 250;
+  const productinfo = "5-Work Upload Bundle (₹250 for 5 Custom Job Postings)";
   const firstname = user.name || "Verified Client";
   const email = user.email || "client@svpersonnels.in";
   const phone = user.phone || "9999999999";
@@ -801,12 +831,12 @@ app.get("/work/pass/buy", async (req, res) => {
   const hashString = `${key}|${txnid}|${amount}|${productinfo}|${firstname}|${email}|||||||||||${salt}`;
   const hash = crypto.createHash("sha512").update(hashString).digest("hex");
 
-  req.session.workPassPending = { txnid, userId: user.id, amount };
+  req.session.workPassPending = { txnid, userId: user.id, amount, creditsToAdd: 5 };
 
   const payuUrl = process.env.PAYU_MODE === "live" ? "https://secure.payu.in/_payment" : "https://test.payu.in/_payment";
 
   return res.render("payuCheckout", {
-    title: "Buy Monthly Work Pass (₹150 via PayU) | SV Personnels",
+    title: "Buy 5-Work Upload Bundle (₹250 via PayU) | SV Personnels",
     pageClass: "page-payu",
     key,
     txnid,
@@ -819,15 +849,16 @@ app.get("/work/pass/buy", async (req, res) => {
     furl,
     hash,
     payuUrl,
-    professional: { name: "SV Personnels Work Pass", photo: "/assets/gigconnect.logo.png" }
+    professional: { name: "SV Personnels Work Bundle (5 Credits)", photo: "/assets/gigconnect.logo.png" }
   });
 });
 
-app.post("/work/pass/success", async (req, res) => {
+app.post(["/work/pass/success", "/client/work-bundle/success"], async (req, res) => {
   const user = req.session.user;
   if (user) {
+    user.workCredits = (user.workCredits || 0) + 5;
     user.workPassActive = true;
-    user.workPassExpiresAt = new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString();
+    user.workPassExpiresAt = new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString();
     try {
       if (isDatabaseReady()) {
         const { getSupabaseClient } = require("./lib/supabase");
@@ -840,23 +871,23 @@ app.post("/work/pass/success", async (req, res) => {
         }
       }
     } catch (err) {
-      console.warn("Could not save work pass to DB:", err.message);
+      console.warn("Could not save work credits to DB:", err.message);
     }
   }
-  req.session.workNotice = createFormNotice("success", "🎉 30-Day Work Pass activated successfully! You can now upload unlimited work requirements.");
+  req.session.workNotice = createFormNotice("success", "🎉 5 Work Upload Credits added successfully! You can now post custom work requirements.");
   return res.redirect("/work");
 });
 
-app.post("/work/pass/failure", async (req, res) => {
-  req.session.workNotice = createFormNotice("error", "Work Pass payment failed or was cancelled. Please try again.");
+app.post(["/work/pass/failure", "/client/work-bundle/failure"], async (req, res) => {
+  req.session.workNotice = createFormNotice("error", "Work Bundle payment failed or was cancelled. Please try again.");
   return res.redirect("/work");
 });
 
 app.post("/work/apply/:id", async (req, res) => {
   try {
     const user = req.session.user;
-    if (!user || user.role !== "professional") {
-      req.session.workNotice = createFormNotice("error", "Please log in as a professional to apply or negotiate on work requirements.");
+    if (!user || (user.role !== "professional" && user.role !== "partner")) {
+      req.session.workNotice = createFormNotice("error", "Please log in as a professional or partner to apply or negotiate on work requirements.");
       return res.redirect("/work");
     }
 
@@ -870,11 +901,81 @@ app.post("/work/apply/:id", async (req, res) => {
       message: message || ""
     });
 
-    req.session.workNotice = createFormNotice("success", "Your rate proposal and application have been sent directly to the client!");
+    req.session.workNotice = createFormNotice("success", "Your rate proposal and message have been sent directly to the client!");
     return res.redirect("/work");
   } catch (error) {
-    req.session.workNotice = createFormNotice("error", `Failed to submit application: ${error.message}`);
+    req.session.workNotice = createFormNotice("error", `Failed to submit proposal/message: ${error.message}`);
     return res.redirect("/work");
+  }
+});
+
+app.get("/work/:workId/chat/:peerId", async (req, res) => {
+  try {
+    const user = req.session.user;
+    if (!user) {
+      req.session.loginNotice = createFormNotice("error", "Please log in to participate in work discussions.");
+      return res.redirect("/login");
+    }
+
+    const { workId, peerId } = req.params;
+    const work = await getWorkRequirementById(workId);
+    if (!work) {
+      req.session.workNotice = createFormNotice("error", "Work requirement not found.");
+      return res.redirect("/work");
+    }
+
+    const clientId = work.clientId || work.clientContact;
+    const messages = await getMessagesForConversation(workId, peerId, clientId);
+
+    let peerName = "User";
+    if (String(user.id) === String(clientId) || String(user.email) === String(clientId)) {
+      const appItem = (work.applications || []).find(a => String(a.professionalId) === String(peerId));
+      if (appItem) peerName = appItem.professionalName;
+      else peerName = "Candidate (" + peerId + ")";
+    } else {
+      peerName = work.clientName || "Client";
+    }
+
+    res.render("workMessages", {
+      title: "Work Discussion & Chat | SV Personnels",
+      pageClass: "page-work-messages",
+      work,
+      peerId,
+      peerName,
+      messages,
+      user
+    });
+  } catch (err) {
+    req.session.workNotice = createFormNotice("error", `Could not open chat: ${err.message}`);
+    return res.redirect("/work");
+  }
+});
+
+app.post("/work/:workId/chat/:peerId/send", async (req, res) => {
+  try {
+    const user = req.session.user;
+    if (!user) return res.redirect("/login");
+
+    const { workId, peerId } = req.params;
+    const { text } = req.body;
+    const work = await getWorkRequirementById(workId);
+    const clientId = work ? (work.clientId || work.clientContact) : "";
+    const receiverId = (String(user.id) === String(clientId) || String(user.email) === String(clientId)) ? peerId : clientId;
+
+    if (text && text.trim()) {
+      await sendWorkMessage({
+        workId,
+        senderId: user.id || user.email,
+        senderName: user.name || "User",
+        senderRole: user.role,
+        receiverId,
+        text: text.trim()
+      });
+    }
+
+    return res.redirect(`/work/${workId}/chat/${peerId}`);
+  } catch (err) {
+    return res.redirect(`/work/${req.params.workId}/chat/${req.params.peerId}`);
   }
 });
 
@@ -900,20 +1001,14 @@ app.get("/refund-policy", (req, res) =>
 );
 
 
-app.get("/findHelpNow", (req, res) => {
-  if (req.session.user && req.session.user.role === "professional") {
-    req.session.professionalDashboardNotice = createFormNotice(
-      "error",
-      "As a registered professional, you cannot search or book other professionals."
-    );
-    return res.redirect("/professional/dashboard");
-  }
+app.get("/findHelpNow", requireRole("client"), (req, res) => {
   return res.render("findHelpNow", {
     title: "Find trusted professionals | SV Personnels",
     pageClass: "page-discover",
     discoverContent: siteContent.discover,
     ottCategories: siteContent.home.ottCategories,
     searchDefaults: createSearchDefaults(req.query),
+    user: req.session.user,
     scripts: ["/javascript/findhelpnow.js"]
   });
 });
@@ -1391,7 +1486,8 @@ app.post(
         portfolioVideos: portfolioVids,
         certificatesUrls: certsUrls,
         aadhaarPanUrl: idDocUrl,
-        livePhotoUrl: selfieUrl
+        livePhotoUrl: selfieUrl,
+        onboarding_complete: true
       });
 
       req.session.user.username = username;
@@ -1525,6 +1621,10 @@ app.post(
   ]),
   async (req, res) => {
     try {
+      const fullName = req.body.fullName || req.session.user.name || "";
+      const phone = req.body.phone || req.session.user.phone || "";
+      const city = req.body.city || req.session.user.city || "";
+      const pincode = req.body.pincode || req.session.user.pincode || "";
       const gstNumber = req.body.gstNumber || "";
       const panNumber = (req.body.panNumber || "").trim().toUpperCase();
       
@@ -1546,21 +1646,26 @@ app.post(
       const bizProofUrl = `/uploads/${bizProofFile.filename}`;
       const livePhotoUrl = `/uploads/${livePhotoFile.filename}`;
 
-      const dbClient = getClient();
-      const { error } = await dbClient
-        .from("partners")
-        .update({
-          gst_number: gstNumber,
-          pan_number: panNumber,
-          id_document_url: idDocUrl,
-          business_proof_url: bizProofUrl,
-          live_photo_url: livePhotoUrl
-        })
-        .eq("id", req.session.user.id);
+      await updatePartnerProfile(req.session.user.id, {
+        name: fullName,
+        phone: phone,
+        city: city,
+        pincode: pincode,
+        gstNumber: gstNumber || "",
+        panNumber: panNumber || "",
+        idDocumentUrl: idDocUrl,
+        businessProofUrl: bizProofUrl,
+        livePhotoUrl: livePhotoUrl,
+        onboarding_complete: true
+      });
 
-      if (error) throw error;
+      if (fullName) req.session.user.name = fullName;
+      if (phone) req.session.user.phone = phone;
+      if (city) req.session.user.city = city;
+      if (pincode) req.session.user.pincode = pincode;
+      req.session.user.onboarding_complete = true;
 
-      req.session.partnerDashboardNotice = createFormNotice("success", "Safety verification files submitted successfully for review!");
+      req.session.partnerDashboardNotice = createFormNotice("success", "Safety verification files submitted successfully! Onboarding complete.");
       return res.redirect("/partner/dashboard");
     } catch (err) {
       req.session.partnerOnboardingNotice = createFormNotice("error", `Submission failed: ${err.message}`);
@@ -1586,6 +1691,45 @@ app.get("/partner/dashboard", requireRole("partner"), async (req, res) => {
   } catch (err) {
     req.session.loginNotice = createFormNotice("error", `Failed to load partner dashboard: ${err.message}`);
     return res.redirect("/login");
+  }
+});
+
+app.get("/partner/professionals", requireRole("partner"), async (req, res) => {
+  try {
+    const dashboardData = await getPartnerDashboardData(req.session.user.id);
+    return res.render("partnerProfessionals", {
+      title: "Managed Sub-Professionals | SV Personnels",
+      pageClass: "page-partner-professionals",
+      professionals: dashboardData.professionals || [],
+      user: req.session.user,
+      formNotice: consumeSessionNotice(req, "partnerDashboardNotice")
+    });
+  } catch (err) {
+    req.session.partnerDashboardNotice = createFormNotice("error", `Could not load added professionals: ${err.message}`);
+    return res.redirect("/partner/dashboard");
+  }
+});
+
+app.post("/partner/professionals/:id/delete", requireRole("partner"), async (req, res) => {
+  try {
+    const proId = Number(req.params.id) || req.params.id;
+    if (isDatabaseReady()) {
+      const { getSupabaseClient } = require("./lib/supabase");
+      const supabase = getSupabaseClient();
+      if (supabase) {
+        await supabase.from("professionals").delete().eq("id", proId).eq("partner_id", Number(req.session.user.id));
+      }
+    }
+    const { getLocalProfessionals, saveLocalProfessionals } = require("./lib/partnerStore");
+    const localPros = await getLocalProfessionals();
+    const updated = localPros.filter(p => String(p.id) !== String(proId));
+    await saveLocalProfessionals(updated);
+
+    req.session.partnerDashboardNotice = createFormNotice("success", "Staff member removed from your agency.");
+    return res.redirect("/partner/professionals");
+  } catch (err) {
+    req.session.partnerDashboardNotice = createFormNotice("error", `Failed to remove professional: ${err.message}`);
+    return res.redirect("/partner/professionals");
   }
 });
 
@@ -1712,10 +1856,13 @@ app.get("/professional/jobs", requireRole("professional"), async (req, res) => {
 app.get("/client/work-requirements/new", requireRole("client"), async (req, res) => {
   try {
     const services = await getServiceOptions();
+    const clientJobs = await getWorkRequirementsByClient(req.session.user.id || req.session.user.email);
     return res.render("clientWorkRequirements", {
       title: "Post a Job | SV Personnels",
       pageClass: "page-create-requirement",
       services,
+      user: req.session.user,
+      clientJobsCount: clientJobs ? clientJobs.length : 0,
       formNotice: consumeSessionNotice(req, "clientWorkNotice")
     });
   } catch (err) {
@@ -1726,11 +1873,21 @@ app.get("/client/work-requirements/new", requireRole("client"), async (req, res)
 
 app.post("/client/work-requirements/new", requireRole("client"), async (req, res) => {
   try {
+    const user = req.session.user;
+    const clientJobs = await getWorkRequirementsByClient(user.id || user.email);
+    const jobsCount = clientJobs ? clientJobs.length : 0;
+    const credits = Number(user.workCredits || 0);
+
+    if (jobsCount >= 1 && credits <= 0 && !user.workPassActive) {
+      req.session.workNotice = createFormNotice("error", "⚡ You have used your 1st Free Work Upload! To post more custom jobs, please purchase a 5-Work Upload Bundle for just ₹250 via PayU.");
+      return res.redirect("/client/work-bundle/payu");
+    }
+
     const { category, subCategory, location, budget, jobType, description } = req.body;
     
-    await createWorkRequirement(req.session.user.id, {
-      clientName: req.session.user.name,
-      clientContact: req.session.user.phone || req.session.user.email,
+    await createWorkRequirement(user.id, {
+      clientName: user.name,
+      clientContact: user.phone || user.email,
       category,
       subCategory,
       location,
@@ -1738,6 +1895,10 @@ app.post("/client/work-requirements/new", requireRole("client"), async (req, res
       jobType,
       description
     });
+
+    if (jobsCount >= 1 && credits > 0 && !user.workPassActive) {
+      user.workCredits = Math.max(0, credits - 1);
+    }
 
     req.session.clientDashboardNotice = createFormNotice("success", "Job requirement posted successfully! Matching professionals will contact you.");
     return res.redirect("/client/dashboard");
@@ -1747,6 +1908,63 @@ app.post("/client/work-requirements/new", requireRole("client"), async (req, res
   }
 });
 
+
+app.get("/client/onboarding", requireRole("client"), async (req, res) => {
+  res.render("clientOnboarding", {
+    title: "Complete Client Onboarding | SV Personnels",
+    pageClass: "page-onboarding-client",
+    user: req.session.user,
+    formNotice: consumeSessionNotice(req, "clientOnboardingNotice")
+  });
+});
+
+app.post("/client/onboarding", requireRole("client"), async (req, res) => {
+  try {
+    const user = req.session.user;
+    const { fullName, phone, city, address, pincode, password } = req.body;
+    const cleanName = sanitizeText(fullName || user.name || "");
+    const cleanPhone = sanitizeText(phone || user.phone || "");
+    const cleanCity = sanitizeText(city || user.city || "");
+    const cleanAddress = sanitizeText(address || "");
+    const cleanPincode = sanitizeText(pincode || "");
+
+    if (!cleanName || !cleanPhone || !cleanCity || !cleanPincode) {
+      req.session.clientOnboardingNotice = createFormNotice("error", "Name, Phone, City, and Pincode are required fields.");
+      return res.redirect("/client/onboarding");
+    }
+
+    const updateData = {
+      fullName: cleanName,
+      phone: cleanPhone,
+      city: cleanCity,
+      area: cleanCity,
+      address: cleanAddress,
+      pincode: cleanPincode,
+      onboarding_complete: true
+    };
+
+    if (password && String(password).trim().length >= 6) {
+      const bcrypt = require("bcryptjs");
+      updateData.password_hash = bcrypt.hashSync(String(password).trim(), 10);
+    }
+
+    await updateClientProfile(user.id, updateData);
+
+    req.session.user.name = cleanName;
+    req.session.user.phone = cleanPhone;
+    req.session.user.city = cleanCity;
+    req.session.user.area = cleanCity;
+    req.session.user.address = cleanAddress;
+    req.session.user.pincode = cleanPincode;
+    req.session.user.onboarding_complete = true;
+
+    req.session.clientDashboardNotice = createFormNotice("success", "Onboarding completed successfully! Welcome to SV Personnels.");
+    return res.redirect("/client/dashboard");
+  } catch (err) {
+    req.session.clientOnboardingNotice = createFormNotice("error", `Onboarding failed: ${err.message}`);
+    return res.redirect("/client/onboarding");
+  }
+});
 
 app.get("/client/dashboard", requireRole("client"), async (req, res) => {
   if (!isDatabaseReady()) {
@@ -2671,85 +2889,64 @@ app.post("/book-service/:professionalId/confirm", requireRole("client"), async (
   const isFullTime = (draft.jobType === "Full Time");
   const paymentMethodChoice = isFullTime ? "payu" : (req.body.paymentMethod || "cod");
 
-  if (paymentMethodChoice === "payu" || isFullTime) {
-    const key = process.env.PAYU_MERCHANT_KEY || "gtKFFx";
-    const salt = process.env.PAYU_MERCHANT_SALT || "eCwWELxi";
-    const txnid = "SV_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
-    const amount = isFullTime ? 250 : (Number(professional.startingPrice) || 500);
-    const productinfo = isFullTime
-      ? "Full Time Platform Booking Fee (₹250) - " + professional.name
-      : "Booking with " + professional.name;
-    const firstname = draft.fullName || "Verified Client";
-    const email = draft.email || "client@svpersonnels.in";
-    const phone = draft.phone || "9999999999";
-    const originUrl = getRequestOrigin(req);
-    const surl = originUrl + "/book-service/payu/success";
-    const furl = originUrl + "/book-service/payu/failure";
+  const baseRate = Number(professional.startingPrice) || 500;
+  const platformFee = Math.round(baseRate * 0.15);
+  const gst = Math.round(platformFee * 0.18);
+  const advanceFeeOnline = platformFee + gst;
+  const fullOnlineAmount = baseRate + advanceFeeOnline;
 
-    const hashString = `${key}|${txnid}|${amount}|${productinfo}|${firstname}|${email}|||||||||||${salt}`;
-    const hash = crypto.createHash("sha512").update(hashString).digest("hex");
+  const key = process.env.PAYU_MERCHANT_KEY || "owE3c7";
+  const salt = process.env.PAYU_MERCHANT_SALT || "murK9GVdBwy1JUraIKrw7iFHfLLqiV2k";
+  const txnid = "SV_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
+  
+  let amount = fullOnlineAmount;
+  let productinfo = "Full Service & Platform Fee Online - " + professional.name;
 
-    req.session.payuPending = {
-      txnid,
-      professionalId,
-      draft,
-      amount,
-      isFullTimeFee: isFullTime
-    };
-
-    const payuUrl = process.env.PAYU_MODE === "live" ? "https://secure.payu.in/_payment" : "https://test.payu.in/_payment";
-
-    return res.render("payuCheckout", {
-      title: "PayU Payment Gateway | SV Personnels",
-      pageClass: "page-payu",
-      key,
-      txnid,
-      amount,
-      productinfo,
-      firstname,
-      email,
-      phone,
-      surl,
-      furl,
-      hash,
-      payuUrl,
-      professional
-    });
+  if (isFullTime) {
+    amount = 295; // 250 + 45 GST
+    productinfo = "Full Time Platform Booking Fee + GST (₹295) - " + professional.name;
+  } else if (paymentMethodChoice === "cod") {
+    amount = advanceFeeOnline;
+    productinfo = `Advance Platform Fee & GST (₹${advanceFeeOnline}) - ${professional.name}`;
   }
 
-  // Option 1: Direct Post-Service Payment (Cash / UPI to Professional)
-  const otp = Math.floor(100000 + Math.random() * 900000);
-  const paymentMethod = "Direct Post-Service Payment (Cash / UPI directly to Professional)";
-  let formattedDetails = `[Start OTP: ${otp}]\n[Payment Method: ${paymentMethod}]`;
-  if (draft.serviceAddress) {
-    formattedDetails += `\n[Complete Address: ${draft.serviceAddress}]`;
-  }
-  if (draft.latitude && draft.longitude) {
-    formattedDetails += `\n[Coordinates: ${draft.latitude},${draft.longitude}]`;
-  }
+  const firstname = draft.fullName || "Verified Client";
+  const email = draft.email || "client@svpersonnels.in";
+  const phone = draft.phone || "9999999999";
+  const originUrl = getRequestOrigin(req);
+  const surl = originUrl + "/book-service/payu/success";
+  const furl = originUrl + "/book-service/payu/failure";
 
-  const fullCombinedAddress = draft.serviceAddress ? `${draft.addressArea} (${draft.serviceAddress})` : draft.addressArea;
+  const hashString = `${key}|${txnid}|${amount}|${productinfo}|${firstname}|${email}|||||||||||${salt}`;
+  const hash = crypto.createHash("sha512").update(hashString).digest("hex");
 
-  const bookingCode = await createBooking({
-    clientId: req.session.user.id,
-    guestName: draft.fullName,
-    guestEmail: draft.email,
-    guestPhone: draft.phone,
+  req.session.payuPending = {
+    txnid,
     professionalId,
-    serviceId: Number(draft.serviceId) || 1,
-    preferredDate: draft.preferredDate,
-    preferredTimeSlot: draft.preferredTimeSlot,
-    addressArea: fullCombinedAddress,
-    budgetInr: 0,
-    details: formattedDetails
-  });
+    draft,
+    amount,
+    isFullTimeFee: isFullTime,
+    paymentMethodChoice,
+    baseRate
+  };
 
-  req.session.bookingDraft = null;
-  req.session.dashboardNotice = createFormNotice(
-    "success",
-    `Booking ${bookingCode} confirmed with ${professional.name}! Settle payment directly with your professional upon completion.`
-  );
-  return res.redirect("/client/dashboard");
+  const payuUrl = process.env.PAYU_MODE === "live" ? "https://secure.payu.in/_payment" : "https://test.payu.in/_payment";
+
+  return res.render("payuCheckout", {
+    title: "PayU Payment Gateway | SV Personnels",
+    pageClass: "page-payu",
+    key,
+    txnid,
+    amount,
+    productinfo,
+    firstname,
+    email,
+    phone,
+    surl,
+    furl,
+    hash,
+    payuUrl
+  });
 });
 
 app.post("/book-service/payu/success", async (req, res) => {
@@ -2763,7 +2960,15 @@ app.post("/book-service/payu/success", async (req, res) => {
   const professional = await getProfessionalById(professionalId);
 
   const otp = Math.floor(100000 + Math.random() * 900000);
-  const paymentMethod = "Online Payment via PayU (Paid Online - TxnID: " + pending.txnid + ")";
+  let paymentMethod = "Online Payment via PayU (Paid Online - TxnID: " + pending.txnid + ")";
+  if (pending.isFullTimeFee) {
+    paymentMethod = `Full Time Platform Fee Paid Online via PayU (TxnID: ${pending.txnid}) — Monthly Salary Negotiated On Site.`;
+  } else if (pending.paymentMethodChoice === "cod") {
+    paymentMethod = `Advance Platform Fee & GST (₹${pending.amount}) Paid via PayU (TxnID: ${pending.txnid}) — Balance ₹${pending.baseRate || 500} Cash/UPI to Professional on Completion.`;
+  } else {
+    paymentMethod = `Full Service & Platform Fee (₹${pending.amount}) Paid via PayU (TxnID: ${pending.txnid}).`;
+  }
+
   let formattedDetails = `[Start OTP: ${otp}]\n[Payment Method: ${paymentMethod}]`;
   if (draft.serviceAddress) {
     formattedDetails += `\n[Complete Address: ${draft.serviceAddress}]`;

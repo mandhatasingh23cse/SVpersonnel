@@ -1,0 +1,99 @@
+<%- include("partials/header") %>
+
+<section class="section shell" style="padding-top: 2rem; padding-bottom: 4rem;">
+  <div style="margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <a href="/partner/dashboard" style="color: var(--color-brand); text-decoration: none; font-weight: 600; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 0.3rem;">
+        ‹ Back to Partner Dashboard
+      </a>
+      <h1 style="color: #fff; font-size: 2.2rem; font-family: 'Outfit', sans-serif; margin: 0.4rem 0 0;">Sub-Professionals & Staff Management</h1>
+      <p style="color: var(--color-ink-light); margin: 0.3rem 0 0; font-size: 0.95rem;">
+        Here are all verified sub-professionals added under your partner agency franchise.
+      </p>
+    </div>
+    <div style="display: flex; gap: 1rem;">
+      <a href="/partner/dashboard#add-staff-form" class="button button-primary" style="padding: 0.75rem 1.5rem; border-radius: 12px; font-weight: 700; background: linear-gradient(135deg, #a78bfa, #7c3aed); color: #fff; text-decoration: none;">
+        + Add New Sub-Professional
+      </a>
+    </div>
+  </div>
+
+  <%- include("partials/notice") %>
+
+  <!-- Stats Banner -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem; margin-bottom: 2.5rem;">
+    <div class="glass-panel" style="padding: 1.5rem; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); background: rgba(15, 23, 42, 0.7);">
+      <span style="font-size: 0.8rem; text-transform: uppercase; color: var(--color-ink-light); font-weight: 700;">Total Staff Added</span>
+      <strong style="display: block; font-size: 2.2rem; color: #a78bfa; font-family: 'Outfit', sans-serif; margin-top: 0.5rem;"><%= professionals ? professionals.length : 0 %></strong>
+    </div>
+    <div class="glass-panel" style="padding: 1.5rem; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); background: rgba(15, 23, 42, 0.7);">
+      <span style="font-size: 0.8rem; text-transform: uppercase; color: var(--color-ink-light); font-weight: 700;">Verification Status</span>
+      <strong style="display: block; font-size: 1.6rem; color: #10b981; font-family: 'Outfit', sans-serif; margin-top: 0.5rem;">100% Verified</strong>
+    </div>
+    <div class="glass-panel" style="padding: 1.5rem; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); background: rgba(15, 23, 42, 0.7);">
+      <span style="font-size: 0.8rem; text-transform: uppercase; color: var(--color-ink-light); font-weight: 700;">Partner Commission</span>
+      <strong style="display: block; font-size: 1.6rem; color: #38bdf8; font-family: 'Outfit', sans-serif; margin-top: 0.5rem;">20% per Booking</strong>
+    </div>
+  </div>
+
+  <!-- Staff Members Grid/List -->
+  <div class="glass-panel" style="padding: 2rem; border-radius: 20px; border: 1px solid rgba(255,255,255,0.12); background: rgba(15, 23, 42, 0.85);">
+    <h2 style="font-family: 'Outfit', sans-serif; color: #fff; font-size: 1.4rem; margin: 0 0 1.5rem; display: flex; align-items: center; justify-content: space-between;">
+      <span>👥 Added Professionals Directory</span>
+      <span style="font-size: 0.85rem; color: var(--color-ink-light); font-weight: normal;">Showing <%= professionals ? professionals.length : 0 %> registered staff</span>
+    </h2>
+
+    <% if (!professionals || professionals.length === 0) { %>
+      <div style="text-align: center; padding: 4rem 1rem; color: var(--color-ink-light);">
+        <span style="font-size: 3rem; display: block; margin-bottom: 1rem;">🧑‍🔧</span>
+        <h3 style="color: #fff; font-size: 1.2rem; margin: 0 0 0.5rem;">No Sub-Professionals Registered</h3>
+        <p style="max-width: 450px; margin: 0 auto 1.5rem; font-size: 0.95rem;">You have not onboarded any staff members yet. Add professionals from your partner dashboard to start receiving bookings and earning 20% commission.</p>
+        <a href="/partner/dashboard#add-staff-form" class="button button-primary" style="padding: 0.75rem 1.75rem; border-radius: 12px; font-weight: 700;">
+          Add First Staff Member ›
+        </a>
+      </div>
+    <% } else { %>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem;">
+        <% professionals.forEach(function(pro) { %>
+          <div style="padding: 1.5rem; border-radius: 16px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; justify-content: space-between; gap: 1.2rem; transition: transform 0.2s, border-color 0.2s;">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem;">
+                <div>
+                  <h3 style="color: #fff; font-size: 1.15rem; margin: 0 0 0.3rem;"><%= pro.full_name || pro.name || 'Staff Member' %></h3>
+                  <span style="font-size: 0.85rem; color: #38bdf8; font-family: monospace; background: rgba(56, 189, 248, 0.1); padding: 2px 8px; border-radius: 6px;">
+                    @<%= pro.username || pro.email %>
+                  </span>
+                </div>
+                <span style="padding: 0.3rem 0.7rem; border-radius: 99px; font-size: 0.75rem; font-weight: 800; background: rgba(16, 185, 129, 0.18); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); white-space: nowrap;">
+                  ✔ Verified
+                </span>
+              </div>
+
+              <div style="margin-top: 1.2rem; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.88rem; color: #cbd5e1;">
+                <div>📍 <strong>City/Area:</strong> <%= pro.city || 'All India' %> <%= pro.area ? '(' + pro.area + ')' : '' %></div>
+                <div>📞 <strong>Phone:</strong> <%= pro.phone || 'N/A' %></div>
+                <div>💼 <strong>Experience:</strong> <%= pro.years_experience || 0 %> years</div>
+                <% if (pro.bio) { %>
+                  <div style="font-size: 0.8rem; color: var(--color-ink-light); margin-top: 0.3rem; line-height: 1.4; background: rgba(255,255,255,0.03); padding: 0.5rem; border-radius: 6px;">
+                    <%= pro.bio %>
+                  </div>
+                <% } %>
+              </div>
+            </div>
+
+            <div style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 0.8rem; color: #a78bfa; font-weight: 600;">Managed Sub-Pro</span>
+              <form action="/partner/professionals/<%= pro.id %>/delete" method="POST" onsubmit="return confirm('Remove <%= pro.full_name || pro.username %> from your agency?');" style="margin: 0;">
+                <button type="submit" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer;">
+                  Remove ✖
+                </button>
+              </form>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+  </div>
+</section>
+
+<%- include("partials/footer") %>

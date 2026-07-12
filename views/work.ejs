@@ -26,32 +26,45 @@
     </div>
 
     <% const isPassActive = (user && user.role === "client" && user.workPassActive && (!user.workPassExpiresAt || new Date(user.workPassExpiresAt) > new Date())); %>
+    <% const cCount = typeof clientJobsCount !== 'undefined' ? clientJobsCount : 0; %>
+    <% const cCredits = (user && user.workCredits) ? Number(user.workCredits) : 0; %>
 
     <% if (user && user.role === "client") { %>
-      <% if (isPassActive) { %>
+      <% if (isPassActive || cCredits > 0) { %>
         <div style="margin-bottom: 1.5rem; padding: 1rem 1.25rem; border-radius: 12px; background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.4); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
           <div style="display: flex; align-items: center; gap: 0.6rem; color: #86efac; font-size: 0.92rem;">
             <span style="font-size: 1.3rem;">✅</span>
             <div>
-              <strong>Active 30-Day Client Work Pass</strong><br>
-              <span style="font-size: 0.82rem; color: #bbf7d0;">You can upload unlimited work requirements & notify matched professionals across India.</span>
+              <strong>Active Work Upload Credits (<%= isPassActive ? 'Unlimited Pass' : `${cCredits} Credits Remaining` %>)</strong><br>
+              <span style="font-size: 0.82rem; color: #bbf7d0;">You can upload custom work requirements & notify matched professionals and local partners.</span>
             </div>
           </div>
-          <span style="font-size: 0.78rem; background: #22c55e; color: #000; font-weight: 800; padding: 4px 10px; border-radius: 6px;">PASS ACTIVE</span>
+          <span style="font-size: 0.78rem; background: #22c55e; color: #000; font-weight: 800; padding: 4px 10px; border-radius: 6px;">ACTIVE</span>
+        </div>
+      <% } else if (cCount === 0) { %>
+        <div style="margin-bottom: 1.5rem; padding: 1rem 1.25rem; border-radius: 12px; background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.4); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
+          <div style="display: flex; align-items: center; gap: 0.6rem; color: #e9d5ff; font-size: 0.92rem;">
+            <span style="font-size: 1.3rem;">🎁</span>
+            <div>
+              <strong>100% Free First Work Upload Included!</strong><br>
+              <span style="font-size: 0.82rem; color: #d8b4fe;">Your 1st custom requirement upload is completely free of platform fees. Post now!</span>
+            </div>
+          </div>
+          <span style="font-size: 0.78rem; background: #a855f7; color: #fff; font-weight: 800; padding: 4px 10px; border-radius: 6px;">1 FREE UPLOAD</span>
         </div>
       <% } else { %>
         <div style="margin-bottom: 1.75rem; padding: 1.5rem; border-radius: 16px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(217, 119, 6, 0.1)); border: 2px solid #f59e0b; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1.25rem;">
           <div style="max-width: 540px;">
             <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
-              <span style="background: #f59e0b; color: #000; font-size: 0.72rem; font-weight: 800; padding: 2px 8px; border-radius: 4px;">MANDATORY PASS</span>
-              <strong style="color: #fbbf24; font-size: 1.1rem;">💎 Unlock Unlimited Work Postings (₹150 / Month)</strong>
+              <span style="background: #f59e0b; color: #000; font-size: 0.72rem; font-weight: 800; padding: 2px 8px; border-radius: 4px;">FREE UPLOAD USED</span>
+              <strong style="color: #fbbf24; font-size: 1.1rem;">💎 Purchase 5-Work Upload Bundle (₹250 only)</strong>
             </div>
             <p style="margin: 0; color: #fde68a; font-size: 0.9rem; line-height: 1.45;">
-              To maintain quality standards and notify verified local professionals instantly, employers need a 30-Day Work Pass (`₹150 only`). Post unlimited jobs and hire candidates directly!
+              You have used your 1st free work upload. To continue posting custom requirements and connecting with local verified professionals & partners, get our 5-Job Bundle for just ₹250!
             </p>
           </div>
-          <a href="/work/pass/buy" class="button button-primary" style="padding: 0.9rem 1.75rem; font-size: 0.95rem; font-weight: 800; border-radius: 12px; background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; text-decoration: none; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4); display: inline-flex; align-items: center; gap: 0.4rem;">
-            ⚡ Buy 30-Day Pass (₹150 via PayU) ›
+          <a href="/client/work-bundle/payu" class="button button-primary" style="padding: 0.9rem 1.75rem; font-size: 0.95rem; font-weight: 800; border-radius: 12px; background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; text-decoration: none; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4); display: inline-flex; align-items: center; gap: 0.4rem;">
+            ⚡ Buy 5-Job Bundle (₹250 via PayU) ›
           </a>
         </div>
       <% } %>
@@ -243,44 +256,50 @@
             </div>
 
             <div style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 1rem; margin-top: auto;">
-              <% if (user && user.role === "professional") { %>
+              <% if (user && (user.role === "professional" || user.role === "partner")) { %>
+                <a href="/work/<%= job.id %>/chat/<%= user.id || user.email %>" class="button button-secondary button-block" style="padding: 0.55rem; font-size: 0.88rem; font-weight: 700; margin-bottom: 0.6rem; text-align: center; border-radius: 8px; background: rgba(167, 139, 250, 0.15); color: #a78bfa; border: 1px solid rgba(167, 139, 250, 0.3); text-decoration: none; display: block;">
+                  💬 Open Live Chat with Client ›
+                </a>
                 <details style="background: rgba(255,255,255,0.04); border-radius: 12px; padding: 0.75rem;">
                   <summary style="cursor: pointer; font-weight: 700; color: #fff; font-size: 0.92rem; list-style: none; display: flex; align-items: center; justify-content: space-between;">
-                    <span>Apply & Negotiate Rate</span>
+                    <span>Submit Proposal / Rate (<%= user.role === 'partner' ? 'Partner' : 'Pro' %>)</span>
                     <span style="color: var(--color-brand);">Apply Now +</span>
                   </summary>
                   
                   <form action="/work/apply/<%= job.id %>" method="POST" style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
                     <label style="display: block;">
-                      <span style="font-size: 0.82rem; color: #fff; font-weight: 600;">Your Negotiated Rate (₹)</span>
+                      <span style="font-size: 0.82rem; color: #fff; font-weight: 600;">Your Negotiated / Proposed Rate (₹)</span>
                       <input type="number" name="proposedRate" value="<%= job.budget %>" required class="form-input" style="width: 100%; padding: 0.5rem 0.75rem; border-radius: 8px; background: rgba(0,0,0,0.5); color: #fff; border: 1px solid rgba(255,255,255,0.2); margin-top: 3px;">
                     </label>
 
                     <label style="display: block;">
-                      <span style="font-size: 0.82rem; color: #fff; font-weight: 600;">Short Proposal Message</span>
-                      <textarea name="message" rows="2" placeholder="Tell client about your experience & availability..." required class="form-input" style="width: 100%; padding: 0.5rem 0.75rem; border-radius: 8px; background: rgba(0,0,0,0.5); color: #fff; border: 1px solid rgba(255,255,255,0.2); margin-top: 3px;"></textarea>
+                      <span style="font-size: 0.82rem; color: #fff; font-weight: 600;">Message to Client</span>
+                      <textarea name="message" rows="2" placeholder="Tell client about your team/experience & availability..." required class="form-input" style="width: 100%; padding: 0.5rem 0.75rem; border-radius: 8px; background: rgba(0,0,0,0.5); color: #fff; border: 1px solid rgba(255,255,255,0.2); margin-top: 3px;"></textarea>
                     </label>
 
                     <button type="submit" class="button button-primary button-block" style="padding: 0.65rem; font-size: 0.9rem; font-weight: 700; border-radius: 8px;">
-                      Send Rate & Application ›
+                      Send Rate & Message ›
                     </button>
                   </form>
                 </details>
               <% } else if (user && user.role === "client") { %>
                 <div style="background: rgba(255,255,255,0.04); border-radius: 12px; padding: 0.85rem;">
                   <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
-                    <span style="font-weight: 700; font-size: 0.9rem; color: #fff;">Applications Received</span>
+                    <span style="font-weight: 700; font-size: 0.9rem; color: #fff;">Applications & Inquiries</span>
                     <span style="background: var(--color-brand); color: #000; font-size: 0.75rem; font-weight: 800; padding: 2px 8px; border-radius: 10px;"><%= (job.applications || []).length %></span>
                   </div>
                   <% if ((job.applications || []).length === 0) { %>
                     <p style="font-size: 0.82rem; color: var(--color-ink-light); margin: 0;">No rate proposals submitted yet.</p>
                   <% } else { %>
-                    <div style="max-height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.5rem;">
+                    <div style="max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.5rem;">
                       <% (job.applications || []).forEach(function(app) { %>
                         <div style="background: rgba(0,0,0,0.4); padding: 0.65rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
-                          <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 0.88rem; color: #fff;">
+                          <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 0.88rem; color: #fff; align-items: center;">
                             <span><%= app.professionalName %></span>
-                            <span style="color: #10b981;">₹<%= app.proposedRate %></span>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                              <span style="color: #10b981;">₹<%= app.proposedRate %></span>
+                              <a href="/work/<%= job.id %>/chat/<%= app.professionalId %>" style="background: var(--color-brand); color: #000; font-size: 0.75rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; text-decoration: none;">💬 Chat</a>
+                            </div>
                           </div>
                           <small style="color: var(--color-ink-light); font-size: 0.75rem; display: block;"><%= app.professionalPhone || app.professionalEmail %></small>
                           <p style="margin: 0.3rem 0 0; font-size: 0.8rem; color: #cbd5e1;"><%= app.message %></p>
