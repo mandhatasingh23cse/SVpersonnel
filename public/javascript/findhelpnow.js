@@ -173,7 +173,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const photo = encodeURI(worker.photo || "/assets/gigconnect.logo.png");
         const similarSearchHref = `/findHelpNow?skill=${encodeURIComponent(skills[0] || worker.name)}&city=${encodeURIComponent(worker.city || DEFAULT_CITY)}`;
         const bookHref = worker.id ? `/book-service/${encodeURIComponent(worker.id)}` : "/contactus";
-        const price = Number(worker.startingPrice || worker.hourlyRateInr || 0);
+        const price = Number(worker.partTimeRate || worker.startingPrice || worker.hourlyRateInr || 0);
         const phoneDisplay = formatPhone(worker.phone || worker.contact);
         const emailDisplay = String(worker.email || "").trim();
         const hasDirectContact = Boolean(phoneDisplay || emailDisplay);
@@ -183,8 +183,8 @@ document.addEventListener("DOMContentLoaded", () => {
               style: "currency",
               currency: "INR",
               maximumFractionDigits: 0
-            }).format(price)
-          : "Price on request";
+            }).format(price) + "/Day approx. (Part-Time)"
+          : "Fixed Part-Time Rate";
 
         return `
           <article class="result-card">
@@ -218,8 +218,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
             <div class="result-meta">
               <span>${escapeHtml(String(worker.experience || 0))} years experience</span>
-              <span>Work: Part Time / Full Time</span>
-              <span style="color: #a78bfa; font-weight: 600;">Negotiable / Fixed</span>
+              <span>Work: Part Time</span>
+              <span style="color: #38bdf8; font-weight: 700;">${escapeHtml(priceLabel)}</span>
             </div>
 
             <div class="result-skills">

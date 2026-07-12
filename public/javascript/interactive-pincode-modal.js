@@ -339,8 +339,8 @@
       .map((w) => {
         const photo = encodeURI(w.photo || "/assets/gigconnect.logo.png");
         const skills = Array.isArray(w.skills) ? w.skills : (w.skills ? [w.skills] : []);
-        const price = Number(w.startingPrice || w.hourlyRateInr || 0);
-        const priceLabel = price > 0 ? `₹${price}/hr approx.` : "Fixed / Negotiable";
+        const price = Number(w.startingPrice || w.hourlyRateInr || w.partTimeRate || 0);
+        const priceLabel = price > 0 ? `₹${price}/Day approx. (Part-Time)` : "Fixed Part-Time Rate";
         const bookHref = w.id ? `/book-service/${encodeURIComponent(w.id)}` : "/contactus";
 
         return `

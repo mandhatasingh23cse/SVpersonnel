@@ -64,7 +64,9 @@
         <span style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.05em;">Professionals Managed</span>
         <strong style="display: block; font-size: 2.2rem; color: #c084fc; font-family: 'Outfit', sans-serif; margin-top: 0.5rem;"><%= dashboardData.professionals.length %></strong>
       </div>
-      <span style="font-size: 0.8rem; color: var(--text-soft);">Inducted and verified under agency</span>
+      <a href="/partner/professionals" style="font-size: 0.85rem; color: #a78bfa; font-weight: 700; text-decoration: none; margin-top: 0.5rem; display: inline-flex; align-items: center; gap: 0.3rem;">
+        View All Staff Directory ›
+      </a>
     </div>
   </div>
 
@@ -207,7 +209,10 @@
 
       <!-- Section 2: List of Managed Staff -->
       <div class="glass-panel" style="padding: 2.5rem; border-radius: var(--radius-xl); background: rgba(22, 32, 58, 0.85); border: 1px solid var(--line-strong);">
-        <h2 style="font-family: 'Outfit', sans-serif; color: #fff; margin: 0 0 1.5rem;">Verified Staff Members</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.5rem;">
+          <h2 style="font-family: 'Outfit', sans-serif; color: #fff; margin: 0;">Verified Staff Members</h2>
+          <a href="/partner/professionals" style="color: var(--color-brand); font-weight: 700; font-size: 0.9rem; text-decoration: none;">Manage All Directory ›</a>
+        </div>
         
         <% if (!dashboardData.professionals.length) { %>
           <p style="text-align: center; color: var(--text-soft); padding: 2rem 0;">No professionals added under your agency franchise yet.</p>

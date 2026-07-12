@@ -10,7 +10,7 @@
   class="shell discover-shell"
   id="discoverApp"
   data-initial-query="<%= searchDefaults.queryText %>"
-  data-initial-city="<%= searchDefaults.city %>"
+  data-initial-city="<%= typeof user !== 'undefined' && user && (user.pincode || user.city) ? (user.pincode || user.city) : searchDefaults.city %>"
   data-initial-sort="<%= searchDefaults.sort %>"
   data-initial-verified="<%= searchDefaults.verifiedOnly %>"
 >
@@ -51,15 +51,8 @@
           </select>
         </label>
 
-        <!-- 3. Part Time or Full Time -->
-        <label class="field-group" style="min-width: 0; max-width: 100%; box-sizing: border-box; margin: 0;">
-          <span style="color: #cbd5e1; font-weight: 600; font-size: 0.88rem; display: block; margin-bottom: 0.45rem;">Work Availability</span>
-          <select id="search-job-type" name="jobType" class="form-input" style="width: 100%; max-width: 100%; box-sizing: border-box; padding: 0.85rem 1rem; border-radius: 14px; background: rgba(15, 23, 42, 0.95); color: #fff; border: 1px solid rgba(255,255,255,0.2); font-weight: 600; cursor: pointer; text-overflow: ellipsis; overflow: hidden;">
-            <option value="">⏰ Both / Flexible Shift</option>
-            <option value="Full Time">Full Time Hiring</option>
-            <option value="Part Time">Part Time Booking</option>
-          </select>
-        </label>
+        <input type="hidden" id="search-job-type" name="jobType" value="Part Time" />
+
       </div>
 
       <!-- Row 2: Location & Sort -->
@@ -73,8 +66,10 @@
             </button>
           </span>
           <div style="position: relative; width: 100%; max-width: 100%; box-sizing: border-box;">
-            <input type="text" id="search-city" name="city" placeholder="Enter Pincode, City or Locality (e.g. 226006, Delhi, Gurugram)" autocomplete="off" style="width: 100%; max-width: 100%; box-sizing: border-box; padding: 0.85rem 1rem; border-radius: 14px; background: rgba(15, 23, 42, 0.95); color: #fff; border: 1px solid rgba(255,255,255,0.2); font-weight: 500; text-overflow: ellipsis; overflow: hidden;">
-            <div id="pincode-location-info" style="font-size: 0.82rem; color: #38bdf8; margin-top: 6px; font-weight: 600; min-height: 1.1em;"></div>
+            <input type="text" id="search-city" name="city" value="<%= typeof user !== 'undefined' && user && (user.pincode || user.city) ? (user.pincode || user.city) : searchDefaults.city %>" placeholder="Enter Pincode, City or Locality (e.g. 226006, Delhi, Gurugram)" autocomplete="off" style="width: 100%; max-width: 100%; box-sizing: border-box; padding: 0.85rem 1rem; border-radius: 14px; background: rgba(15, 23, 42, 0.95); color: #fff; border: 1px solid rgba(255,255,255,0.2); font-weight: 500; text-overflow: ellipsis; overflow: hidden;">
+            <div id="pincode-location-info" style="font-size: 0.82rem; color: #38bdf8; margin-top: 6px; font-weight: 600; min-height: 1.1em;">
+              <% if (typeof user !== 'undefined' && user && user.pincode) { %>⚡ Auto-filtered to your profile pincode: <%= user.pincode %><% } %>
+            </div>
             <div id="search-suggestions" style="position: absolute; top: 100%; left: 0; right: 0; background: #0f172a; border: 1px solid rgba(255,255,255,0.2); border-radius: 14px; max-height: 220px; overflow-y: auto; z-index: 200; display: none; box-shadow: 0 16px 40px rgba(0,0,0,0.8);"></div>
           </div>
         </label>
@@ -158,7 +153,20 @@
     </script>
   </div>
 
-  <!-- Horizontal Scrolling Categories & Sub-categories (same as Home Page) -->
+  <div class="discover-results" style="margin: 2rem 0;">
+    <div class="results-topbar glass-panel" data-reveal>
+      <div>
+        <p class="card-kicker" style="color: #38bdf8; font-weight: 700;">Local Results (Filtered to Your Area)</p>
+        <h2 id="resultsHeading">Featured professionals around <%= typeof user !== 'undefined' && user && (user.pincode || user.city) ? (user.pincode || user.city) : brand.city %></h2>
+        <p id="resultsSummary">Loading professionals...</p>
+      </div>
+    </div>
+
+    <p class="loading-state" id="loadingState" hidden>Loading professionals...</p>
+    <div class="results-grid" id="resultsGrid" aria-live="polite"></div>
+  </div>
+
+  <!-- Horizontal Scrolling Categories & Sub-categories -->
   <div class="ott-hub" style="margin: 2.5rem 0;">
     <% if (typeof ottCategories !== 'undefined' && ottCategories && ottCategories.length) { %>
       <% ottCategories.forEach(function (category, catIndex) { %>
@@ -178,7 +186,7 @@
           <div class="ott-tray-container" style="overflow: hidden;">
             <div class="ott-tray" id="fhn-tray-<%= category.id || catIndex %>" style="display: flex; gap: 1.25rem; overflow-x: auto; scroll-behavior: smooth; padding-bottom: 0.75rem; scrollbar-width: none;">
               <% (category.items || []).forEach(function (item) { %>
-                <a class="ott-card" href="/findHelpNow?skill=<%= encodeURIComponent(item.name) %>&city=<%= encodeURIComponent(brand.city) %>" style="min-width: 240px; max-width: 240px; background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; padding: 1.25rem; text-decoration: none; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s, border-color 0.2s;">
+                <a class="ott-card" href="/findHelpNow?skill=<%= encodeURIComponent(item.name) %>&city=<%= encodeURIComponent(typeof user !== 'undefined' && user && (user.pincode || user.city) ? (user.pincode || user.city) : brand.city) %>" style="min-width: 240px; max-width: 240px; background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; padding: 1.25rem; text-decoration: none; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s, border-color 0.2s;">
                   <div class="ott-card-top" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
                     <span class="ott-card-tag" style="background: rgba(96, 165, 250, 0.15); color: #60a5fa; font-size: 0.72rem; padding: 2px 8px; border-radius: 6px; font-weight: 700;"><%= item.tag || 'TOP 10' %></span>
                     <span class="ott-card-pill" style="font-size: 0.72rem; color: #38bdf8;">Instant Hire</span>
@@ -200,18 +208,5 @@
         </div>
       <% }) %>
     <% } %>
-  </div>
-
-  <div class="discover-results">
-    <div class="results-topbar glass-panel" data-reveal>
-      <div>
-        <p class="card-kicker">Results</p>
-        <h2 id="resultsHeading">Featured professionals around <%= brand.city %></h2>
-        <p id="resultsSummary">Loading professionals...</p>
-      </div>
-    </div>
-
-    <p class="loading-state" id="loadingState" hidden>Loading professionals...</p>
-    <div class="results-grid" id="resultsGrid" aria-live="polite"></div>
   </div>
 </section>

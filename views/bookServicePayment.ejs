@@ -64,40 +64,55 @@
     <form method="POST" action="/book-service/<%= professional.id %>/confirm" style="width: 100%; box-sizing: border-box;">
       <div style="display: flex; flex-direction: column; gap: 1.25rem; margin-bottom: 2.5rem;">
         
+        <% const baseRate = Number(professional.startingPrice) || 500;
+           const platformFee = Math.round(baseRate * 0.15);
+           const gst = Math.round(platformFee * 0.18);
+           const advanceFeeOnline = platformFee + gst;
+           const fullOnlineAmount = baseRate + advanceFeeOnline;
+        %>
+
         <% if (!isFullTime) { %>
-          <!-- Option 1: Cash/UPI on completion (Part Time / Fixed) -->
+          <!-- Option 1: Cash/UPI on completion with advance platform fee -->
           <label style="display: flex; align-items: flex-start; gap: 1.25rem; padding: 1.75rem; border-radius: 20px; border: 2px solid #38bdf8; background: rgba(56, 189, 248, 0.14); cursor: pointer; transition: all 0.2s; box-shadow: 0 6px 28px rgba(56, 189, 248, 0.18);" id="card-cod" onclick="selectPayment('cod')">
             <input type="radio" name="paymentMethod" id="radio-cod" value="cod" checked style="margin-top: 0.35rem; accent-color: #38bdf8; transform: scale(1.4); cursor: pointer;">
             <div style="flex: 1;">
               <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
                 <strong style="color: #fff; font-size: 1.15rem; font-weight: 800; display: flex; align-items: center; gap: 0.5rem;">
-                  🤝 Direct Post-Service Payment (Cash / UPI on Completion)
+                  🤝 Advance Platform Fee Online — Balance Cash on Completion
                 </strong>
                 <span style="background: #22c55e; color: #000; font-size: 0.75rem; font-weight: 800; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.04em;">Recommended</span>
               </div>
               <p style="margin: 0; font-size: 0.94rem; color: #cbd5e1; line-height: 1.6;">
-                Part-time payment is fixed based on selected service rate. Settle payment directly with your professional after the work is completed without any upfront platform fee.
+                Pay only the <strong>15% Platform Booking Fee + GST (₹<%= advanceFeeOnline %>)</strong> right now via PayU to confirm your booking. The remaining base service charge (<strong>₹<%= baseRate %></strong>) is settled directly in Cash/UPI to your professional after doorstep service completion.
               </p>
+              <div style="margin-top: 1rem; background: rgba(0,0,0,0.35); padding: 0.75rem 1rem; border-radius: 10px; font-size: 0.85rem; color: #93c5fd; border: 1px solid rgba(56, 189, 248, 0.25);">
+                📊 <strong>Fee Breakdown:</strong> Service Rate ₹<%= baseRate %> + Advance Online Fee ₹<%= advanceFeeOnline %> (15% + GST) | <strong>Total Online Now: ₹<%= advanceFeeOnline %></strong>
+              </div>
             </div>
           </label>
         <% } %>
 
-        <!-- Option 2: PayU Online Payment Gateway / Platform Fee -->
+        <!-- Option 2: PayU Online Payment Gateway / Full Fee -->
         <label style="display: flex; align-items: flex-start; gap: 1.25rem; padding: 1.75rem; border-radius: 20px; border: <%= isFullTime ? '2px solid #f59e0b' : '1px solid rgba(255,255,255,0.18)' %>; background: <%= isFullTime ? 'rgba(245, 158, 11, 0.15)' : 'rgba(15, 23, 42, 0.75)' %>; cursor: pointer; transition: all 0.2s; box-shadow: <%= isFullTime ? '0 6px 28px rgba(245, 158, 11, 0.22)' : 'none' %>;" id="card-payu" onclick="selectPayment('payu')">
           <input type="radio" name="paymentMethod" id="radio-payu" value="payu" <%= isFullTime ? 'checked' : '' %> style="margin-top: 0.35rem; accent-color: #f59e0b; transform: scale(1.4); cursor: pointer;">
           <div style="flex: 1;">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
               <strong style="color: #fff; font-size: 1.15rem; font-weight: 800; display: flex; align-items: center; gap: 0.5rem;">
-                🔒 <%= isFullTime ? 'Online PayU Payment — ₹250 Platform Booking Fee' : 'Online Payment via PayU Payment Gateway' %>
+                🔒 <%= isFullTime ? 'Online PayU Payment — ₹295 Platform Booking Fee & GST' : 'Full Online Payment via PayU (Service + Fee)' %>
               </strong>
-              <span style="background: #f59e0b; color: #000; font-size: 0.75rem; font-weight: 800; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.04em;"><%= isFullTime ? 'Mandatory Fee' : 'Instant & Secure' %></span>
+              <span style="background: #f59e0b; color: #000; font-size: 0.75rem; font-weight: 800; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.04em;"><%= isFullTime ? 'Mandatory Fee' : '100% Online' %></span>
             </div>
             <p style="margin: 0; font-size: 0.94rem; color: <%= isFullTime ? '#fde68a' : '#94a3b8' %>; line-height: 1.6;">
               <%= isFullTime
-                ? 'Pay the ₹250 one-time platform booking fee online right now via PayU (UPI, Cards, NetBanking) to confirm your full-time professional booking.'
-                : 'Pay online instantly and securely using Credit Card, Debit Card, UPI (Google Pay, PhonePe, Paytm), NetBanking, or Digital Wallets powered by PayU India.'
+                ? 'Pay the ₹250 platform fee + ₹45 GST (Total ₹295) online right now via PayU (UPI, Cards, NetBanking) to confirm your full-time professional booking.'
+                : `Pay the complete service charges plus platform fee (Total ₹${fullOnlineAmount}) online right now via PayU so no cash exchange is required upon arrival.`
               %>
             </p>
+            <% if (!isFullTime) { %>
+              <div style="margin-top: 1rem; background: rgba(0,0,0,0.35); padding: 0.75rem 1rem; border-radius: 10px; font-size: 0.85rem; color: #fde68a; border: 1px solid rgba(245, 158, 11, 0.25);">
+                📊 <strong>Fee Breakdown:</strong> Service Rate ₹<%= baseRate %> + Platform Fee & GST ₹<%= advanceFeeOnline %> | <strong>Total Online Now: ₹<%= fullOnlineAmount %></strong>
+              </div>
+            <% } %>
             <div style="display: flex; gap: 0.6rem; align-items: center; margin-top: 1rem; flex-wrap: wrap;">
               <span style="font-size: 0.78rem; font-weight: 700; background: rgba(255,255,255,0.08); padding: 4px 10px; border-radius: 6px; color: #e2e8f0; border: 1px solid rgba(255,255,255,0.15);">⚡ UPI (GPay / PhonePe)</span>
               <span style="font-size: 0.78rem; font-weight: 700; background: rgba(255,255,255,0.08); padding: 4px 10px; border-radius: 6px; color: #e2e8f0; border: 1px solid rgba(255,255,255,0.15);">💳 Credit/Debit Cards</span>
