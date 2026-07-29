@@ -1,4 +1,5 @@
 require("dotenv").config();
+require("node:dns").setDefaultResultOrder("ipv4first");
 
 const express = require("express");
 const path = require("path");
@@ -501,20 +502,22 @@ async function buildHomePageContent() {
   return { homeContent, featuredWorkers };
 }
 
-function requireRole(role) {
+function requireRole(roleOrRoles) {
   return (req, res, next) => {
-    if (!req.session.user || req.session.user.role !== role) {
-      if (role === "client") return res.redirect("/login?role=client");
-      if (role === "admin") return res.redirect("/admin/login");
+    const allowedRoles = Array.isArray(roleOrRoles) ? roleOrRoles : [roleOrRoles];
+    if (!req.session.user || !allowedRoles.includes(req.session.user.role)) {
+      if (allowedRoles.includes("client")) return res.redirect("/login?role=client");
+      if (allowedRoles.includes("admin")) return res.redirect("/admin/login");
       return res.redirect("/professionallogin");
     }
 
-    if (role !== "admin" && !req.session.user.onboarding_complete) {
+    const userRole = req.session.user.role;
+    if (userRole !== "admin" && !req.session.user.onboarding_complete) {
       const p = req.path || "";
       if (!p.includes("/onboarding") && !p.includes("/logout") && !p.includes("/delete") && !p.includes("/api/")) {
-        if (role === "client") return res.redirect("/client/onboarding");
-        if (role === "professional") return res.redirect("/professional/onboarding");
-        if (role === "partner") return res.redirect("/partner/onboarding");
+        if (userRole === "client") return res.redirect("/client/onboarding");
+        if (userRole === "professional") return res.redirect("/professional/onboarding");
+        if (userRole === "partner") return res.redirect("/partner/onboarding");
       }
     }
 
@@ -1376,12 +1379,18 @@ app.post(
 
 app.get("/professional/onboarding", requireRole("professional"), async (req, res) => {
   const content = siteContent;
+  let serviceOptions = [];
+  try {
+    serviceOptions = await getServiceOptions();
+  } catch(e) { serviceOptions = []; }
   res.render("professionalOnboarding", {
     title: "Complete Your Professional Onboarding | SV Personnels",
     pageClass: "page-onboarding",
     bridgeNote: null,
     ottCategories: content.home.ottCategories || [],
-    user: req.session.user
+    serviceOptions,
+    user: req.session.user,
+    formNotice: consumeSessionNotice(req, "professionalOnboardingNotice")
   });
 });
 
@@ -1459,14 +1468,11 @@ app.post(
       bioAppend += ` [workModes:${wmTag}] [partTimeRate:${finalDailyRate}] [fullTimeRate:${finalProjectRate}]`;
 
       const formattedPan = (panNumber || "").trim().toUpperCase();
-      if (!formattedPan || !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(formattedPan)) {
-        req.session.onboardingNotice = createFormNotice("error", "Invalid PAN Card format. Must be 5 letters, 4 digits, 1 letter (e.g. ABCDE1234F).");
-        return res.redirect("/professional/onboarding");
-      }
 
-      await updateProfessionalProfile(user.id, {
+      const updateData = {
         fullName: user.name,
         username: sanitizeText(username || ""),
+        phone: req.body.phone || user.phone,
         city: formattedCity,
         area: sanitizeText(area || formattedCity || "Main"),
         pincode: sanitizeText(pincode || ""),
@@ -1488,12 +1494,21 @@ app.post(
         aadhaarPanUrl: idDocUrl,
         livePhotoUrl: selfieUrl,
         onboarding_complete: true
-      });
+      };
 
-      req.session.user.username = username;
-      req.session.user.city = formattedCity;
-      req.session.user.pincode = pincode;
-      req.session.user.area = area;
+      const password = req.body.password;
+      if (password && String(password).trim().length >= 6) {
+        const bcrypt = require("bcryptjs");
+        updateData.password_hash = bcrypt.hashSync(String(password).trim(), 10);
+      }
+
+      await updateProfessionalProfile(user.id, updateData);
+
+      req.session.user.username = updateData.username;
+      req.session.user.phone = updateData.phone;
+      req.session.user.city = updateData.city;
+      req.session.user.area = updateData.area;
+      req.session.user.pincode = updateData.pincode;
       req.session.user.onboarding_complete = true;
 
       // Try to resolve exact service IDs or custom services from selected skills
@@ -1607,7 +1622,8 @@ app.get("/partner/onboarding", requireRole("partner"), async (req, res) => {
   return res.render("partnerOnboarding", {
     title: "Partner Verification | SV Personnels",
     pageClass: "page-onboarding-partner",
-    formNotice: consumeSessionNotice(req, "partnerOnboardingNotice")
+    formNotice: consumeSessionNotice(req, "partnerOnboardingNotice"),
+    user: req.session.user || null
   });
 });
 
@@ -1632,11 +1648,6 @@ app.post(
       const bizProofFile = req.files && req.files["businessProof"] ? req.files["businessProof"][0] : null;
       const livePhotoFile = req.files && req.files["livePhoto"] ? req.files["livePhoto"][0] : null;
 
-      if (!panNumber || !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(panNumber)) {
-        req.session.partnerOnboardingNotice = createFormNotice("error", "Invalid PAN Card format. Must be 5 letters, 4 digits, 1 letter (e.g. ABCDE1234F).");
-        return res.redirect("/partner/onboarding");
-      }
-
       if (!idDocFile || !bizProofFile || !livePhotoFile) {
         req.session.partnerOnboardingNotice = createFormNotice("error", "All verification document files must be uploaded.");
         return res.redirect("/partner/onboarding");
@@ -1646,18 +1657,26 @@ app.post(
       const bizProofUrl = `/uploads/${bizProofFile.filename}`;
       const livePhotoUrl = `/uploads/${livePhotoFile.filename}`;
 
-      await updatePartnerProfile(req.session.user.id, {
-        name: fullName,
-        phone: phone,
-        city: city,
-        pincode: pincode,
+      const updateData = {
+        fullName,
+        phone,
+        city,
+        pincode,
         gstNumber: gstNumber || "",
         panNumber: panNumber || "",
         idDocumentUrl: idDocUrl,
         businessProofUrl: bizProofUrl,
         livePhotoUrl: livePhotoUrl,
         onboarding_complete: true
-      });
+      };
+
+      const password = req.body.password;
+      if (password && String(password).trim().length >= 6) {
+        const bcrypt = require("bcryptjs");
+        updateData.password_hash = bcrypt.hashSync(String(password).trim(), 10);
+      }
+
+      await updatePartnerProfile(req.session.user.id, updateData);
 
       if (fullName) req.session.user.name = fullName;
       if (phone) req.session.user.phone = phone;
@@ -3323,7 +3342,21 @@ app.post("/professional/bookings/:bookingId/start-work", requireRole("profession
     const otpMatch = details.match(/\[Start OTP:\s*(\d+)\]/);
     const expectedOtp = otpMatch ? otpMatch[1] : null;
 
-    if (!expectedOtp || otpInput !== expectedOtp) {
+    let isPartnerManaged = false;
+    if (req.session.user && req.session.user.is_partner_managed) {
+      isPartnerManaged = true;
+    } else {
+      const { data: pro } = await dbClient
+        .from("professionals")
+        .select("is_partner_managed")
+        .eq("id", req.session.user.id)
+        .maybeSingle();
+      if (pro && pro.is_partner_managed) {
+        isPartnerManaged = true;
+      }
+    }
+
+    if (!isPartnerManaged && (!expectedOtp || otpInput !== expectedOtp)) {
       req.session.professionalDashboardNotice = createFormNotice("error", "Incorrect OTP. Please ask the client for the correct code.");
       return res.redirect("/professional/dashboard");
     }
@@ -4043,6 +4076,17 @@ io.on("connection", (socket) => {
 
     io.to(receiverRoom).emit("new_message", saved);
     io.to(senderRoom).emit("new_message", saved);
+  });
+
+  socket.on("send_work_message", async (data) => {
+    const { workId, senderId, senderName, senderRole, receiverRole, receiverId, text } = data;
+    const saved = await sendWorkMessage({ workId, senderId, senderName, senderRole, receiverId, text });
+    
+    const receiverRoom = `${receiverRole}_${receiverId}`;
+    const senderRoom = `${senderRole}_${senderId}`;
+
+    io.to(receiverRoom).emit("new_work_message", saved);
+    io.to(senderRoom).emit("new_work_message", saved);
   });
 
   socket.on("typing", (data) => {

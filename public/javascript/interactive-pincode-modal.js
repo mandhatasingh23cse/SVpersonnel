@@ -122,7 +122,7 @@
       .pincode-input {
         width: 100%;
         box-sizing: border-box;
-        padding: 1rem 1.25rem;
+        padding: 1rem 8.5rem 1rem 1.25rem;
         border-radius: 16px;
         background: rgba(15, 23, 42, 0.9);
         border: 2px solid rgba(56, 189, 248, 0.4);
