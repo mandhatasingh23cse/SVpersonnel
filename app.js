@@ -62,6 +62,7 @@ const {
 
   createPartnerAccount,
   authenticatePartner,
+  updatePartnerProfile,
   getPartnerDashboardData,
   createPartnerManagedProfessional,
   getWalletBalance,

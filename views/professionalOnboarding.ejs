@@ -137,7 +137,7 @@
             <span style="font-size: 2rem; display:block; margin-bottom: 0.5rem;">📷</span>
             <strong style="color: #fff; display:block; margin-bottom: 0.3rem;">Verification Selfie Image</strong>
             <p style="font-size: 0.78rem; color: #94a3b8; margin: 0 0 1.25rem 0;">Upload a live selfie holding your ID card (JPG/PNG max 5MB)</p>
-            <input type="file" name="liveSelfiePhoto" required style="display: none;" onchange="previewFileName(this, 'selfie-file-name')">
+            <input type="file" name="liveSelfiePhoto" accept="image/*" capture="user" required style="display: none;" onchange="previewFileName(this, 'selfie-file-name')">
             <span id="selfie-file-name" style="font-size: 0.85rem; color: #f59e0b; font-weight: 700;">No file selected</span>
           </label>
 
