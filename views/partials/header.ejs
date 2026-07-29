@@ -1,137 +1,129 @@
 <script>
-  (function() {
-    document.documentElement.setAttribute("data-theme", "dark");
-  })();
+  (function() { document.documentElement.setAttribute("data-theme", "dark"); })();
 </script>
 
 <% if (typeof cmsSettings !== 'undefined' && cmsSettings && cmsSettings.announcementActive && cmsSettings.announcementBanner) { %>
-<div class="announcement-banner" style="background: linear-gradient(90deg, var(--accent), #f43f5e); color: #fff; text-align: center; padding: 0.55rem 1rem; font-size: 0.88rem; font-weight: 700; letter-spacing: 0.02em; position: relative; z-index: 10000; box-shadow: 0 2px 10px rgba(0,0,0,0.3);">
+<div class="announcement-banner" style="background: linear-gradient(90deg, var(--premium-primary), var(--premium-secondary)); color: #fff; text-align: center; padding: 0.55rem 1rem; font-size: 0.85rem; font-weight: 700; position: relative; z-index: 10000; width: 100%;">
   <span><%= cmsSettings.announcementBanner %></span>
 </div>
 <% } %>
 
-<header class="site-header">
-  <div class="shell">
-    <nav class="navbar glass-shell" aria-label="Primary navigation">
-      <a href="/" class="brand-lockup" aria-label="SV Personnels home">
-        <img src="/assets/svpersonnel-logo.png" alt="SV Personnels logo" class="brand-mark">
-        <span class="brand-copy">
-          <span class="brand-name"><%= brand.name %></span>
-          <span class="brand-caption"><%= brand.tagline %></span>
+<header class="premium-header">
+  <div class="premium-shell">
+    <nav class="premium-nav" aria-label="Primary navigation">
+      
+      <a href="/" class="premium-brand" aria-label="SV Personnels home">
+        <img src="/assets/svpersonnel-logo.png" alt="SV Personnels logo" style="height: 42px; width: auto;">
+        <span class="premium-brand-text">
+          <span class="premium-brand-title"><%= brand.name %></span>
+          <span class="premium-brand-tagline"><%= brand.tagline %></span>
         </span>
       </a>
 
-      <button
-        type="button"
-        class="nav-toggle"
-        aria-expanded="false"
-        aria-controls="primary-navigation-panel"
-        data-nav-toggle
-      >
-        <span></span>
-        <span></span>
-        <span></span>
+      <button type="button" class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="navPanel" style="display: none; flex-direction: column; justify-content: center; align-items: center; gap: 5px; width: 44px; height: 44px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; cursor: pointer; padding: 0;">
+        <span style="display: block; width: 20px; height: 2px; background: #fff; border-radius: 2px; transition: all 0.25s;"></span>
+        <span style="display: block; width: 20px; height: 2px; background: #fff; border-radius: 2px; transition: all 0.25s;"></span>
+        <span style="display: block; width: 20px; height: 2px; background: #fff; border-radius: 2px; transition: all 0.25s;"></span>
       </button>
 
-      <div class="nav-panel" id="primary-navigation-panel" data-nav-panel>
-        <ul class="nav-links">
-          <% navigation.forEach(function (item) { %>
-            <% if (item.href === "/findHelpNow" && (!sessionUser || sessionUser.role !== "client")) { %>
-              <% return; %>
-            <% } %>
-            <% if (item.href === "/howitworks") { %>
-              <% return; %>
-            <% } %>
-            <li>
-              <a href="<%= item.href %>" class="<%= currentPath === item.href ? 'is-active' : '' %>">
-                <%= item.label %>
-              </a>
-            </li>
-          <% }) %>
-          <% if (sessionUser && sessionUser.role === "client") { %>
-            <li>
-              <a href="/client/dashboard" class="<%= currentPath === '/client/dashboard' ? 'is-active' : '' %>">
-                Dashboard
-              </a>
-            </li>
-            <li>
-              <a href="/chat" class="<%= currentPath === '/chat' ? 'is-active' : '' %>">
-                Messages 💬
-              </a>
-            </li>
+      <div class="nav-panel" id="navPanel">
+        <ul class="premium-nav-links">
+          <li><a href="/" class="premium-nav-link <%= currentPath === '/' ? 'active' : '' %>">Home</a></li>
+          <li><a href="/work" class="premium-nav-link <%= currentPath === '/work' ? 'active' : '' %>">Work</a></li>
+          <li><a href="/contactus" class="premium-nav-link <%= currentPath === '/contactus' ? 'active' : '' %>">Contact</a></li>
+          
+          <% if (sessionUser && sessionUser.role === 'client') { %>
+          <li><a href="/findHelpNow" class="premium-nav-link <%= currentPath === '/findHelpNow' ? 'active' : '' %>" style="color: var(--premium-accent);">Find Professional</a></li>
+          <li><a href="/client/dashboard" class="premium-nav-link <%= currentPath === '/client/dashboard' ? 'active' : '' %>">Dashboard</a></li>
+          <li><a href="/chat" class="premium-nav-link" style="color: #4ade80;">Messages</a></li>
           <% } %>
-          <% if (sessionUser && sessionUser.role === "professional") { %>
-            <li>
-              <a href="/professional/dashboard" class="<%= currentPath === '/professional/dashboard' ? 'is-active' : '' %>">
-                Dashboard
-              </a>
-            </li>
-            <li>
-              <a href="/chat" class="<%= currentPath === '/chat' ? 'is-active' : '' %>">
-                Messages 💬
-              </a>
-            </li>
+          
+          <% if (sessionUser && sessionUser.role === 'professional') { %>
+          <li><a href="/professional/dashboard" class="premium-nav-link <%= currentPath === '/professional/dashboard' ? 'active' : '' %>">Dashboard</a></li>
+          <li><a href="/chat" class="premium-nav-link" style="color: #4ade80;">Messages</a></li>
           <% } %>
-          <% if (sessionUser && sessionUser.role === "admin") { %>
-            <li>
-              <a href="/admin/dashboard" class="<%= currentPath === '/admin/dashboard' ? 'is-active' : '' %>">
-                Dashboard
-              </a>
-            </li>
+          
+          <% if (sessionUser && sessionUser.role === 'partner') { %>
+          <li><a href="/partner/dashboard" class="premium-nav-link <%= currentPath === '/partner/dashboard' ? 'active' : '' %>">Dashboard</a></li>
           <% } %>
-          <% if (sessionUser && sessionUser.role === "partner") { %>
-            <li>
-              <a href="/partner/dashboard" class="<%= currentPath === '/partner/dashboard' ? 'is-active' : '' %>">
-                Dashboard
-              </a>
-            </li>
+          
+          <% if (sessionUser && sessionUser.role === 'admin') { %>
+          <li><a href="/admin/dashboard" class="premium-nav-link" style="color: #f59e0b;">Admin Dashboard</a></li>
           <% } %>
         </ul>
 
-        <div class="nav-actions">
-          <details class="nav-dropdown" style="margin-right: 8px;">
-            <summary class="button button-secondary" style="display: inline-flex; align-items: center; gap: 6px;">
-              <span>Settings</span>
-              <span style="font-size: 0.75rem; opacity: 0.8;">▼</span>
-            </summary>
-            <div class="nav-dropdown-menu" style="right: 0; left: auto; display: flex; flex-direction: column;">
-              <a href="/howitworks" class="<%= currentPath === '/howitworks' ? 'is-active' : '' %>">How it works</a>
-              <% if (sessionUser) { %>
-                <% if (sessionUser.role === "client") { %>
-                  <a href="/client/profile" class="<%= currentPath === '/client/profile' ? 'is-active' : '' %>">Profile</a>
-                  <a href="/client/settings" class="<%= currentPath === '/client/settings' ? 'is-active' : '' %>">Account Settings</a>
-                <% } else if (sessionUser.role === "professional") { %>
-                  <a href="/professional/profile" class="<%= currentPath === '/professional/profile' ? 'is-active' : '' %>">Profile</a>
-                  <a href="/professional/onboarding" class="<%= currentPath === '/professional/onboarding' ? 'is-active' : '' %>">Onboarding & Skills</a>
-                  <a href="/professional/settings" class="<%= currentPath === '/professional/settings' ? 'is-active' : '' %>">Account Settings</a>
-                <% } else if (sessionUser.role === "admin") { %>
-                  <a href="/admin/profile" class="<%= currentPath === '/admin/profile' ? 'is-active' : '' %>">Profile</a>
-                <% } else if (sessionUser.role === "partner") { %>
-                  <a href="/partner/dashboard" class="<%= currentPath === '/partner/dashboard' ? 'is-active' : '' %>">Partner Dashboard</a>
-                <% } %>
-                <a href="/logout" style="color: var(--error); border-top: 1px solid var(--line); margin-top: 6px; padding-top: 8px;">Log out</a>
-              <% } %>
-            </div>
-          </details>
-
+        <div class="premium-nav-actions">
           <% if (sessionUser) { %>
-            <!-- User name next to settings removed as requested -->
+          <div class="nav-settings-wrap" style="position: relative;">
+            <button type="button" class="premium-btn premium-btn-secondary" id="settingsDropBtn" style="padding: 0.6rem 1.2rem;">
+              ⚙️ <span><%= sessionUser.name ? sessionUser.name.split(' ')[0] : 'Account' %></span>
+              <span style="font-size: 0.7rem; opacity: 0.7;">▼</span>
+            </button>
+            <div class="nav-settings-menu drop-menu-js premium-glass" id="settingsDropMenu" style="display: none; position: absolute; right: 0; top: calc(100% + 12px); min-width: 220px; padding: 0.5rem; z-index: 2000;">
+              <% if (sessionUser.role === 'client') { %>
+              <a href="/client/profile" class="premium-nav-link" style="display: block; margin: 4px 0;">👤 Profile</a>
+              <a href="/client/settings" class="premium-nav-link" style="display: block; margin: 4px 0;">⚙️ Settings & History</a>
+              <% } else if (sessionUser.role === 'professional') { %>
+              <a href="/professional/profile" class="premium-nav-link" style="display: block; margin: 4px 0;">👤 Profile</a>
+              <a href="/professional/settings" class="premium-nav-link" style="display: block; margin: 4px 0;">⚙️ Settings</a>
+              <% } else if (sessionUser.role === 'partner') { %>
+              <a href="/partner/dashboard" class="premium-nav-link" style="display: block; margin: 4px 0;">🏢 Partner Dashboard</a>
+              <a href="/partner/professionals" class="premium-nav-link" style="display: block; margin: 4px 0;">👥 My Professionals</a>
+              <% } else if (sessionUser.role === 'admin') { %>
+              <a href="/admin/profile" class="premium-nav-link" style="display: block; margin: 4px 0;">👤 Admin Profile</a>
+              <% } %>
+              <div style="height: 1px; background: var(--premium-border); margin: 8px 12px;"></div>
+              <a href="/logout" class="premium-nav-link" style="display: block; margin: 4px 0; color: var(--premium-secondary);">🚪 Log out</a>
+            </div>
+          </div>
           <% } else { %>
-            <a href="/login" class="button button-secondary">Log in</a>
-            <details class="nav-dropdown" style="position: relative;">
-              <summary class="button button-primary" style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; list-style: none;">
-                <span>Join us</span>
-                <span style="font-size: 0.75rem; opacity: 0.9;">▼</span>
-              </summary>
-              <div class="nav-dropdown-menu" style="right: 0; left: auto; display: flex; flex-direction: column; min-width: 190px; z-index: 1100; box-shadow: 0 15px 30px rgba(0,0,0,0.6); border-radius: 12px; padding: 0.5rem 0; background: #1e293b; border: 1px solid rgba(255,255,255,0.15);">
-                <a href="/register/client" style="padding: 0.7rem 1.1rem; color: #fff; font-weight: 600; text-decoration: none; display: block; border-bottom: 1px solid rgba(255,255,255,0.08);">👔 Client</a>
-                <a href="/register/professional" style="padding: 0.7rem 1.1rem; color: #fff; font-weight: 600; text-decoration: none; display: block; border-bottom: 1px solid rgba(255,255,255,0.08);">🛠️ Professional</a>
-                <a href="/register/partner" style="padding: 0.7rem 1.1rem; color: #fff; font-weight: 600; text-decoration: none; display: block;">🤝 Partner</a>
-              </div>
-            </details>
+          <a href="/login" class="premium-btn premium-btn-secondary">Log in</a>
+          <div style="position: relative;">
+            <button type="button" id="joinDropBtn" class="premium-btn premium-btn-primary">Join Us ▾</button>
+            <div id="joinDropMenu" class="drop-menu-js premium-glass" style="display: none; position: absolute; right: 0; top: calc(100% + 12px); min-width: 200px; padding: 0.5rem; z-index: 2000;">
+              <a href="/register/client" class="premium-nav-link" style="display: block; margin: 4px 0;">👔 As a Client</a>
+              <a href="/register/professional" class="premium-nav-link" style="display: block; margin: 4px 0;">🛠️ As a Professional</a>
+              <a href="/register/partner" class="premium-nav-link" style="display: block; margin: 4px 0;">🤝 As a Partner</a>
+            </div>
+          </div>
           <% } %>
         </div>
       </div>
     </nav>
   </div>
 </header>
+
+<script>
+(function() {
+  var toggle = document.getElementById('navToggle');
+  var panel = document.getElementById('navPanel');
+  var settingsBtn = document.getElementById('settingsDropBtn');
+  var settingsMenu = document.getElementById('settingsDropMenu');
+  var joinBtn = document.getElementById('joinDropBtn');
+  var joinMenu = document.getElementById('joinDropMenu');
+
+  if (toggle && panel) {
+    toggle.addEventListener('click', function() {
+      var isOpen = panel.classList.toggle('nav-open');
+      toggle.setAttribute('aria-expanded', isOpen);
+    });
+  }
+
+  function toggleDrop(btn, menu) {
+    if (!btn || !menu) return;
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var isVisible = menu.style.display === 'block';
+      document.querySelectorAll('.drop-menu-js').forEach(function(m) { m.style.display = 'none'; });
+      menu.style.display = isVisible ? 'none' : 'block';
+    });
+  }
+
+  toggleDrop(settingsBtn, settingsMenu);
+  toggleDrop(joinBtn, joinMenu);
+
+  document.addEventListener('click', function() {
+    document.querySelectorAll('.drop-menu-js').forEach(function(m) { m.style.display = 'none'; });
+  });
+})();
+</script>

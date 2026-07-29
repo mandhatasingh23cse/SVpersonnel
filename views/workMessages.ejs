@@ -43,8 +43,8 @@
     </div>
 
     <!-- Message Input Bar -->
-    <form action="/work/<%= work ? work.id : '' %>/chat/<%= peerId %>/send" method="POST" style="display: flex; gap: 0.75rem; padding: 1rem 1.25rem; background: rgba(0,0,0,0.4); border-top: 1px solid rgba(255,255,255,0.1);">
-      <input type="text" name="text" required placeholder="Type your message here..." autocomplete="off" class="form-input" style="flex: 1; padding: 0.8rem 1.25rem; border-radius: 12px; background: rgba(255,255,255,0.06); color: #fff; border: 1px solid rgba(255,255,255,0.18); font-size: 0.95rem;">
+    <form id="work-chat-form" style="display: flex; gap: 0.75rem; padding: 1rem 1.25rem; background: rgba(0,0,0,0.4); border-top: 1px solid rgba(255,255,255,0.1);">
+      <input type="text" id="work-chat-input" name="text" required placeholder="Type your live message here..." autocomplete="off" class="form-input" style="flex: 1; padding: 0.8rem 1.25rem; border-radius: 12px; background: rgba(255,255,255,0.06); color: #fff; border: 1px solid rgba(255,255,255,0.18); font-size: 0.95rem;">
       <button type="submit" class="button button-primary" style="padding: 0 1.5rem; border-radius: 12px; font-weight: 700; font-size: 0.95rem; background: linear-gradient(135deg, #a78bfa, #7c3aed); color: #fff; border: none; cursor: pointer;">
         Send 💬
       </button>
@@ -53,12 +53,88 @@
   </div>
 </section>
 
+<%
+  const clientId = work ? (work.clientId || work.clientContact) : "";
+  const amIClient = (String(user.id) === String(clientId) || String(user.email) === String(clientId));
+  const myRole = user.role || (amIClient ? 'client' : 'professional');
+  const receiverRole = amIClient ? 'professional' : 'client';
+%>
+
+<script src="/socket.io/socket.io.js"></script>
 <script>
   document.addEventListener("DOMContentLoaded", function() {
     const container = document.getElementById("chat-messages-container");
     if (container) {
       container.scrollTop = container.scrollHeight;
     }
+
+    const socket = io();
+    const myId = "<%= user.id || user.email %>";
+    const myRole = "<%= myRole %>";
+    const receiverId = "<%= peerId %>";
+    const receiverRole = "<%= receiverRole %>";
+    const workId = "<%= work ? work.id : '' %>";
+    const myName = "<%= user.name || 'User' %>";
+    const peerName = "<%= peerName %>";
+
+    const myRoom = `${myRole}_${myId}`;
+    socket.emit("join", myRoom);
+
+    const form = document.getElementById("work-chat-form");
+    const input = document.getElementById("work-chat-input");
+
+    form.addEventListener("submit", function(e) {
+      e.preventDefault();
+      const text = input.value.trim();
+      if (!text) return;
+
+      socket.emit("send_work_message", {
+        workId: workId,
+        senderId: myId,
+        senderName: myName,
+        senderRole: myRole,
+        receiverRole: receiverRole,
+        receiverId: receiverId,
+        text: text
+      });
+
+      input.value = "";
+    });
+
+    socket.on("new_work_message", function(msg) {
+      if (String(msg.workId) !== String(workId)) return;
+      
+      const isMe = String(msg.senderId) === String(myId);
+      
+      // If we don't care about others chatting in the same room right now:
+      if (!isMe && String(msg.senderId) !== String(receiverId)) return;
+
+      const bubble = document.createElement("div");
+      bubble.style.display = "flex";
+      bubble.style.flexDirection = "column";
+      bubble.style.maxWidth = "75%";
+      bubble.style.alignSelf = isMe ? "flex-end" : "flex-start";
+
+      const time = new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const senderDisplayName = isMe ? "You" : (msg.senderName || peerName);
+      
+      bubble.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.2rem; padding: 0 0.3rem;">
+          <span style="font-size: 0.75rem; font-weight: 700; color: ${isMe ? '#a78bfa' : '#38bdf8'};">${senderDisplayName}</span>
+          <span style="font-size: 0.7rem; color: rgba(255,255,255,0.4);">${time}</span>
+        </div>
+        <div style="padding: 0.85rem 1.1rem; border-radius: 14px; background: ${isMe ? 'linear-gradient(135deg, #7c3aed, #6d28d9)' : 'rgba(255, 255, 255, 0.08)'}; color: #fff; font-size: 0.95rem; line-height: 1.45; word-break: break-word; border: 1px solid ${isMe ? 'rgba(167, 139, 250, 0.3)' : 'rgba(255,255,255,0.1)'}; border-bottom-${isMe ? 'right' : 'left'}-radius: 3px;">
+          ${msg.text}
+        </div>
+      `;
+
+      // Remove "No messages yet" if exists
+      const emptyState = container.querySelector("div[style*='text-align: center']");
+      if (emptyState) emptyState.remove();
+
+      container.appendChild(bubble);
+      container.scrollTop = container.scrollHeight;
+    });
   });
 </script>
 

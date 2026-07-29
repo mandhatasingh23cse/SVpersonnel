@@ -297,6 +297,11 @@ document.addEventListener("DOMContentLoaded", () => {
     event.preventDefault();
     applyFormState();
     await fetchProfessionals();
+    // Scroll results into view after applying filter
+    const resultsSection = document.querySelector(".discover-results");
+    if (resultsSection) {
+      resultsSection.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   });
 
   sortSelect.addEventListener("change", () => {

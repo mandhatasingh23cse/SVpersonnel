@@ -169,18 +169,18 @@
           🔒 Only professionals specifically categorized under this skill will be notified and granted access.
         </span>
         <% if (user && user.role === "client") { %>
-          <% if (isPassActive) { %>
+          <% if (isPassActive || cCredits > 0 || cCount === 0) { %>
             <button type="submit" class="button button-primary" style="padding: 0.85rem 2rem; font-weight: 700; border-radius: 10px;">
               Notify Professionals & Post Work ›
             </button>
           <% } else { %>
-            <a href="/work/pass/buy" class="button button-primary" style="padding: 0.85rem 2rem; font-weight: 800; border-radius: 10px; background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem;">
-              ⚡ Buy Work Pass (₹150) to Post Work ›
+            <a href="/client/work-bundle/payu" class="button button-primary" style="padding: 0.85rem 2rem; font-weight: 800; border-radius: 10px; background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem;">
+              ⚡ Buy 5-Job Bundle (₹250) to Post More Work ›
             </a>
           <% } %>
         <% } else { %>
-          <a href="/clientlogin" class="button button-primary" style="padding: 0.85rem 2rem; font-weight: 700; border-radius: 10px; text-decoration: none; background: #ef4444; color: #fff; display: inline-block;">
-            Login to Post Work ›
+          <a href="/clientlogin" class="button button-primary" style="padding: 0.85rem 2rem; font-weight: 700; border-radius: 10px; text-decoration: none; background: #ef4444; color: #fff;">
+            Login as Client to Post Work ›
           </a>
         <% } %>
       </div>

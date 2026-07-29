@@ -1,34 +1,41 @@
-<section class="hero-section">
-  <div class="shell hero-grid">
-    <div class="hero-copy" data-reveal>
-      <p class="eyebrow"><%= homeContent.hero.eyebrow %></p>
-      <h1><%= (typeof cmsSettings !== 'undefined' && cmsSettings && cmsSettings.heroTitle) ? cmsSettings.heroTitle : homeContent.hero.title %></h1>
-      <p class="hero-description"><%= (typeof cmsSettings !== 'undefined' && cmsSettings && cmsSettings.heroSubtitle) ? cmsSettings.heroSubtitle : homeContent.hero.description %></p>
+<section class="premium-hero">
+  <div class="premium-shell premium-hero-grid">
+    <div class="premium-hero-content" data-reveal>
+      <span class="premium-eyebrow"><%= homeContent.hero.eyebrow %></span>
+      <h1 class="premium-hero-title">
+        <% 
+          let titleRaw = (typeof cmsSettings !== 'undefined' && cmsSettings && cmsSettings.heroTitle) ? cmsSettings.heroTitle : homeContent.hero.title; 
+          let titleParts = titleRaw.split('across India');
+        %>
+        <%= titleParts[0] %> <span>across India</span><%= titleParts.length > 1 ? titleParts[1] : '' %>
+      </h1>
+      <p class="premium-hero-desc"><%= (typeof cmsSettings !== 'undefined' && cmsSettings && cmsSettings.heroSubtitle) ? cmsSettings.heroSubtitle : homeContent.hero.description %></p>
 
-      <div class="hero-actions">
+      <div class="premium-hero-actions">
         <% if (sessionUser && sessionUser.role === "client") { %>
-          <a href="/findHelpNow" class="button button-primary">Find professionals</a>
+          <a href="/findHelpNow" class="premium-btn premium-btn-primary">Find professionals</a>
         <% } else { %>
-          <a href="/login?role=client" class="button button-primary">Client Login to Find Professionals</a>
+          <a href="/login?role=client" class="premium-btn premium-btn-primary">Client Login to Hire</a>
         <% } %>
-        <a href="/register" class="button button-secondary">Register as a professional</a>
+        <a href="/register" class="premium-btn premium-btn-secondary">Register as professional</a>
       </div>
 
-      <div class="pill-row">
+      <div class="premium-trust-pills">
         <% homeContent.hero.trustPills.forEach(function (pill) { %>
-          <span class="info-pill"><%= pill %></span>
+          <span class="premium-pill"><%= pill %></span>
         <% }) %>
       </div>
     </div>
 
-    <form class="hero-search-card glass-panel" action="/findHelpNow" method="GET" data-reveal id="quick-search-form">
-      <p class="card-kicker">Quick search</p>
-      <h2>Start with what you need.</h2>
+    <form class="premium-search-card premium-glass-card" action="/findHelpNow" method="GET" data-reveal id="quick-search-form">
+      <div class="premium-search-header">
+        <p class="premium-eyebrow" style="margin-bottom: 0;">Quick search</p>
+        <h2>Start with what you need.</h2>
+      </div>
 
-      <!-- 1. Select Category -->
-      <label class="field-group">
-        <span>Select Category</span>
-        <select name="category" id="search-category-select" class="form-input" style="width: 100%; padding: 0.75rem 1rem; border-radius: 12px; background: rgba(15, 23, 42, 0.9); color: #fff; border: 1px solid rgba(255,255,255,0.15); font-size: 0.95rem; cursor: pointer;">
+      <div class="premium-field">
+        <label>Select Category</label>
+        <select name="category" id="search-category-select" class="premium-input">
           <option value="">All Categories</option>
           <% if (homeContent.ottCategories) { %>
             <% homeContent.ottCategories.forEach(function (cat) { %>
@@ -36,12 +43,11 @@
             <% }) %>
           <% } %>
         </select>
-      </label>
+      </div>
 
-      <!-- 2. Select Sub-Category (list given) -->
-      <label class="field-group" style="margin-top: 1rem;">
-        <span>Select Sub-Category</span>
-        <select name="skill" id="search-skill-select" class="form-input" style="width: 100%; padding: 0.75rem 1rem; border-radius: 12px; background: rgba(15, 23, 42, 0.9); color: #fff; border: 1px solid rgba(255,255,255,0.15); font-size: 0.95rem; cursor: pointer;">
+      <div class="premium-field">
+        <label>Select Sub-Category</label>
+        <select name="skill" id="search-skill-select" class="premium-input">
           <option value="">All Sub-Categories</option>
           <% if (homeContent.ottCategories) { %>
             <% homeContent.ottCategories.forEach(function (cat) { %>
@@ -51,31 +57,24 @@
             <% }) %>
           <% } %>
         </select>
-      </label>
+      </div>
 
       <input type="hidden" name="jobType" value="Part Time" />
 
-      <!-- 4. Location -->
-      <label class="field-group" style="margin-top: 1rem;">
-        <span>Location</span>
-        <input
-          type="text"
-          name="city"
-          value="<%= brand.city %>"
-          placeholder="Enter city (e.g., All India, Mumbai, Delhi...)"
-          autocomplete="off"
-          class="form-input"
-          style="width: 100%; padding: 0.75rem 1rem; border-radius: 12px; background: rgba(15, 23, 42, 0.9); color: #fff; border: 1px solid rgba(255,255,255,0.15); font-size: 0.95rem;"
-        >
-      </label>
+      <div class="premium-field">
+        <label>Location</label>
+        <input type="text" name="city" value="<%= brand.city %>" placeholder="Enter city (e.g., Mumbai, Delhi...)" autocomplete="off" class="premium-input">
+      </div>
 
-      <button type="submit" class="button button-primary button-block" style="margin-top: 1.25rem;">Search Professionals ›</button>
+      <button type="submit" class="premium-btn premium-btn-primary premium-btn-block" style="margin-top: 1rem; padding: 1.25rem; font-size: 1.1rem;">
+        Search Professionals ›
+      </button>
 
-      <div class="hero-stats" style="margin-top: 1.25rem;">
+      <div class="premium-stats">
         <% homeContent.hero.stats.forEach(function (stat) { %>
-          <div class="stat-card">
-            <strong><%= stat.value %></strong>
-            <span><%= stat.label %></span>
+          <div class="premium-stat">
+            <span class="premium-stat-value"><%= stat.value %></span>
+            <span class="premium-stat-label"><%= stat.label %></span>
           </div>
         <% }) %>
       </div>

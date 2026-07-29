@@ -1,121 +1,311 @@
-<section class="page-hero">
-  <div class="shell page-hero-content">
-    <p class="eyebrow">Settings</p>
-    <h1>Account Settings &amp; Support</h1>
-    <p>View your support inquiries, check admin responses, or manage account termination.</p>
+<!-- Sticky Sidebar Nav for Settings sections -->
+<style>
+  .settings-layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 2rem;
+    max-width: 1100px;
+    margin: 0 auto;
+    align-items: start;
+  }
+  .settings-nav {
+    position: sticky;
+    top: 5rem;
+    background: rgba(15,23,42,0.7);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 18px;
+    padding: 1.25rem 0;
+    backdrop-filter: blur(12px);
+  }
+  .settings-nav a {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.7rem 1.5rem;
+    color: #94a3b8;
+    font-size: 0.88rem;
+    font-weight: 600;
+    text-decoration: none;
+    border-left: 3px solid transparent;
+    transition: all 0.18s;
+  }
+  .settings-nav a:hover {
+    color: #e2e8f0;
+    background: rgba(255,255,255,0.04);
+    border-left-color: #38bdf8;
+  }
+  .settings-section {
+    background: rgba(15,23,42,0.65);
+    border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 22px;
+    padding: 2.25rem;
+    margin-bottom: 2rem;
+    backdrop-filter: blur(10px);
+  }
+  .settings-section h2 {
+    color: #fff;
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.35rem;
+    font-weight: 800;
+    margin: 0 0 1.5rem;
+  }
+  .settings-kicker {
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #38bdf8;
+    margin-bottom: 0.4rem;
+    display: block;
+  }
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  .field-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .field-block label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .field-block input,
+  .field-block textarea,
+  .field-block select {
+    background: rgba(0,0,0,0.35);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px;
+    padding: 0.7rem 1rem;
+    color: #e2e8f0;
+    font-size: 0.92rem;
+    width: 100%;
+    box-sizing: border-box;
+    transition: border-color 0.18s;
+    outline: none;
+  }
+  .field-block input:focus,
+  .field-block textarea:focus {
+    border-color: #38bdf8;
+  }
+  .step-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.25rem;
+    padding: 1.25rem;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 14px;
+    margin-bottom: 1rem;
+  }
+  .step-num {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    background: linear-gradient(135deg,#38bdf8,#6366f1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 1rem;
+    color: #fff;
+  }
+  .danger-zone {
+    border-color: rgba(244,63,94,0.3) !important;
+    background: rgba(244,63,94,0.04) !important;
+  }
+  @media (max-width: 768px) {
+    .settings-layout { grid-template-columns: 1fr; }
+    .settings-nav { position: static; display: flex; flex-wrap: wrap; gap: 0; padding: 0.5rem; }
+    .settings-nav a { border-left: none; border-bottom: 2px solid transparent; padding: 0.5rem 0.85rem; font-size: 0.8rem; border-radius: 8px; }
+    .field-row { grid-template-columns: 1fr; }
+  }
+</style>
+
+<section class="page-hero" style="padding: 2rem 0 1.5rem;">
+  <div class="shell">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <p class="eyebrow" style="color: #f59e0b; font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.4rem;">Settings</p>
+        <h1 style="font-family: 'Outfit', sans-serif; font-size: clamp(1.6rem, 5vw, 2.2rem); color: #fff; margin: 0;">Account Settings</h1>
+        <p style="color: #94a3b8; margin: 0.4rem 0 0; font-size: 0.9rem;">Manage your profile, review history, get support, and more.</p>
+      </div>
+      <a href="/client/dashboard" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.2rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: #e2e8f0; font-size: 0.88rem; font-weight: 600; text-decoration: none;">← Dashboard</a>
+    </div>
   </div>
 </section>
 
-<section class="section shell dashboard-shell">
-  <%- include("partials/notice") %>
+<section class="section shell" style="padding: 1.5rem 1rem 4rem;">
+  <%- include('partials/notice') %>
 
-  <div style="display: grid; grid-template-columns: 1fr; gap: 3rem; max-width: 900px; margin: 0 auto;">
-    
+  <div class="settings-layout">
 
+    <!-- Sidebar Nav -->
+    <nav class="settings-nav">
+      <a href="#profile">👤 Profile</a>
+      <a href="#history">📜 Booking History</a>
+      <a href="#contact">💬 Contact Us</a>
+      <a href="#how-it-works">💡 How It Works</a>
+      <a href="#danger">🗑️ Delete Account</a>
+    </nav>
 
-    <!-- Consolidated Settings & Account Hub Navigation -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
-      <a href="/client/profile" class="glass-panel" style="padding: 1.75rem; border-radius: var(--radius-lg); text-decoration: none; border: 1px solid var(--line-strong); transition: transform 0.2s, border-color 0.2s; display: block; background: rgba(15, 23, 42, 0.65);">
-        <div style="font-size: 2rem; margin-bottom: 0.75rem;">👤</div>
-        <h3 style="color: #fff; font-size: 1.25rem; font-family: 'Outfit', sans-serif; margin: 0 0 0.35rem;">Profile &amp; Addresses</h3>
-        <p style="color: var(--text-soft); font-size: 0.88rem; margin: 0; line-height: 1.5;">Update your name, phone number, and manage your saved service locations &amp; coordinates.</p>
-      </a>
+    <!-- Main Content -->
+    <div>
 
-      <a href="/client/dashboard" class="glass-panel" style="padding: 1.75rem; border-radius: var(--radius-lg); text-decoration: none; border: 1px solid var(--line-strong); transition: transform 0.2s, border-color 0.2s; display: block; background: rgba(15, 23, 42, 0.65);">
-        <div style="font-size: 2rem; margin-bottom: 0.75rem;">📜</div>
-        <h3 style="color: #fff; font-size: 1.25rem; font-family: 'Outfit', sans-serif; margin: 0 0 0.35rem;">Total Booking History</h3>
-        <p style="color: var(--text-soft); font-size: 0.88rem; margin: 0; line-height: 1.5;">Review all your past completed bookings, cancelled requests, reviews, and download invoices.</p>
-      </a>
-
-      <a href="/contactus" class="glass-panel" style="padding: 1.75rem; border-radius: var(--radius-lg); text-decoration: none; border: 1px solid var(--line-strong); transition: transform 0.2s, border-color 0.2s; display: block; background: rgba(15, 23, 42, 0.65);">
-        <div style="font-size: 2rem; margin-bottom: 0.75rem;">💬</div>
-        <h3 style="color: #fff; font-size: 1.25rem; font-family: 'Outfit', sans-serif; margin: 0 0 0.35rem;">Contact Support</h3>
-        <p style="color: var(--text-soft); font-size: 0.88rem; margin: 0; line-height: 1.5;">Send a message to our 24/7 helpdesk. View responses directly below on this page.</p>
-      </a>
-
-      <a href="/how-it-works" class="glass-panel" style="padding: 1.75rem; border-radius: var(--radius-lg); text-decoration: none; border: 1px solid var(--line-strong); transition: transform 0.2s, border-color 0.2s; display: block; background: rgba(15, 23, 42, 0.65);">
-        <div style="font-size: 2rem; margin-bottom: 0.75rem;">💡</div>
-        <h3 style="color: #fff; font-size: 1.25rem; font-family: 'Outfit', sans-serif; margin: 0 0 0.35rem;">How It Works</h3>
-        <p style="color: var(--text-soft); font-size: 0.88rem; margin: 0; line-height: 1.5;">Learn about fixed part-time pricing, OTP work verification, and full-time custom job posts.</p>
-      </a>
-    </div>
-
-    <!-- Support Inquiries Section -->
-    <article class="glass-panel" style="padding: 2.5rem; border-radius: var(--radius-lg);">
-      <p class="card-kicker">Support History</p>
-      <h2 style="margin-bottom: 0.5rem;">Your Contact Inquiries</h2>
-      <p style="color: var(--text-muted); margin-bottom: 2rem; font-size: 0.95rem;">
-        These are the support requests you have sent using your registered email: <strong><%= sessionUser.email %></strong>.
-      </p>
-
-      <% if (messages && messages.length > 0) { %>
-        <div style="display: grid; gap: 1.5rem;">
-          <% messages.forEach(function(msg) { %>
-            <div class="glass-inset" style="padding: 1.5rem; border: 1px solid var(--line); border-radius: var(--radius-md); background: rgba(255, 255, 255, 0.02);">
-              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
-                <div>
-                  <span class="mini-badge" style="margin-bottom: 0.5rem;"><%= msg.subject || "No Subject" %></span>
-                  <div style="font-size: 0.85rem; color: var(--text-soft);">
-                    Sent on <%= new Date(msg.created_at).toLocaleDateString(undefined, { dateStyle: 'medium' }) %>
-                  </div>
-                </div>
-                <span class="info-pill <%= msg.status === 'resolved' ? 'status-badge-confirmed' : 'status-badge-pending' %>" style="min-height: 28px; font-size: 0.8rem; text-transform: uppercase;">
-                  <%= msg.status || 'pending' %>
-                </span>
-              </div>
-
-              <p style="margin: 0 0 1rem 0; font-size: 0.95rem; line-height: 1.6; white-space: pre-line; color: var(--text-muted);">
-                <%= msg.message %>
-              </p>
-
-              <% if (msg.admin_reply) { %>
-                <div style="margin-top: 1rem; padding: 1.25rem; border-radius: var(--radius-sm); background: rgba(99, 102, 241, 0.08); border-left: 3px solid var(--accent);">
-                  <div style="font-size: 0.8rem; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">
-                    Admin Resolution
-                  </div>
-                  <p style="margin: 0 0 0.5rem 0; font-size: 0.95rem; line-height: 1.6; color: var(--text); white-space: pre-line;">
-                    <%= msg.admin_reply %>
-                  </p>
-                  <% if (msg.replied_at) { %>
-                    <div style="font-size: 0.8rem; color: var(--text-soft);">
-                      Resolved on <%= new Date(msg.replied_at).toLocaleDateString(undefined, { dateStyle: 'medium' }) %>
-                    </div>
-                  <% } %>
-                </div>
-              <% } else { %>
-                <div style="font-size: 0.9rem; color: var(--text-soft); font-style: italic; margin-top: 1rem; display: flex; align-items: center; gap: 0.5rem;">
-                  <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--info);"></span>
-                  Awaiting review by the support team.
-                </div>
-              <% } %>
+      <!-- ── PROFILE ── -->
+      <div class="settings-section" id="profile">
+        <span class="settings-kicker">Account</span>
+        <h2>Profile Information</h2>
+        <form method="POST" action="/client/profile">
+          <div class="field-row" style="margin-bottom: 1rem;">
+            <div class="field-block">
+              <label for="set-name">Full Name</label>
+              <input type="text" id="set-name" name="name" placeholder="Your full name" value="<%= sessionUser ? sessionUser.name || '' : '' %>">
             </div>
-          <% }) %>
-        </div>
-      <% } else { %>
-        <div style="text-align: center; padding: 3rem 1.5rem; border: 1px dashed var(--line); border-radius: var(--radius-md);">
-          <p style="color: var(--text-muted); margin-bottom: 1.5rem;">You haven't submitted any support requests yet.</p>
-          <a href="/contactus" class="button button-secondary">Contact Support</a>
-        </div>
-      <% } %>
-    </article>
-
-    <!-- Delete Profile Danger Zone -->
-    <article class="glass-panel dashboard-danger" style="padding: 2.5rem; border-radius: var(--radius-lg);">
-      <div class="dashboard-danger-copy">
-        <p class="card-kicker" style="color: var(--error);">Danger zone</p>
-        <h2>Delete client profile</h2>
-        <p>Delete your account and end access to your dashboard. Existing booking records will no longer stay linked to your client account. This action cannot be undone.</p>
+            <div class="field-block">
+              <label for="set-phone">Phone Number</label>
+              <input type="tel" id="set-phone" name="phone" placeholder="+91 XXXXX XXXXX" value="<%= sessionUser ? sessionUser.phone || '' : '' %>">
+            </div>
+          </div>
+          <div class="field-row" style="margin-bottom: 1rem;">
+            <div class="field-block">
+              <label for="set-city">City</label>
+              <input type="text" id="set-city" name="city" placeholder="Your city" value="<%= sessionUser ? sessionUser.city || '' : '' %>">
+            </div>
+            <div class="field-block">
+              <label for="set-pincode">Pincode</label>
+              <input type="text" id="set-pincode" name="pincode" placeholder="6-digit pincode" value="<%= sessionUser ? sessionUser.pincode || '' : '' %>">
+            </div>
+          </div>
+          <div class="field-block" style="margin-bottom: 1.5rem;">
+            <label for="set-address">Address</label>
+            <input type="text" id="set-address" name="address" placeholder="House / Street / Area" value="<%= sessionUser ? sessionUser.address || '' : '' %>">
+          </div>
+          <button type="submit" class="button button-primary" style="padding: 0.7rem 2rem; font-size: 0.92rem; font-weight: 700;">Save Changes</button>
+        </form>
       </div>
 
-      <form method="POST" action="/client/delete-profile" class="danger-form" style="margin-top: 1.5rem;">
-        <label class="danger-confirm" style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; cursor: pointer;">
-          <input type="checkbox" name="confirmDelete" value="yes" required style="width: auto;">
-          <span style="font-size: 0.95rem; color: var(--text-muted);">I understand that deleting this client profile is permanent.</span>
-        </label>
-        <button type="submit" class="button button-danger">Delete profile permanently</button>
-      </form>
-    </article>
-  </div>
+      <!-- ── BOOKING HISTORY ── -->
+      <div class="settings-section" id="history">
+        <span class="settings-kicker">Records</span>
+        <h2>Booking History</h2>
+        <%
+          const allBookings = (typeof dashboardData !== 'undefined' && dashboardData && dashboardData.bookings)
+            ? dashboardData.bookings : [];
+        %>
+        <% if (!allBookings.length) { %>
+          <div style="text-align: center; padding: 2.5rem 1rem; border: 1px dashed rgba(255,255,255,0.1); border-radius: 14px;">
+            <span style="font-size: 2.5rem; display: block; margin-bottom: 0.75rem;">📭</span>
+            <p style="color: #64748b; margin: 0;">No bookings found. <a href="/findHelpNow" style="color: #38bdf8;">Find a professional →</a></p>
+          </div>
+        <% } else { %>
+          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+          <% allBookings.forEach(function(booking) { %>
+            <%
+              var hColor = '#94a3b8';
+              if (booking.status === 'completed') hColor = '#4ade80';
+              else if (booking.status === 'cancelled') hColor = '#f43f5e';
+              else if (booking.status === 'pending') hColor = '#f59e0b';
+              else if (booking.status === 'confirmed' || booking.status === 'accepted') hColor = '#38bdf8';
+            %>
+            <div style="background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 1rem 1.25rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+              <div>
+                <strong style="color: #e2e8f0; font-size: 0.92rem;"><%= booking.professionalName || 'Professional' %></strong>
+                <p style="color: #64748b; font-size: 0.8rem; margin: 0.2rem 0 0;">
+                  <%= booking.serviceName %> — <%= booking.preferredDate || '—' %>
+                  &nbsp;|&nbsp; <span style="color: <%= hColor %>; font-weight: 700; text-transform: uppercase; font-size: 0.75rem;"><%= booking.status %></span>
+                </p>
+                <p style="color: #475569; font-size: 0.78rem; margin: 0.15rem 0 0;">Booking #<%= booking.bookingCode || booking.id %></p>
+              </div>
+              <% if (booking.status === 'completed') { %>
+              <a href="/client/bookings/<%= booking.id %>/invoice" style="padding: 0.45rem 0.85rem; background: rgba(56,189,248,0.08); color: #38bdf8; border: 1px solid rgba(56,189,248,0.2); border-radius: 8px; font-size: 0.8rem; font-weight: 700; text-decoration: none; white-space: nowrap;">📄 Invoice</a>
+              <% } %>
+            </div>
+          <% }); %>
+          </div>
+        <% } %>
+      </div>
+
+      <!-- ── CONTACT US ── -->
+      <div class="settings-section" id="contact">
+        <span class="settings-kicker">Support</span>
+        <h2>Contact Us</h2>
+        <p style="color: #64748b; font-size: 0.9rem; margin: -0.5rem 0 1.5rem;">Have a question or issue? Send us a message and our team will get back to you shortly.</p>
+        <form method="POST" action="/contactus">
+          <div class="field-row" style="margin-bottom: 1rem;">
+            <div class="field-block">
+              <label for="ct-name">Your Name</label>
+              <input type="text" id="ct-name" name="name" placeholder="Full name" value="<%= sessionUser ? sessionUser.name || '' : '' %>">
+            </div>
+            <div class="field-block">
+              <label for="ct-email">Email</label>
+              <input type="email" id="ct-email" name="email" placeholder="you@email.com" value="<%= sessionUser ? sessionUser.email || '' : '' %>">
+            </div>
+          </div>
+          <div class="field-block" style="margin-bottom: 1rem;">
+            <label for="ct-subject">Subject</label>
+            <input type="text" id="ct-subject" name="subject" placeholder="e.g. Booking issue, Payment query...">
+          </div>
+          <div class="field-block" style="margin-bottom: 1.5rem;">
+            <label for="ct-message">Message</label>
+            <textarea id="ct-message" name="message" rows="4" placeholder="Describe your issue or question in detail..."></textarea>
+          </div>
+          <button type="submit" class="button button-primary" style="padding: 0.7rem 2rem; font-size: 0.92rem; font-weight: 700;">Send Message</button>
+        </form>
+      </div>
+
+      <!-- ── HOW IT WORKS ── -->
+      <div class="settings-section" id="how-it-works">
+        <span class="settings-kicker">Guide</span>
+        <h2>How It Works</h2>
+        <p style="color: #64748b; font-size: 0.9rem; margin: -0.5rem 0 1.5rem;">Get started with GigConnect in 3 simple steps.</p>
+
+        <div class="step-card">
+          <div class="step-num">1</div>
+          <div>
+            <strong style="color: #e2e8f0; font-size: 0.95rem; display: block; margin-bottom: 0.35rem;">Find & Book a Professional</strong>
+            <p style="color: #64748b; font-size: 0.85rem; margin: 0; line-height: 1.6;">Browse verified professionals near you. Select the service, choose a date and time slot, enter your address, and submit your booking request.</p>
+          </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-num">2</div>
+          <div>
+            <strong style="color: #e2e8f0; font-size: 0.95rem; display: block; margin-bottom: 0.35rem;">Get Confirmed & Track Status</strong>
+            <p style="color: #64748b; font-size: 0.85rem; margin: 0; line-height: 1.6;">Once a professional accepts your request, your booking moves to <em>Confirmed</em>. You'll see their contact info and a one-time OTP to verify the start of work at your doorstep.</p>
+          </div>
+        </div>
+
+        <div class="step-card" style="margin-bottom: 0;">
+          <div class="step-num">3</div>
+          <div>
+            <strong style="color: #e2e8f0; font-size: 0.95rem; display: block; margin-bottom: 0.35rem;">Pay & Download Invoice</strong>
+            <p style="color: #64748b; font-size: 0.85rem; margin: 0; line-height: 1.6;">After the service is completed, settle the fixed price directly with the professional. Download your invoice anytime from the dashboard for records.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── DELETE ACCOUNT ── -->
+      <div class="settings-section danger-zone" id="danger">
+        <span class="settings-kicker" style="color: #f43f5e;">Danger Zone</span>
+        <h2 style="color: #fca5a5;">Delete Account</h2>
+        <p style="color: #94a3b8; font-size: 0.9rem; margin: -0.5rem 0 1.5rem;">Permanently delete your client account. All booking history will be unlinked. <strong style="color: #f43f5e;">This action cannot be undone.</strong></p>
+
+        <form method="POST" action="/client/delete-profile">
+          <label style="display: flex; align-items: flex-start; gap: 0.75rem; margin-bottom: 1.5rem; cursor: pointer;">
+            <input type="checkbox" name="confirmDelete" value="yes" required style="margin-top: 2px; width: auto; accent-color: #f43f5e;">
+            <span style="font-size: 0.9rem; color: #94a3b8; line-height: 1.5;">I understand that deleting my account is permanent and all data will be lost.</span>
+          </label>
+          <button type="submit" class="button button-danger" style="background: rgba(244,63,94,0.15); color: #f43f5e; border: 1px solid rgba(244,63,94,0.4); padding: 0.7rem 2rem; font-size: 0.92rem; font-weight: 700; border-radius: 10px; cursor: pointer;">🗑️ Delete Account Permanently</button>
+        </form>
+      </div>
+
+    </div><!-- /main content -->
+  </div><!-- /settings-layout -->
 </section>
-
-
