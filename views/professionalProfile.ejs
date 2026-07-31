@@ -16,20 +16,24 @@
       <!-- PARTNER-MANAGED STAFF PROFILE: READ-ONLY DETAILS ONLY       -->
       <!-- ═══════════════════════════════════════════════════════════ -->
       <%
-        let cleanBioText = (profile.description || '')
+        let assignedList = [];
+        const match = (profile.description || '').match(/\[assignedSkillsJson:([\s\S]*?)\]\]/i);
+        if (match && match[1]) {
+          try { assignedList = JSON.parse(match[1] + ']'); } catch(e) {
+            try { assignedList = JSON.parse(match[1]); } catch(err) {}
+          }
+        }
+
+        let cleanBio = (profile.description || '')
+          .replace(/\[assignedSkillsJson:[\s\S]*?\]\]/gi, '')
           .replace(/\[Partner Managed Professional\]/gi, '')
           .replace(/\[workModes?:[^\]]+\]/gi, '')
           .replace(/\[partTimeRate:[^\]]+\]/gi, '')
           .replace(/\[fullTimeRate:[^\]]+\]/gi, '')
-          .replace(/\[assignedSkillsJson:[^\]]+\]/gi, '')
           .replace(/\[subskills:[^\]]+\]/gi, '')
+          .replace(/\[.*?\]/g, '')
+          .replace(/,?\"rate\":\d+\}/g, '')
           .trim();
-
-        let assignedList = [];
-        const match = (profile.description || '').match(/\[assignedSkillsJson:([^\]]+)\]/i);
-        if (match) {
-          try { assignedList = JSON.parse(match[1]); } catch(e) {}
-        }
       %>
       <article class="glass-panel" style="padding: 2.5rem; border-radius: var(--radius-lg); background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(167, 139, 250, 0.35);">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
