@@ -1,5 +1,3 @@
-<%- include("partials/header") %>
-
 <section class="section shell" style="padding-top: 2rem; padding-bottom: 4rem;">
   <div style="margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
     <div>
@@ -58,11 +56,14 @@
           <div style="padding: 1.5rem; border-radius: 16px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; justify-content: space-between; gap: 1.2rem; transition: transform 0.2s, border-color 0.2s;">
             <div>
               <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem;">
-                <div>
-                  <h3 style="color: #fff; font-size: 1.15rem; margin: 0 0 0.3rem;"><%= pro.full_name || pro.name || 'Staff Member' %></h3>
-                  <span style="font-size: 0.85rem; color: #38bdf8; font-family: monospace; background: rgba(56, 189, 248, 0.1); padding: 2px 8px; border-radius: 6px;">
-                    @<%= pro.username || pro.email %>
-                  </span>
+                <div style="display: flex; gap: 0.8rem; align-items: center;">
+                  <img src="<%= pro.photo_url || '/assets/gigconnect.logo.png' %>" alt="Staff photo" style="width: 46px; height: 46px; border-radius: 50%; object-fit: cover; border: 2px solid #38bdf8;">
+                  <div>
+                    <h3 style="color: #fff; font-size: 1.15rem; margin: 0 0 0.2rem;"><%= pro.full_name || pro.name || 'Staff Member' %></h3>
+                    <span style="font-size: 0.82rem; color: #38bdf8; font-family: monospace; background: rgba(56, 189, 248, 0.1); padding: 2px 8px; border-radius: 6px;">
+                      @<%= pro.username || pro.email %>
+                    </span>
+                  </div>
                 </div>
                 <span style="padding: 0.3rem 0.7rem; border-radius: 99px; font-size: 0.75rem; font-weight: 800; background: rgba(16, 185, 129, 0.18); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); white-space: nowrap;">
                   ✔ Verified
@@ -73,16 +74,50 @@
                 <div>📍 <strong>City/Area:</strong> <%= pro.city || 'All India' %> <%= pro.area ? '(' + pro.area + ')' : '' %></div>
                 <div>📞 <strong>Phone:</strong> <%= pro.phone || 'N/A' %></div>
                 <div>💼 <strong>Experience:</strong> <%= pro.years_experience || 0 %> years</div>
-                <% if (pro.bio) { %>
+
+                <% 
+                  let cleanBioText = (pro.bio || '')
+                    .replace(/\[Partner Managed Professional\]/gi, '')
+                    .replace(/\[workModes?:[^\]]+\]/gi, '')
+                    .replace(/\[partTimeRate:[^\]]+\]/gi, '')
+                    .replace(/\[fullTimeRate:[^\]]+\]/gi, '')
+                    .replace(/\[assignedSkillsJson:[^\]]+\]/gi, '')
+                    .replace(/\[subskills:[^\]]+\]/gi, '')
+                    .replace(/[\[\]]/g, '')
+                    .trim();
+
+                  let assignedSkillsList = [];
+                  const skillsMatch = (pro.bio || '').match(/\[assignedSkillsJson:([^\]]+)\]/i);
+                  if (skillsMatch) {
+                    try { assignedSkillsList = JSON.parse(skillsMatch[1]); } catch(e) {}
+                  }
+                %>
+
+                <% if (assignedSkillsList && assignedSkillsList.length > 0) { %>
+                  <div style="margin-top: 0.4rem; display: flex; flex-wrap: wrap; gap: 0.35rem;">
+                    <% assignedSkillsList.forEach(function(sk) { %>
+                      <span style="font-size: 0.75rem; color: #a78bfa; background: rgba(167, 139, 250, 0.12); border: 1px solid rgba(167, 139, 250, 0.3); padding: 3px 8px; border-radius: 6px; font-weight: 600;">
+                        🏷️ <%= sk.categoryName || 'Service' %>
+                        <% if (sk.subskills && sk.subskills.length) { %>
+                          (<%= sk.subskills.join(', ') %>)
+                        <% } %>
+                      </span>
+                    <% }); %>
+                  </div>
+                <% } %>
+
+                <% if (cleanBioText) { %>
                   <div style="font-size: 0.8rem; color: var(--color-ink-light); margin-top: 0.3rem; line-height: 1.4; background: rgba(255,255,255,0.03); padding: 0.5rem; border-radius: 6px;">
-                    <%= pro.bio %>
+                    <%= cleanBioText %>
                   </div>
                 <% } %>
               </div>
             </div>
 
-            <div style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 0.8rem; color: #a78bfa; font-weight: 600;">Managed Sub-Pro</span>
+            <div style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 1rem; display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;">
+              <button type="button" onclick='openEditModal(<%= JSON.stringify({ id: pro.id, name: pro.full_name || pro.name, username: pro.username, email: pro.email, phone: pro.phone, experience: pro.years_experience }) %>)' style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); padding: 0.4rem 0.9rem; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer;">
+                ✏️ Edit Staff
+              </button>
               <form action="/partner/professionals/<%= pro.id %>/delete" method="POST" onsubmit="return confirm('Remove <%= pro.full_name || pro.username %> from your agency?');" style="margin: 0;">
                 <button type="submit" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer;">
                   Remove ✖
@@ -96,4 +131,206 @@
   </div>
 </section>
 
-<%- include("partials/footer") %>
+<!-- Edit Staff Modal -->
+<div id="editStaffModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.92); z-index: 9999; justify-content: center; align-items: center; padding: 1.5rem; backdrop-filter: blur(12px); overflow-y: auto;">
+  <div style="background: #0f172a; border: 1px solid rgba(167, 139, 250, 0.4); border-radius: 20px; width: 100%; max-width: 540px; max-height: 88vh; display: flex; flex-direction: column; padding: 1.75rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.85); position: relative; margin: auto;">
+    <button type="button" onclick="closeEditModal()" style="position: absolute; right: 1.5rem; top: 1.5rem; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; cursor: pointer; z-index: 10;">✕</button>
+    <h2 style="color: #fff; font-family: 'Outfit', sans-serif; margin: 0 0 1.25rem; font-size: 1.35rem;">✏️ Edit Sub-Professional Details</h2>
+
+    <form id="editStaffForm" method="POST" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 1rem; overflow-y: auto; flex: 1; padding-right: 0.5rem;">
+      <label class="field-group">
+        <span style="font-size: 0.82rem; font-weight: 600; color: #94a3b8;">Full Name</span>
+        <input type="text" name="fullname" id="edit_fullname" required style="width: 100%; padding: 0.7rem 1rem; border-radius: 10px; background: rgba(0,0,0,0.5); color: #fff; border: 1px solid rgba(255,255,255,0.15);">
+      </label>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <label class="field-group">
+          <span style="font-size: 0.82rem; font-weight: 600; color: #94a3b8;">Username</span>
+          <input type="text" name="username" id="edit_username" required style="width: 100%; padding: 0.7rem 1rem; border-radius: 10px; background: rgba(0,0,0,0.5); color: #fff; border: 1px solid rgba(255,255,255,0.15);">
+        </label>
+        <label class="field-group">
+          <span style="font-size: 0.82rem; font-weight: 600; color: #94a3b8;">Phone Number</span>
+          <input type="tel" name="phone" id="edit_phone" required style="width: 100%; padding: 0.7rem 1rem; border-radius: 10px; background: rgba(0,0,0,0.5); color: #fff; border: 1px solid rgba(255,255,255,0.15);">
+        </label>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <label class="field-group">
+          <span style="font-size: 0.82rem; font-weight: 600; color: #94a3b8;">Experience (Years)</span>
+          <input type="number" name="experience" id="edit_experience" min="0" required style="width: 100%; padding: 0.7rem 1rem; border-radius: 10px; background: rgba(0,0,0,0.5); color: #fff; border: 1px solid rgba(255,255,255,0.15);">
+        </label>
+        <label class="field-group">
+          <span style="font-size: 0.82rem; font-weight: 600; color: #94a3b8;">New Password (Optional)</span>
+          <input type="password" name="password" placeholder="Leave blank to keep same" style="width: 100%; padding: 0.7rem 1rem; border-radius: 10px; background: rgba(0,0,0,0.5); color: #fff; border: 1px solid rgba(255,255,255,0.15);">
+        </label>
+      </div>
+
+      <label class="field-group">
+        <span style="font-size: 0.82rem; font-weight: 600; color: #94a3b8;">Change Profile Photo</span>
+        <input type="file" name="photo" accept="image/*" style="width: 100%; padding: 0.5rem 1rem; border-radius: 10px; background: rgba(0,0,0,0.5); color: #fff; border: 1px solid rgba(255,255,255,0.15);">
+      </label>
+
+      <!-- Edit Skill Category & Subcategories -->
+      <div style="background: rgba(15,23,42,0.8); border: 1px solid rgba(167, 139, 250, 0.3); border-radius: 12px; padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; margin-top: 0.5rem;">
+        <span style="font-size: 0.88rem; font-weight: 700; color: #a78bfa; display: block;">Edit Service Category &amp; Subcategories / Skills</span>
+
+        <div style="display: flex; flex-direction: column; gap: 0.8rem;">
+          <label>
+            <span style="font-size: 0.8rem; font-weight: 600; color: #f8fafc; display: block; margin-bottom: 0.4rem;">Select Main Category</span>
+            <select id="editCategorySelect" class="form-select" style="width: 100%; background: #1e293b; border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 10px 14px; color: #fff;">
+              <option value="">-- Select Service Category --</option>
+              <% (typeof services !== 'undefined' ? services : []).forEach(function(svc) { %>
+                <option value="<%= svc.id %>" data-name="<%= svc.name %>" data-subskills='<%= JSON.stringify(svc.subskills || []) %>'><%= svc.name %></option>
+              <% }) %>
+            </select>
+          </label>
+
+          <!-- Subcategories Picker -->
+          <div id="editSubskillPickerContainer" style="display: none; background: rgba(0,0,0,0.4); padding: 1rem; border-radius: 10px; border: 1px solid rgba(167, 139, 250, 0.2);">
+            <span style="font-size: 0.8rem; font-weight: 700; color: #a78bfa; display: block; margin-bottom: 0.5rem;">Select Subcategories / Specializations</span>
+            <div id="editSubskillCheckboxes" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.5rem; max-height: 160px; overflow-y: auto; padding: 0.4rem;">
+            </div>
+          </div>
+
+          <button type="button" id="btnEditAddSkill" class="button button-primary" style="padding: 8px 14px; border-radius: 8px; font-weight: bold; align-self: flex-start; background: rgba(167,139,250,0.2); border: 1px solid rgba(167,139,250,0.4); color: #a78bfa;">+ Add / Update Category</button>
+        </div>
+
+        <div id="editAssignedSkillsContainer" style="display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.5rem;">
+          <p id="editNoSkillsNotice" style="font-size: 0.82rem; color: #64748b; margin: 0; padding: 0.8rem; border: 1px dashed rgba(255,255,255,0.1); border-radius: 8px; text-align: center;">No categories assigned yet.</p>
+        </div>
+        <input type="hidden" name="assignedSkillsJson" id="editAssignedSkillsJsonInput" value="[]">
+      </div>
+
+      <div style="display: flex; gap: 0.8rem; margin-top: auto; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1); background: #0f172a; position: sticky; bottom: 0; z-index: 5;">
+        <button type="button" onclick="closeEditModal()" style="flex: 1; padding: 0.75rem; border-radius: 10px; background: rgba(255,255,255,0.06); color: #94a3b8; border: 1px solid rgba(255,255,255,0.1); font-weight: 700; cursor: pointer;">Cancel</button>
+        <button type="submit" style="flex: 2; padding: 0.75rem; border-radius: 10px; background: linear-gradient(135deg, #a78bfa, #7c3aed); color: #fff; border: none; font-weight: 800; cursor: pointer;">Save Changes ✅</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+let editAssignedSkillsList = [];
+
+document.addEventListener("DOMContentLoaded", function() {
+  const catSelect = document.getElementById("editCategorySelect");
+  const btnAdd = document.getElementById("btnEditAddSkill");
+  const subPicker = document.getElementById("editSubskillPickerContainer");
+  const subCbs = document.getElementById("editSubskillCheckboxes");
+
+  if (catSelect) {
+    catSelect.addEventListener("change", function() {
+      const selectedOpt = catSelect.options[catSelect.selectedIndex];
+      if (!selectedOpt || !selectedOpt.value) {
+        if (subPicker) subPicker.style.display = "none";
+        return;
+      }
+      let subskills = [];
+      try {
+        const raw = selectedOpt.getAttribute("data-subskills");
+        if (raw) subskills = JSON.parse(raw);
+      } catch(e) {}
+
+      if (subskills && subskills.length > 0) {
+        if (subCbs) {
+          subCbs.innerHTML = subskills.map(sub => `
+            <label style="display: flex; align-items: center; gap: 0.4rem; color: #e2e8f0; font-size: 0.82rem; cursor: pointer; background: rgba(255,255,255,0.04); padding: 5px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.08);">
+              <input type="checkbox" class="edit-subskill-cb" value="${sub.replace(/"/g, '&quot;')}" checked>
+              <span>${sub}</span>
+            </label>
+          `).join("");
+        }
+        if (subPicker) subPicker.style.display = "block";
+      } else {
+        if (subPicker) subPicker.style.display = "none";
+      }
+    });
+  }
+
+  if (btnAdd) {
+    btnAdd.addEventListener("click", function() {
+      const selectedOpt = catSelect ? catSelect.options[catSelect.selectedIndex] : null;
+      if (!selectedOpt || !selectedOpt.value) {
+        alert("Please select a Service Category first.");
+        return;
+      }
+      const categoryId = selectedOpt.value;
+      const categoryName = selectedOpt.getAttribute("data-name") || selectedOpt.text;
+      
+      const checkedSubskills = [];
+      document.querySelectorAll(".edit-subskill-cb:checked").forEach(cb => {
+        checkedSubskills.push(cb.value);
+      });
+
+      const existingIdx = editAssignedSkillsList.findIndex(item => item.categoryId == categoryId);
+      if (existingIdx === -1) {
+        editAssignedSkillsList.push({
+          categoryId: Number(categoryId),
+          categoryName: categoryName,
+          subskills: checkedSubskills,
+          rate: 500
+        });
+      } else {
+        editAssignedSkillsList[existingIdx].subskills = checkedSubskills;
+      }
+      renderEditAssignedSkills();
+    });
+  }
+});
+
+function renderEditAssignedSkills() {
+  const container = document.getElementById("editAssignedSkillsContainer");
+  const jsonInput = document.getElementById("editAssignedSkillsJsonInput");
+  if (!container) return;
+
+  if (editAssignedSkillsList.length === 0) {
+    container.innerHTML = '<p id="editNoSkillsNotice" style="font-size: 0.82rem; color: #64748b; margin: 0; padding: 0.8rem; border: 1px dashed rgba(255,255,255,0.1); border-radius: 8px; text-align: center;">No categories assigned yet.</p>';
+  } else {
+    container.innerHTML = editAssignedSkillsList.map((item, idx) => `
+      <div style="background: rgba(30,41,59,0.75); border: 1px solid rgba(167,139,250,0.3); border-radius: 8px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
+        <div>
+          <strong style="color: #a78bfa; font-size: 0.9rem;">${item.categoryName}</strong>
+          ${item.subskills && item.subskills.length ? `<div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;">${item.subskills.map(s => `<span style="font-size: 0.72rem; color: #38bdf8; background: rgba(56,189,248,0.15); padding: 2px 6px; border-radius: 4px;">${s}</span>`).join('')}</div>` : ''}
+        </div>
+        <button type="button" onclick="removeEditAssignedSkill(${idx})" style="background: rgba(239,68,68,0.2); color: #f87171; border: 1px solid rgba(239,68,68,0.4); border-radius: 6px; padding: 4px 10px; font-size: 0.75rem; cursor: pointer; font-weight: bold;">Remove</button>
+      </div>
+    `).join("");
+  }
+  if (jsonInput) {
+    jsonInput.value = JSON.stringify(editAssignedSkillsList);
+  }
+}
+
+window.removeEditAssignedSkill = function(idx) {
+  editAssignedSkillsList.splice(idx, 1);
+  renderEditAssignedSkills();
+};
+
+function openEditModal(pro) {
+  var modal = document.getElementById('editStaffModal');
+  var form = document.getElementById('editStaffForm');
+  if (!modal || !form) return;
+  form.action = '/partner/professionals/' + pro.id + '/edit';
+  document.getElementById('edit_fullname').value = pro.name || '';
+  document.getElementById('edit_username').value = pro.username || '';
+  document.getElementById('edit_phone').value = pro.phone || '';
+  document.getElementById('edit_experience').value = pro.experience || 0;
+
+  // Parse existing assigned skills/categories if present
+  editAssignedSkillsList = [];
+  if (pro.bio) {
+    var match = pro.bio.match(/\[assignedSkillsJson:(.*?)\]/);
+    if (match && match[1]) {
+      try { editAssignedSkillsList = JSON.parse(match[1]); } catch(e) {}
+    }
+  }
+  renderEditAssignedSkills();
+
+  modal.style.display = 'flex';
+}
+
+function closeEditModal() {
+  var modal = document.getElementById('editStaffModal');
+  if (modal) modal.style.display = 'none';
+}
+</script>

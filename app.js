@@ -19,6 +19,9 @@ const seedData = require("./data/mysqlSeed");
 const {
   initializeSupabase,
   isDatabaseReady,
+  isUsernameGloballyUnique,
+  isPhoneGloballyUnique,
+  isEmailGloballyUnique,
   getServiceCatalog,
   getHomeStats,
   getFeaturedProfessionals,
@@ -28,6 +31,7 @@ const {
   getProfessionalServiceOptions,
   getClient,
   createContactMessage,
+  getContactMessagesByEmail,
   createClientAccount,
   deleteClientAccount,
   authenticateClient,
@@ -65,6 +69,7 @@ const {
   updatePartnerProfile,
   getPartnerDashboardData,
   createPartnerManagedProfessional,
+  updatePartnerManagedProfessional,
   getWalletBalance,
   addEarningRecord,
   requestWithdrawal,
@@ -85,7 +90,8 @@ const {
   updateCmsSettings,
   createServiceCategory,
   updateServiceCategory,
-  deleteServiceCategory
+  deleteServiceCategory,
+  getProfessionalBookedSlots
 } = require("./lib/supabaseStore");
 
 const {
@@ -95,10 +101,12 @@ const {
   getWorkRequirementsForPartner,
   getWorkRequirementsByClient,
   createWorkRequirement,
+  deleteWorkRequirement,
   applyOrNegotiateWorkRequirement,
 } = require("./lib/workRequirementsStore");
 
 const {
+  getAllWorkMessages,
   getMessagesForConversation,
   sendWorkMessage
 } = require("./lib/workMessagesStore");
@@ -710,6 +718,9 @@ app.get("/", async (req, res) => {
     if (req.session.user.role === "professional") {
       return res.redirect("/professional/dashboard");
     }
+    if (req.session.user.role === "partner") {
+      return res.redirect("/partner/dashboard");
+    }
     if (req.session.user.role === "admin") {
       return res.redirect("/admin/dashboard");
     }
@@ -746,9 +757,9 @@ app.get("/work", async (req, res) => {
   } else if (user && user.role === "partner") {
     displayedJobs = await getWorkRequirementsForPartner(user);
   } else if (user && user.role === "client") {
-    displayedJobs = allJobs;
     const cJobs = await getWorkRequirementsByClient(user.id || user.email);
-    clientJobsCount = cJobs ? cJobs.length : 0;
+    displayedJobs = cJobs || [];
+    clientJobsCount = displayedJobs.length;
   }
 
   const formNotice = req.session.workNotice || null;
@@ -788,8 +799,8 @@ app.post("/work/post", async (req, res) => {
     const { category, subCategory, location, budget, jobType, description } = req.body;
     
     await createWorkRequirement({
-      clientId: user.id,
-      clientName: user.name,
+      clientId: user.id || user.email,
+      clientName: user.name || user.full_name || "Verified Client",
       clientContact: user.phone || user.email || "",
       category: category || "General",
       subCategory: subCategory || "",
@@ -809,6 +820,25 @@ app.post("/work/post", async (req, res) => {
   } catch (error) {
     req.session.workNotice = createFormNotice("error", `Failed to post work requirement: ${error.message}`);
     return res.redirect("/work");
+  }
+});
+
+app.post(["/work/:workId/delete", "/client/work-requirements/:workId/delete"], async (req, res) => {
+  try {
+    const user = req.session.user;
+    if (!user || (user.role !== "client" && user.role !== "admin")) {
+      req.session.loginNotice = createFormNotice("error", "Please login as a client to manage work requirements.");
+      return res.redirect("/clientlogin");
+    }
+
+    const { workId } = req.params;
+    await deleteWorkRequirement(workId, user.id || user.email);
+
+    req.session.workNotice = createFormNotice("success", "Work requirement removed successfully!");
+    return res.redirect(req.headers.referer || "/work");
+  } catch (error) {
+    req.session.workNotice = createFormNotice("error", `Failed to remove work requirement: ${error.message}`);
+    return res.redirect(req.headers.referer || "/work");
   }
 });
 
@@ -865,8 +895,7 @@ app.post(["/work/pass/success", "/client/work-bundle/success"], async (req, res)
     user.workPassExpiresAt = new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString();
     try {
       if (isDatabaseReady()) {
-        const { getSupabaseClient } = require("./lib/supabase");
-        const supabase = getSupabaseClient();
+        const supabase = getClient();
         if (supabase) {
           await supabase.from("clients").update({
             work_pass_active: true,
@@ -1177,6 +1206,45 @@ app.post(
     }
   }
 );
+
+app.get('/api/check-username/:username', async (req, res) => {
+  try {
+    const username = req.params.username;
+    if (!username || username.trim().length < 3) {
+      return res.json({ available: false, message: 'Username must be at least 3 characters.' });
+    }
+    const isAvailable = await isUsernameGloballyUnique(username.trim());
+    return res.json({ available: isAvailable, message: isAvailable ? '✓ Username is available!' : '✖ Username is already taken.' });
+  } catch (err) {
+    return res.json({ available: false, message: 'Unable to check username.' });
+  }
+});
+
+app.get('/api/check-phone/:phone', async (req, res) => {
+  try {
+    const phone = req.params.phone;
+    if (!phone || phone.trim().length < 10) {
+      return res.json({ available: false, message: 'Enter a valid 10-digit phone number.' });
+    }
+    const isAvailable = await isPhoneGloballyUnique(phone.trim());
+    return res.json({ available: isAvailable, message: isAvailable ? '✓ Phone number available!' : '✖ Phone number already registered.' });
+  } catch (err) {
+    return res.json({ available: false, message: 'Unable to check phone.' });
+  }
+});
+
+app.get('/api/check-email/:email', async (req, res) => {
+  try {
+    const email = req.params.email;
+    if (!email || !email.includes('@')) {
+      return res.json({ available: false, message: 'Enter a valid email address.' });
+    }
+    const isAvailable = await isEmailGloballyUnique(email.trim());
+    return res.json({ available: isAvailable, message: isAvailable ? '✓ Email address available!' : '✖ Email address already registered.' });
+  } catch (err) {
+    return res.json({ available: false, message: 'Unable to check email.' });
+  }
+});
 
 app.get("/clientlogin", (req, res) => res.redirect("/login"));
 app.get("/professionallogin", (req, res) => res.redirect("/login"));
@@ -1698,6 +1766,7 @@ app.get("/partner/dashboard", requireRole("partner"), async (req, res) => {
   try {
     const dashboardData = await getPartnerDashboardData(req.session.user.id);
     const services = await getServiceOptions();
+    const workRequirements = await getWorkRequirementsForPartner(req.session.user);
 
     req.session.user.isVerified = dashboardData.partner.is_verified;
 
@@ -1706,6 +1775,7 @@ app.get("/partner/dashboard", requireRole("partner"), async (req, res) => {
       pageClass: "page-dashboard-partner",
       dashboardData,
       services,
+      workRequirements: workRequirements || [],
       formNotice: consumeSessionNotice(req, "partnerDashboardNotice")
     });
   } catch (err) {
@@ -1717,10 +1787,12 @@ app.get("/partner/dashboard", requireRole("partner"), async (req, res) => {
 app.get("/partner/professionals", requireRole("partner"), async (req, res) => {
   try {
     const dashboardData = await getPartnerDashboardData(req.session.user.id);
+    const services = await getServiceOptions();
     return res.render("partnerProfessionals", {
       title: "Managed Sub-Professionals | SV Personnels",
       pageClass: "page-partner-professionals",
       professionals: dashboardData.professionals || [],
+      services: services || [],
       user: req.session.user,
       formNotice: consumeSessionNotice(req, "partnerDashboardNotice")
     });
@@ -1732,15 +1804,10 @@ app.get("/partner/professionals", requireRole("partner"), async (req, res) => {
 
 app.post("/partner/professionals/:id/delete", requireRole("partner"), async (req, res) => {
   try {
-    const proId = Number(req.params.id) || req.params.id;
-    if (isDatabaseReady()) {
-      const { getSupabaseClient } = require("./lib/supabase");
-      const supabase = getSupabaseClient();
-      if (supabase) {
-        await supabase.from("professionals").delete().eq("id", proId).eq("partner_id", Number(req.session.user.id));
-      }
+    const client = getClient();
+    if (client) {
+      await client.from("professionals").delete().eq("id", proId).eq("partner_id", Number(req.session.user.id));
     }
-    const { getLocalProfessionals, saveLocalProfessionals } = require("./lib/partnerStore");
     const localPros = await getLocalProfessionals();
     const updated = localPros.filter(p => String(p.id) !== String(proId));
     await saveLocalProfessionals(updated);
@@ -1753,7 +1820,7 @@ app.post("/partner/professionals/:id/delete", requireRole("partner"), async (req
   }
 });
 
-app.post("/partner/professionals/create", requireRole("partner"), async (req, res) => {
+app.post("/partner/professionals/create", requireRole("partner"), upload.single("photo"), async (req, res) => {
   try {
     const {
       fullname,
@@ -1764,9 +1831,6 @@ app.post("/partner/professionals/create", requireRole("partner"), async (req, re
       area,
       experience,
       password,
-      workSchedule,
-      partTimeRate,
-      fullTimeRate,
       assignedSkillsJson,
       serviceIds,
       selectedSubskills
@@ -1777,6 +1841,11 @@ app.post("/partner/professionals/create", requireRole("partner"), async (req, re
       if (assignedSkillsJson) parsedSkills = JSON.parse(assignedSkillsJson);
     } catch (e) {}
 
+    let photoUrl = undefined;
+    if (req.file) {
+      photoUrl = `/uploads/${req.file.filename}`;
+    }
+
     await createPartnerManagedProfessional(req.session.user.id, {
       fullName: fullname,
       username,
@@ -1786,9 +1855,8 @@ app.post("/partner/professionals/create", requireRole("partner"), async (req, re
       area,
       experience,
       password,
-      workSchedule: Array.isArray(workSchedule) ? workSchedule : (workSchedule ? [workSchedule] : ["Part Time", "Full Time"]),
-      partTimeRate: Number(partTimeRate) || 0,
-      fullTimeRate: Number(fullTimeRate) || 0,
+      photoUrl,
+      workSchedule: ["Part Time"],
       assignedSkills: parsedSkills,
       serviceIds: Array.isArray(serviceIds) ? serviceIds : (serviceIds ? [serviceIds] : []),
       selectedSubskills: Array.isArray(selectedSubskills) ? selectedSubskills : (selectedSubskills ? [selectedSubskills] : [])
@@ -1802,6 +1870,40 @@ app.post("/partner/professionals/create", requireRole("partner"), async (req, re
   }
 });
 
+app.post("/partner/professionals/:id/edit", requireRole("partner"), upload.single("photo"), async (req, res) => {
+  try {
+    const proId = Number(req.params.id) || req.params.id;
+    const { fullname, username, email, phone, experience, password, assignedSkillsJson } = req.body;
+
+    let photoUrl = undefined;
+    if (req.file) {
+      photoUrl = `/uploads/${req.file.filename}`;
+    }
+
+    let parsedSkills = [];
+    try {
+      if (assignedSkillsJson) parsedSkills = JSON.parse(assignedSkillsJson);
+    } catch (e) {}
+
+    await updatePartnerManagedProfessional(req.session.user.id, proId, {
+      fullName: fullname,
+      username,
+      email,
+      phone,
+      experience,
+      password,
+      photoUrl,
+      assignedSkills: parsedSkills
+    });
+
+    req.session.partnerDashboardNotice = createFormNotice("success", `Updated staff member ${fullname || ''} successfully!`);
+    return res.redirect("/partner/professionals");
+  } catch (err) {
+    req.session.partnerDashboardNotice = createFormNotice("error", `Failed to update staff: ${err.message}`);
+    return res.redirect("/partner/professionals");
+  }
+});
+
 app.post("/partner/withdraw", requireRole("partner"), async (req, res) => {
   try {
     const { amount, bankDetails } = req.body;
@@ -1812,6 +1914,58 @@ app.post("/partner/withdraw", requireRole("partner"), async (req, res) => {
   } catch (err) {
     req.session.partnerDashboardNotice = createFormNotice("error", `Withdrawal request failed: ${err.message}`);
     return res.redirect("/partner/dashboard");
+  }
+});
+
+app.get("/partner/settings", requireRole("partner"), async (req, res) => {
+  try {
+    const dashboardData = await getPartnerDashboardData(req.session.user.id);
+    const messages = await getContactMessagesByEmail(req.session.user.email);
+    return res.render("partnerSettings", {
+      title: "Agency Settings | SV Personnels",
+      pageClass: "page-settings-partner",
+      partner: dashboardData.partner || req.session.user,
+      messages: messages || [],
+      formNotice: consumeSessionNotice(req, "partnerSettingsNotice")
+    });
+  } catch (err) {
+    req.session.partnerDashboardNotice = createFormNotice("error", `Settings load error: ${err.message}`);
+    return res.redirect("/partner/dashboard");
+  }
+});
+
+app.post("/partner/settings", requireRole("partner"), async (req, res) => {
+  try {
+    const { name, phone, city, address, password } = req.body;
+    const cleanName = sanitizeText(name || "");
+    const cleanPhone = sanitizeText(phone || "");
+    const cleanCity = sanitizeText(city || "");
+    const cleanAddress = sanitizeText(address || "");
+
+    const updateData = {
+      fullName: cleanName,
+      phone: cleanPhone,
+      city: cleanCity,
+      address: cleanAddress
+    };
+
+    if (password && String(password).trim().length >= 6) {
+      const bcrypt = require("bcryptjs");
+      updateData.password_hash = bcrypt.hashSync(String(password).trim(), 10);
+    }
+
+    await updatePartnerProfile(req.session.user.id, updateData);
+
+    if (cleanName) req.session.user.name = cleanName;
+    if (cleanPhone) req.session.user.phone = cleanPhone;
+    if (cleanCity) req.session.user.city = cleanCity;
+    if (cleanAddress) req.session.user.address = cleanAddress;
+
+    req.session.partnerSettingsNotice = createFormNotice("success", "Agency details updated successfully!");
+    return res.redirect("/partner/settings");
+  } catch (err) {
+    req.session.partnerSettingsNotice = createFormNotice("error", `Failed to update agency settings: ${err.message}`);
+    return res.redirect("/partner/settings");
   }
 });
 
@@ -1852,6 +2006,12 @@ app.post("/professional/withdraw", requireRole("professional"), async (req, res)
 
 app.get("/professional/jobs", requireRole("professional"), async (req, res) => {
   try {
+    // Partner-managed professionals receive assignments through their agency
+    if (req.session.user && req.session.user.isPartnerManaged) {
+      req.session.professionalDashboardNotice = createFormNotice("info", "As a partner-managed professional, job assignments are coordinated through your agency.");
+      return res.redirect("/professional/dashboard");
+    }
+
     const mappedServices = await getProfessionalServiceOptions(req.session.user.id);
     const skills = mappedServices.map(s => s.name);
 
@@ -2258,10 +2418,24 @@ app.get("/professional/dashboard", requireRole("professional"), async (req, res)
       role: "professional"
     };
   }
+
+  // Fetch partner agency info for partner-managed professionals
+  let partnerAgency = null;
+  if (dashboardData && dashboardData.profile && dashboardData.profile.isPartnerManaged && dashboardData.profile.partnerId) {
+    try {
+      const supaClient = getClient();
+      if (supaClient) {
+        const { data: partnerRow } = await supaClient.from("partners").select("id, business_name, full_name, city, is_verified").eq("id", dashboardData.profile.partnerId).maybeSingle();
+        if (partnerRow) partnerAgency = partnerRow;
+      }
+    } catch (e) {}
+  }
+
   return res.render("professionalDashboard", {
     title: "Professional dashboard | SV Personnels",
     pageClass: "page-dashboard",
     dashboardData,
+    partnerAgency,
     formNotice: consumeSessionNotice(req, "professionalDashboardNotice")
   });
 });
@@ -2770,6 +2944,20 @@ app.get("/auth/verify-email-notice", (req, res) => {
   });
 });
 
+app.get('/api/professional/:id/availability', async (req, res) => {
+  try {
+    const professionalId = Number(req.params.id);
+    const date = req.query.date;
+    if (!date || Number.isNaN(professionalId)) {
+      return res.json({ error: 'Invalid parameters', bookedSlots: [] });
+    }
+    const bookedSlots = await getProfessionalBookedSlots(professionalId, date);
+    return res.json({ bookedSlots });
+  } catch (err) {
+    return res.json({ bookedSlots: [] });
+  }
+});
+
 app.get("/book-service/:professionalId", requireRole("client"), async (req, res) => {
   if (!isDatabaseReady()) {
     return renderBookingPage(res.status(503), {
@@ -2849,6 +3037,45 @@ app.post(
         clientAddresses,
         formNotice: createFormNotice("error", "Please select or add a service address first.")
       });
+    }
+
+    // Enforce Same City Booking Rule
+    let selectedCity = "";
+    if (req.body.selectedAddressId && clientAddresses.length > 0) {
+      const foundAddr = clientAddresses.find(a => String(a.id) === String(req.body.selectedAddressId));
+      if (foundAddr && foundAddr.city) selectedCity = foundAddr.city.trim();
+    }
+    if (!selectedCity && req.body.city) selectedCity = req.body.city.trim();
+    if (!selectedCity && user.city) selectedCity = user.city.trim();
+    if (!selectedCity && addressArea) selectedCity = addressArea.split(",").pop().trim();
+
+    const proCity = (professional.city || "").trim();
+    if (proCity && selectedCity) {
+      const pLower = proCity.toLowerCase();
+      const sLower = selectedCity.toLowerCase();
+      if (!sLower.includes(pLower) && !pLower.includes(sLower)) {
+        const serviceOptions = isDatabaseReady() ? await getProfessionalServiceOptions(professionalId) : [];
+        return renderBookingPage(res.status(422), {
+          professional,
+          serviceOptions,
+          clientAddresses,
+          formData: {
+            fullName: req.body.fullName || user.name || "",
+            email: req.body.email || user.email || "",
+            phone: req.body.phone || user.phone || "",
+            preferredDate: req.body.preferredDate || "",
+            preferredTimeSlot: req.body.preferredTimeSlot || "",
+            addressArea: addressArea,
+            budget: req.body.budget || professional.startingPrice || "",
+            serviceId: req.body.serviceId || "",
+            details: req.body.details || ""
+          },
+          formNotice: createFormNotice(
+            "error",
+            `📍 Booking Restricted: Professional "${professional.name}" only operates in "${proCity}". Your selected doorstep address is in "${selectedCity}". Please select an address in ${proCity} or choose a local professional in your city.`
+          )
+        });
+      }
     }
 
     const serviceOptions = isDatabaseReady() ? await getProfessionalServiceOptions(professionalId) : [];
@@ -2955,6 +3182,7 @@ app.post("/book-service/:professionalId/confirm", requireRole("client"), async (
   return res.render("payuCheckout", {
     title: "PayU Payment Gateway | SV Personnels",
     pageClass: "page-payu",
+    professional,
     key,
     txnid,
     amount,
@@ -3872,7 +4100,7 @@ app.post(
 
 // --- REALTIME CHAT SYSTEM ROUTES ---
 
-app.get("/chat", requireRole(["client", "professional"]), async (req, res) => {
+app.get("/chat", requireRole(["client", "professional", "partner"]), async (req, res) => {
   const user = req.session.user;
   const myRole = user.role;
   const myId = user.id;
@@ -3880,18 +4108,18 @@ app.get("/chat", requireRole(["client", "professional"]), async (req, res) => {
   try {
     const dbClient = getClient();
     let contacts = [];
-    
+    const globalSeen = new Set();
+
     if (myRole === "client") {
       const { data: bookings } = await dbClient
         .from("bookings")
         .select("professional_id, professionals(full_name, photo_url)")
         .eq("client_id", myId);
       
-      const seen = new Set();
       if (bookings) {
         bookings.forEach(b => {
-          if (b.professional_id && !seen.has(b.professional_id)) {
-            seen.add(b.professional_id);
+          if (b.professional_id && !globalSeen.has(String(b.professional_id))) {
+            globalSeen.add(String(b.professional_id));
             contacts.push({
               id: b.professional_id,
               role: "professional",
@@ -3901,17 +4129,42 @@ app.get("/chat", requireRole(["client", "professional"]), async (req, res) => {
           }
         });
       }
+    } else if (myRole === "partner") {
+      const pData = await getPartnerDashboardData(myId);
+      (pData.bookings || []).forEach(b => {
+        const clientInfo = b.clients || {};
+        const cId = clientInfo.email || clientInfo.phone || b.client_id;
+        if (cId && !globalSeen.has(String(cId))) {
+          globalSeen.add(String(cId));
+          contacts.push({
+            id: cId,
+            role: "client",
+            name: clientInfo.full_name || "Client",
+            photo: "/assets/default-user.png"
+          });
+        }
+      });
+      (pData.professionals || []).forEach(pro => {
+        if (pro.id && !globalSeen.has(String(pro.id))) {
+          globalSeen.add(String(pro.id));
+          contacts.push({
+            id: pro.id,
+            role: "professional",
+            name: pro.full_name || "Managed Staff",
+            photo: pro.photo_url || "/assets/default-user.png"
+          });
+        }
+      });
     } else {
       const { data: bookings } = await dbClient
         .from("bookings")
         .select("client_id, clients(full_name)")
         .eq("professional_id", myId);
       
-      const seen = new Set();
       if (bookings) {
         bookings.forEach(b => {
-          if (b.client_id && !seen.has(b.client_id)) {
-            seen.add(b.client_id);
+          if (b.client_id && !globalSeen.has(String(b.client_id))) {
+            globalSeen.add(String(b.client_id));
             contacts.push({
               id: b.client_id,
               role: "client",
@@ -3919,6 +4172,45 @@ app.get("/chat", requireRole(["client", "professional"]), async (req, res) => {
               photo: "/assets/default-user.png"
             });
           }
+        });
+      }
+    }
+
+    // Load active work requirement discussions into chat contacts
+    const allWorkMsgs = await getAllWorkMessages();
+    const myIdentifiers = new Set([
+      String(user.id || "").toLowerCase(),
+      String(user.email || "").toLowerCase(),
+      String(user.phone || "").toLowerCase()
+    ].filter(Boolean));
+
+    for (const msg of allWorkMsgs) {
+      const sId = String(msg.senderId || "").toLowerCase();
+      const rId = String(msg.receiverId || "").toLowerCase();
+      
+      let peerId = null;
+      let peerName = "User";
+      let peerRole = "user";
+
+      if (myIdentifiers.has(sId) && !myIdentifiers.has(rId)) {
+        peerId = msg.receiverId;
+        peerRole = myRole === "client" ? "candidate" : "client";
+      } else if (myIdentifiers.has(rId) && !myIdentifiers.has(sId)) {
+        peerId = msg.senderId;
+        peerName = msg.senderName || "User";
+        peerRole = msg.senderRole || "user";
+      }
+
+      if (peerId && !globalSeen.has(String(peerId))) {
+        globalSeen.add(String(peerId));
+        const workInfo = await getWorkRequirementById(msg.workId);
+        contacts.push({
+          id: peerId,
+          role: peerRole,
+          name: (peerName && peerName !== "User") ? peerName : (workInfo ? (workInfo.clientName || workInfo.category) : "Work Discussion Contact"),
+          photo: "/assets/default-user.png",
+          chatUrl: `/work/${msg.workId}/chat/${peerId}`,
+          lastMessage: msg.text
         });
       }
     }
@@ -3941,7 +4233,7 @@ app.get("/chat", requireRole(["client", "professional"]), async (req, res) => {
   }
 });
 
-app.get("/chat/:recipientRole/:recipientId", requireRole(["client", "professional"]), async (req, res) => {
+app.get("/chat/:recipientRole/:recipientId", requireRole(["client", "professional", "partner"]), async (req, res) => {
   const user = req.session.user;
   const myRole = user.role;
   const myId = user.id;
@@ -4038,7 +4330,7 @@ app.get("/chat/:recipientRole/:recipientId", requireRole(["client", "professiona
   }
 });
 
-app.post("/chat/upload", requireRole(["client", "professional"]), upload.single("file"), (req, res) => {
+app.post("/chat/upload", requireRole(["client", "professional", "partner"]), upload.single("file"), (req, res) => {
   if (req.file) {
     return res.json({ success: true, url: "/uploads/" + req.file.filename });
   }

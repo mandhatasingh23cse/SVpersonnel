@@ -253,3 +253,69 @@
     </form>
   </div>
 </section>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const professionalId = '<%= professional ? professional.id : "" %>';
+    const dateInput = document.querySelector('input[name="preferredDate"]');
+    const timeInput = document.getElementById('preferredTimeSlotInput');
+    const quickSelectButtons = document.querySelectorAll('button[type="button"][onclick^="document.getElementById(\'preferredTimeSlotInput\')"]');
+    let currentBookedSlots = [];
+
+    async function fetchAvailability() {
+      if (!professionalId) return;
+      const date = dateInput.value;
+      if (!date) return;
+      
+      try {
+        const response = await fetch(`/api/professional/${professionalId}/availability?date=${date}`);
+        const data = await response.json();
+        currentBookedSlots = data.bookedSlots || [];
+        updateUI();
+      } catch (err) {
+        console.error('Failed to fetch availability:', err);
+      }
+    }
+
+    function updateUI() {
+      quickSelectButtons.forEach(btn => {
+        const match = btn.getAttribute('onclick').match(/value='([^']+)'/);
+        if (match) {
+          const time = match[1];
+          const isBooked = currentBookedSlots.some(booked => booked.startsWith(time));
+          
+          if (isBooked) {
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+            btn.style.cursor = 'not-allowed';
+            if (!btn.querySelector('.booked-badge')) {
+               btn.innerHTML += ' <span class="booked-badge" style="background: #ef4444; color: white; border-radius: 4px; padding: 2px 4px; font-size: 0.65rem; margin-left: 4px; font-weight: bold;">Booked</span>';
+            }
+          } else {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+            const badge = btn.querySelector('.booked-badge');
+            if (badge) badge.remove();
+          }
+        }
+      });
+      
+      validateTimeInput();
+    }
+
+    function validateTimeInput() {
+      const selectedTime = timeInput.value;
+      if (selectedTime && currentBookedSlots.some(booked => booked.startsWith(selectedTime))) {
+        alert('This time slot is already booked. Please select another time.');
+        timeInput.value = '';
+      }
+    }
+
+    dateInput.addEventListener('change', fetchAvailability);
+    timeInput.addEventListener('change', validateTimeInput);
+    
+    // Initial fetch
+    fetchAvailability();
+  });
+</script>

@@ -13,5 +13,35 @@
     "alternatePhone": "",
     "addressType": "Home",
     "createdAt": "2026-07-10T14:43:30.239Z"
+  },
+  {
+    "id": "addr_1785399830366_169",
+    "clientId": "16",
+    "name": "Mandhata Singh",
+    "phone": "7054533509",
+    "pincode": "123106",
+    "locality": "Dharuhera",
+    "address": "Amer Road",
+    "city": "Gurgaon",
+    "state": "Haryana",
+    "landmark": "",
+    "alternatePhone": "",
+    "addressType": "Home",
+    "createdAt": "2026-07-30T08:23:50.370Z"
+  },
+  {
+    "id": "addr_1785399870337_539",
+    "clientId": "16",
+    "name": "Mandhata Singh",
+    "phone": "7054533509",
+    "pincode": "273001",
+    "locality": "Alinagar",
+    "address": "Bilandpur\r\n5b",
+    "city": "Gorakhpur",
+    "state": "Uttar Pradesh",
+    "landmark": "",
+    "alternatePhone": "",
+    "addressType": "Home",
+    "createdAt": "2026-07-30T08:24:30.337Z"
   }
 ]
