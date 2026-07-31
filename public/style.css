@@ -346,13 +346,17 @@ section[id] {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  min-height: 48px;
-  padding: 0 24px;
+  min-height: 44px;
+  padding: 0.65rem 1.25rem;
   border: 1px solid transparent;
   border-radius: 999px;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-weight: 700;
-  white-space: nowrap;
+  white-space: normal;
+  word-break: break-word;
+  max-width: 100%;
+  box-sizing: border-box;
+  text-align: center;
 }
 
 .button:hover,
@@ -406,6 +410,13 @@ button:disabled {
 
 .button-block {
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  text-align: center;
+  white-space: normal;
+  word-break: break-word;
 }
 
 input:not([type="checkbox"]):not([type="radio"]),
