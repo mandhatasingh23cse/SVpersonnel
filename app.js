@@ -2813,10 +2813,21 @@ app.post(
   }
 );
 
-app.get("/logout", (req, res) => {
-  req.session.destroy(() => {
-    res.redirect("/");
-  });
+app.all(["/logout", "/logout/"], (req, res) => {
+  try {
+    if (req.session) {
+      req.session.destroy((err) => {
+        try {
+          res.clearCookie("connect.sid");
+        } catch (e) {}
+        return res.redirect("/");
+      });
+    } else {
+      return res.redirect("/");
+    }
+  } catch (err) {
+    return res.redirect("/");
+  }
 });
 
 function renderResetPasswordPage(res, overrides = {}) {
