@@ -3,21 +3,87 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title><%= typeof title !== "undefined" ? title : "SV Personnels - Govt. Authorized Job & Hiring Provider" %></title>
-  <meta
-    name="description"
-    content="<%= brand && brand.tagline ? brand.tagline : 'SV Personnels connects employers with verified manpower and job seekers across India.' %>"
-  />
+  
+  <!-- Google Search Console Verification -->
+  <meta name="google-site-verification" content="google538d927c34e02dc2" />
+
+  <!-- Primary Meta Tags -->
+  <title><%= typeof title !== "undefined" ? title : "SV Personnels - Govt. Authorized Job & Hiring Provider across India" %></title>
+  <meta name="title" content="<%= typeof title !== "undefined" ? title : "SV Personnels - Govt. Authorized Job & Hiring Provider across India" %>" />
+  <meta name="description" content="SV Personnels connects clients with verified local professionals, workers, and job seekers across India. Book trusted manpower for housekeeping, event staff, electricians, drivers, and security." />
+  <meta name="keywords" content="SV Personnels, SV Personnel, manpower hiring, verified workers, Gorakhpur manpower agency, hire housekeeping staff, hire event management staff, electrician near me, plumber near me, driver hiring, security guard provider, job hiring India, custom work requirements" />
+  <meta name="author" content="SV Personnels Pvt. Ltd." />
+  <meta name="robots" content="index, follow" />
   <meta name="theme-color" content="#16203a" />
+
+  <!-- Canonical URL -->
+  <link rel="canonical" href="https://svpersonnel.in" />
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://svpersonnel.in/" />
+  <meta property="og:site_name" content="SV Personnels" />
+  <meta property="og:title" content="<%= typeof title !== "undefined" ? title : "SV Personnels - Govt. Authorized Job & Hiring Provider" %>" />
+  <meta property="og:description" content="Book verified local professionals and post custom job requirements across India with SV Personnels." />
+  <meta property="og:image" content="https://svpersonnel.in/assets/svpersonnel-logo.png" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:url" content="https://svpersonnel.in/" />
+  <meta name="twitter:title" content="<%= typeof title !== "undefined" ? title : "SV Personnels - Job & Hiring Platform" %>" />
+  <meta name="twitter:description" content="Book verified local professionals and post custom job requirements across India with SV Personnels." />
+  <meta name="twitter:image" content="https://svpersonnel.in/assets/svpersonnel-logo.png" />
+
+  <!-- Favicon -->
   <link rel="icon" href="/assets/svpersonnel-logo.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@500;600;700&display=swap"
-    rel="stylesheet"
-  >
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/style.css">
   <link rel="stylesheet" href="/premium-ui.css">
+
+  <!-- Schema.org JSON-LD Structured Data for Google Search -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "EmploymentAgency",
+    "name": "SV Personnels Pvt. Ltd.",
+    "url": "https://svpersonnel.in/",
+    "logo": "https://svpersonnel.in/assets/svpersonnel-logo.png",
+    "image": "https://svpersonnel.in/assets/svpersonnel-logo.png",
+    "description": "Govt. Authorized Professional Job & Hiring Provider across India. Hire verified local professionals for event management, housekeeping, drivers, electricians, and security staff.",
+    "telephone": "+91-7054533509",
+    "email": "mandhatasingh00000@gmail.com",
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "Gorakhpur",
+      "addressRegion": "Uttar Pradesh",
+      "addressCountry": "IN"
+    },
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": 26.7606,
+      "longitude": 83.3732
+    },
+    "sameAs": [
+      "https://svpersonnel.in/"
+    ],
+    "priceRange": "₹"
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "SV Personnels",
+    "url": "https://svpersonnel.in/",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": "https://svpersonnel.in/findhelpnow?q={search_term_string}",
+      "query-input": "required name=search_term_string"
+    }
+  }
+  </script>
 </head>
 <body class="<%= pageClass || '' %>">
   <canvas id="canvas-3d-background" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 0;"></canvas>
