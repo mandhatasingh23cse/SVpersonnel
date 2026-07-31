@@ -214,6 +214,16 @@ app.use("/uploads", (req, res) => {
   res.status(404).send("Verification File Not Found Locally (File exists on live hosted server disk)");
 });
 
+app.get(["/sitemap.xml", "/sitemap", "/sitemap.html"], (req, res) => {
+  res.type("application/xml");
+  res.sendFile(path.join(__dirname, "public", "sitemap.xml"));
+});
+
+app.get(["/robots.txt", "/robots"], (req, res) => {
+  res.type("text/plain");
+  res.sendFile(path.join(__dirname, "public", "robots.txt"));
+});
+
 app.locals.currentYear = new Date().getFullYear();
 app.locals.formatCurrency = formatCurrency;
 app.locals.formatShortDate = formatShortDate;
