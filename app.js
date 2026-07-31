@@ -214,13 +214,13 @@ app.use("/uploads", (req, res) => {
   res.status(404).send("Verification File Not Found Locally (File exists on live hosted server disk)");
 });
 
-app.get("/sitemap.xml", (req, res) => {
-  res.header("Content-Type", "application/xml");
+app.get(["/sitemap.xml", "/sitemap", "/sitemap.html"], (req, res) => {
+  res.type("application/xml");
   res.sendFile(path.join(__dirname, "public", "sitemap.xml"));
 });
 
-app.get("/robots.txt", (req, res) => {
-  res.header("Content-Type", "text/plain");
+app.get(["/robots.txt", "/robots"], (req, res) => {
+  res.type("text/plain");
   res.sendFile(path.join(__dirname, "public", "robots.txt"));
 });
 
