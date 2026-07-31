@@ -76,27 +76,30 @@
                 <div>💼 <strong>Experience:</strong> <%= pro.years_experience || 0 %> years</div>
 
                 <% 
+                  let assignedSkillsList = [];
+                  const skillsMatch = (pro.bio || '').match(/\[assignedSkillsJson:([\s\S]*?)\]\]/i);
+                  if (skillsMatch && skillsMatch[1]) {
+                    try { assignedSkillsList = JSON.parse(skillsMatch[1] + ']'); } catch(e) {
+                      try { assignedSkillsList = JSON.parse(skillsMatch[1]); } catch(err) {}
+                    }
+                  }
+
                   let cleanBioText = (pro.bio || '')
+                    .replace(/\[assignedSkillsJson:[\s\S]*?\]\]/gi, '')
                     .replace(/\[Partner Managed Professional\]/gi, '')
                     .replace(/\[workModes?:[^\]]+\]/gi, '')
                     .replace(/\[partTimeRate:[^\]]+\]/gi, '')
                     .replace(/\[fullTimeRate:[^\]]+\]/gi, '')
-                    .replace(/\[assignedSkillsJson:[^\]]+\]/gi, '')
                     .replace(/\[subskills:[^\]]+\]/gi, '')
-                    .replace(/[\[\]]/g, '')
+                    .replace(/\[.*?\]/g, '')
+                    .replace(/,?\"rate\":\d+\}/g, '')
                     .trim();
-
-                  let assignedSkillsList = [];
-                  const skillsMatch = (pro.bio || '').match(/\[assignedSkillsJson:([^\]]+)\]/i);
-                  if (skillsMatch) {
-                    try { assignedSkillsList = JSON.parse(skillsMatch[1]); } catch(e) {}
-                  }
                 %>
 
                 <% if (assignedSkillsList && assignedSkillsList.length > 0) { %>
                   <div style="margin-top: 0.4rem; display: flex; flex-wrap: wrap; gap: 0.35rem;">
                     <% assignedSkillsList.forEach(function(sk) { %>
-                      <span style="font-size: 0.75rem; color: #a78bfa; background: rgba(167, 139, 250, 0.12); border: 1px solid rgba(167, 139, 250, 0.3); padding: 3px 8px; border-radius: 6px; font-weight: 600;">
+                      <span style="font-size: 0.78rem; color: #a78bfa; background: rgba(167, 139, 250, 0.15); border: 1px solid rgba(167, 139, 250, 0.4); padding: 4px 10px; border-radius: 8px; font-weight: 700;">
                         🏷️ <%= sk.categoryName || 'Service' %>
                         <% if (sk.subskills && sk.subskills.length) { %>
                           (<%= sk.subskills.join(', ') %>)
@@ -104,10 +107,16 @@
                       </span>
                     <% }); %>
                   </div>
+                <% } else if (pro.primarySkill || pro.serviceName) { %>
+                  <div style="margin-top: 0.4rem;">
+                    <span style="font-size: 0.78rem; color: #a78bfa; background: rgba(167, 139, 250, 0.15); border: 1px solid rgba(167, 139, 250, 0.4); padding: 4px 10px; border-radius: 8px; font-weight: 700;">
+                      🏷️ <%= pro.primarySkill || pro.serviceName %>
+                    </span>
+                  </div>
                 <% } %>
 
                 <% if (cleanBioText) { %>
-                  <div style="font-size: 0.8rem; color: var(--color-ink-light); margin-top: 0.3rem; line-height: 1.4; background: rgba(255,255,255,0.03); padding: 0.5rem; border-radius: 6px;">
+                  <div style="font-size: 0.8rem; color: var(--color-ink-light); margin-top: 0.38rem; line-height: 1.4; background: rgba(255,255,255,0.03); padding: 0.5rem; border-radius: 6px;">
                     <%= cleanBioText %>
                   </div>
                 <% } %>
@@ -115,7 +124,7 @@
             </div>
 
             <div style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 1rem; display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;">
-              <button type="button" onclick='openEditModal(<%= JSON.stringify({ id: pro.id, name: pro.full_name || pro.name, username: pro.username, email: pro.email, phone: pro.phone, experience: pro.years_experience }) %>)' style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); padding: 0.4rem 0.9rem; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer;">
+              <button type="button" onclick='openEditModal(<%= JSON.stringify({ id: pro.id, name: pro.full_name || pro.name, username: pro.username, email: pro.email, phone: pro.phone, experience: pro.years_experience, bio: pro.bio }) %>)' style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); padding: 0.4rem 0.9rem; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer;">
                 ✏️ Edit Staff
               </button>
               <form action="/partner/professionals/<%= pro.id %>/delete" method="POST" onsubmit="return confirm('Remove <%= pro.full_name || pro.username %> from your agency?');" style="margin: 0;">
@@ -132,8 +141,8 @@
 </section>
 
 <!-- Edit Staff Modal -->
-<div id="editStaffModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.92); z-index: 9999; justify-content: center; align-items: center; padding: 1.5rem; backdrop-filter: blur(12px); overflow-y: auto;">
-  <div style="background: #0f172a; border: 1px solid rgba(167, 139, 250, 0.4); border-radius: 20px; width: 100%; max-width: 540px; max-height: 88vh; display: flex; flex-direction: column; padding: 1.75rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.85); position: relative; margin: auto;">
+<div id="editStaffModal" style="display: none; position: fixed; inset: 0; background: rgba(11, 15, 25, 0.96) !important; z-index: 99999; justify-content: center; align-items: center; padding: 1.5rem; backdrop-filter: blur(16px); overflow-y: auto;">
+  <div style="background: #0f172a !important; border: 1px solid rgba(167, 139, 250, 0.5); border-radius: 20px; width: 100%; max-width: 540px; max-height: 88vh; display: flex; flex-direction: column; padding: 1.75rem; box-shadow: 0 25px 50px 10px rgba(0,0,0,0.95); position: relative; margin: auto;">
     <button type="button" onclick="closeEditModal()" style="position: absolute; right: 1.5rem; top: 1.5rem; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; cursor: pointer; z-index: 10;">✕</button>
     <h2 style="color: #fff; font-family: 'Outfit', sans-serif; margin: 0 0 1.25rem; font-size: 1.35rem;">✏️ Edit Sub-Professional Details</h2>
 

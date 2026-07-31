@@ -6,8 +6,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function cleanBioText(raw) {
     if (!raw) return "Experienced local professional available for nearby service requests and repeat work.";
-    const cleaned = String(raw).replace(/\[.*?\]/g, "").trim();
-    return cleaned || "Experienced local professional available for nearby service requests and repeat work.";
+    let s = String(raw);
+    s = s.replace(/\[assignedSkillsJson:[\s\S]*?\]\]/gi, "");
+    s = s.replace(/\[.*?\]/g, "");
+    s = s.replace(/,?\"rate\":\d+\}/g, "");
+    s = s.replace(/\{\"?category[^\}]+\}/gi, "");
+    s = s.trim();
+    return s || "Experienced local professional available for nearby service requests and repeat work.";
   }
 
   const form = document.getElementById("discoverForm");
