@@ -146,10 +146,16 @@
     <!-- RIGHT PANEL: Withdrawals request -->
     <div style="display: flex; flex-direction: column; gap: 3rem;">
       
-      <!-- Withdraw Request Card -->
-      <div class="glass-panel" style="padding: 2.5rem; border-radius: var(--radius-xl); background: rgba(22, 32, 58, 0.85); border: 1px solid var(--line-strong);">
-        <h2 style="font-family: 'Outfit', sans-serif; color: #fff; margin: 0 0 0.25rem;">Request Withdrawal</h2>
-        <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 2rem;">Available earnings can be requested once a rolling 7 days.</p>
+      <!-- Premium Withdraw Request Card -->
+      <div class="glass-panel" style="padding: 2.5rem; border-radius: var(--radius-xl); background: rgba(22, 32, 58, 0.85); border: 1px solid var(--line-strong); position: relative; overflow: hidden;">
+        <!-- PayU Branding Accent -->
+        <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #10b981, #059669, #0d9488);"></div>
+        
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
+          <h2 style="font-family: 'Outfit', sans-serif; color: #fff; margin: 0;">Withdraw Earnings</h2>
+          <span style="padding: 4px 12px; border-radius: 20px; font-size: 0.72rem; font-weight: 800; color: #10b981; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); text-transform: uppercase; letter-spacing: 0.04em;">PayU Secured</span>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;">Withdraw your available balance securely via Bank Transfer or UPI. Once per 7 days.</p>
 
         <% if (user.isPartnerManaged) { %>
           <div style="background: rgba(192, 132, 252, 0.08); border: 1px solid rgba(192, 132, 252, 0.25); border-radius: 10px; padding: 1.25rem; font-size: 0.85rem; color: #e9d5ff; line-height: 1.5; text-align: center;">
@@ -160,21 +166,252 @@
             🔒 Withdrawals are locked until your professional account is verified by the administrator.
           </div>
         <% } else { %>
-          <form action="/professional/withdraw" method="POST" style="display: flex; flex-direction: column; gap: 1.25rem;">
-            <label class="field-group" style="display: flex; flex-direction: column; gap: 0.4rem;">
-              <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-soft);">Amount to Withdraw (₹)</span>
-              <input type="number" name="amount" min="1" max="<%= wallet.available_inr %>" required placeholder="Maximum ₹<%= wallet.available_inr %>" style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; color: #fff; font-size: 1.1rem; font-weight: bold;">
-            </label>
+          <!-- Progress Stepper -->
+          <div id="withdraw-stepper" style="display: flex; align-items: center; justify-content: center; gap: 0; margin-bottom: 2rem;">
+            <div class="wstep wstep-active" data-step="1" style="display: flex; align-items: center; gap: 0.4rem;">
+              <div class="wstep-circle" style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #059669); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 800; transition: all 0.3s;">1</div>
+              <span style="font-size: 0.78rem; color: #10b981; font-weight: 700;">Amount</span>
+            </div>
+            <div style="flex: 0 0 40px; height: 2px; background: rgba(255,255,255,0.1); margin: 0 0.5rem;"></div>
+            <div class="wstep" data-step="2" style="display: flex; align-items: center; gap: 0.4rem;">
+              <div class="wstep-circle" style="width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.08); color: #64748b; display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 800; transition: all 0.3s;">2</div>
+              <span style="font-size: 0.78rem; color: #64748b; font-weight: 700;">Method</span>
+            </div>
+            <div style="flex: 0 0 40px; height: 2px; background: rgba(255,255,255,0.1); margin: 0 0.5rem;"></div>
+            <div class="wstep" data-step="3" style="display: flex; align-items: center; gap: 0.4rem;">
+              <div class="wstep-circle" style="width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.08); color: #64748b; display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 800; transition: all 0.3s;">3</div>
+              <span style="font-size: 0.78rem; color: #64748b; font-weight: 700;">Confirm</span>
+            </div>
+          </div>
 
-            <label class="field-group" style="display: flex; flex-direction: column; gap: 0.4rem;">
-              <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-soft);">Bank Account Details</span>
-              <textarea name="bankDetails" required rows="4" placeholder="Bank Name:&#10;Account Holder:&#10;Account Number:&#10;IFSC Code:" style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; color: #fff; font-size: 0.9rem; resize: none;"></textarea>
-            </label>
+          <form action="/professional/withdraw" method="POST" id="withdrawForm">
+            <!-- Step 1: Amount -->
+            <div id="wStep1" class="wstep-panel">
+              <label style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem;">
+                <span style="font-size: 0.88rem; font-weight: 700; color: #e2e8f0;">Withdrawal Amount (₹)</span>
+                <div style="position: relative;">
+                  <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 1.3rem; color: #34d399; font-weight: 800;">₹</span>
+                  <input type="number" name="amount" id="wAmount" min="100" max="<%= wallet.available_inr %>" required placeholder="Enter amount" style="width: 100%; box-sizing: border-box; padding: 14px 16px 14px 40px; background: rgba(0,0,0,0.4); border: 2px solid rgba(16, 185, 129, 0.25); border-radius: 12px; color: #fff; font-size: 1.2rem; font-weight: 800; font-family: 'Outfit', sans-serif; transition: border-color 0.2s;" oninput="validateWithdrawAmount()">
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 0.78rem; color: #64748b;">Min ₹100 · Max ₹<%= wallet.available_inr %></span>
+                  <button type="button" onclick="document.getElementById('wAmount').value='<%= wallet.available_inr %>';validateWithdrawAmount();" style="font-size: 0.75rem; color: #10b981; font-weight: 700; background: none; border: 1px solid rgba(16,185,129,0.3); padding: 3px 10px; border-radius: 6px; cursor: pointer;">Withdraw Max</button>
+                </div>
+              </label>
+              <div id="wAmountError" style="display: none; color: #f43f5e; font-size: 0.82rem; font-weight: 600; margin-bottom: 1rem;"></div>
+              <button type="button" id="wNext1" onclick="goToStep(2)" disabled style="width: 100%; padding: 13px; background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; border-radius: 12px; font-size: 0.95rem; font-weight: 800; cursor: pointer; opacity: 0.5; transition: opacity 0.2s;">Continue →</button>
+            </div>
 
-            <button type="submit" class="button button-primary button-block" style="background: linear-gradient(135deg, #10b981, #059669); border: none; font-weight: bold; border-radius: 8px; margin-top: 0.5rem; padding: 12px; font-size: 1rem; cursor: pointer; color: #fff;">
-              Request Bank Payout
-            </button>
+            <!-- Step 2: Payout Method -->
+            <div id="wStep2" class="wstep-panel" style="display: none;">
+              <p style="font-size: 0.88rem; font-weight: 700; color: #e2e8f0; margin-bottom: 1rem;">Choose Payout Method</p>
+              
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                <label style="cursor: pointer;">
+                  <input type="radio" name="payoutMethod" value="bank" checked style="display: none;" onchange="togglePayoutFields()">
+                  <div id="pmBank" style="padding: 1.25rem; border-radius: 14px; border: 2px solid rgba(16, 185, 129, 0.4); background: rgba(16, 185, 129, 0.08); text-align: center; transition: all 0.25s;">
+                    <span style="font-size: 1.8rem; display: block; margin-bottom: 0.4rem;">🏦</span>
+                    <strong style="color: #34d399; font-size: 0.9rem;">Bank Transfer</strong>
+                    <span style="display: block; font-size: 0.72rem; color: #94a3b8; margin-top: 0.2rem;">1-3 business days</span>
+                  </div>
+                </label>
+                <label style="cursor: pointer;">
+                  <input type="radio" name="payoutMethod" value="upi" style="display: none;" onchange="togglePayoutFields()">
+                  <div id="pmUpi" style="padding: 1.25rem; border-radius: 14px; border: 2px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.03); text-align: center; transition: all 0.25s;">
+                    <span style="font-size: 1.8rem; display: block; margin-bottom: 0.4rem;">📱</span>
+                    <strong style="color: #94a3b8; font-size: 0.9rem;">UPI Transfer</strong>
+                    <span style="display: block; font-size: 0.72rem; color: #94a3b8; margin-top: 0.2rem;">Instant transfer</span>
+                  </div>
+                </label>
+              </div>
+
+              <!-- Bank Details Fields -->
+              <div id="bankFields">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                  <label style="display: flex; flex-direction: column; gap: 0.35rem;">
+                    <span style="font-size: 0.82rem; font-weight: 600; color: #94a3b8;">Bank Name</span>
+                    <input type="text" id="wBankName" placeholder="e.g. State Bank of India" style="padding: 10px 14px; border-radius: 10px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12); color: #fff; font-size: 0.88rem;">
+                  </label>
+                  <label style="display: flex; flex-direction: column; gap: 0.35rem;">
+                    <span style="font-size: 0.82rem; font-weight: 600; color: #94a3b8;">Account Holder</span>
+                    <input type="text" id="wAccHolder" placeholder="Full name" style="padding: 10px 14px; border-radius: 10px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12); color: #fff; font-size: 0.88rem;">
+                  </label>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                  <label style="display: flex; flex-direction: column; gap: 0.35rem;">
+                    <span style="font-size: 0.82rem; font-weight: 600; color: #94a3b8;">Account Number</span>
+                    <input type="text" id="wAccNo" placeholder="Account number" style="padding: 10px 14px; border-radius: 10px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12); color: #fff; font-size: 0.88rem; letter-spacing: 0.08em;">
+                  </label>
+                  <label style="display: flex; flex-direction: column; gap: 0.35rem;">
+                    <span style="font-size: 0.82rem; font-weight: 600; color: #94a3b8;">IFSC Code</span>
+                    <input type="text" id="wIfsc" placeholder="e.g. SBIN0001234" style="padding: 10px 14px; border-radius: 10px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12); color: #fff; font-size: 0.88rem; text-transform: uppercase;">
+                  </label>
+                </div>
+              </div>
+
+              <!-- UPI Fields -->
+              <div id="upiFields" style="display: none;">
+                <label style="display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1rem;">
+                  <span style="font-size: 0.82rem; font-weight: 600; color: #94a3b8;">UPI ID / VPA</span>
+                  <input type="text" id="wUpiId" placeholder="name@upi or 9876543210@paytm" style="padding: 12px 14px; border-radius: 10px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12); color: #fff; font-size: 0.95rem; letter-spacing: 0.02em;">
+                  <span style="font-size: 0.72rem; color: #64748b;">Your UPI ID linked to your bank account</span>
+                </label>
+              </div>
+
+              <!-- Hidden field to send combined bank details -->
+              <input type="hidden" name="bankDetails" id="wBankDetailsHidden">
+
+              <div style="display: flex; gap: 0.75rem;">
+                <button type="button" onclick="goToStep(1)" style="flex: 1; padding: 12px; background: rgba(255,255,255,0.06); color: #94a3b8; border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; font-size: 0.9rem; font-weight: 700; cursor: pointer;">← Back</button>
+                <button type="button" id="wNext2" onclick="goToStep(3)" style="flex: 2; padding: 12px; background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; border-radius: 12px; font-size: 0.9rem; font-weight: 800; cursor: pointer;">Review & Confirm →</button>
+              </div>
+            </div>
+
+            <!-- Step 3: Review & Confirm -->
+            <div id="wStep3" class="wstep-panel" style="display: none;">
+              <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 1.5rem; margin-bottom: 1.5rem;">
+                <p style="font-size: 0.82rem; text-transform: uppercase; font-weight: 700; color: #64748b; letter-spacing: 0.04em; margin-bottom: 1rem;">Withdrawal Summary</p>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                  <span style="color: #94a3b8; font-size: 0.9rem;">Withdrawal Amount</span>
+                  <strong id="reviewAmount" style="color: #fff; font-size: 1.15rem; font-family: 'Outfit', sans-serif;">₹0</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                  <span style="color: #94a3b8; font-size: 0.9rem;">Processing Fee</span>
+                  <strong style="color: #34d399; font-size: 0.9rem;">₹0 (FREE)</strong>
+                </div>
+                <div style="height: 1px; background: rgba(255,255,255,0.08); margin: 0.75rem 0;"></div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="color: #e2e8f0; font-size: 1rem; font-weight: 700;">Net Credit</span>
+                  <strong id="reviewNetCredit" style="color: #34d399; font-size: 1.3rem; font-family: 'Outfit', sans-serif;">₹0</strong>
+                </div>
+                <div style="height: 1px; background: rgba(255,255,255,0.08); margin: 0.75rem 0;"></div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="color: #94a3b8; font-size: 0.85rem;">Payout Method</span>
+                  <span id="reviewMethod" style="color: #38bdf8; font-size: 0.88rem; font-weight: 700;">Bank Transfer</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+                  <span style="color: #94a3b8; font-size: 0.85rem;">Destination</span>
+                  <span id="reviewDestination" style="color: #e2e8f0; font-size: 0.85rem; font-weight: 600; max-width: 200px; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">—</span>
+                </div>
+              </div>
+
+              <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 10px; padding: 0.85rem 1rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.6rem;">
+                <span style="font-size: 1.1rem;">⏱️</span>
+                <span style="font-size: 0.82rem; color: #fbbf24; line-height: 1.4;">Processing time: Bank transfers take 1-3 business days. UPI transfers are instant during business hours.</span>
+              </div>
+
+              <div style="display: flex; gap: 0.75rem;">
+                <button type="button" onclick="goToStep(2)" style="flex: 1; padding: 13px; background: rgba(255,255,255,0.06); color: #94a3b8; border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; font-size: 0.9rem; font-weight: 700; cursor: pointer;">← Back</button>
+                <button type="submit" style="flex: 2; padding: 13px; background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; border-radius: 12px; font-size: 1rem; font-weight: 800; cursor: pointer; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); transition: transform 0.15s, box-shadow 0.15s;" onmousedown="this.style.transform='scale(0.98)'" onmouseup="this.style.transform='scale(1)'" onmouseleave="this.style.transform='scale(1)'">✅ Confirm Withdrawal</button>
+              </div>
+            </div>
           </form>
+
+          <script>
+          (function() {
+            var currentStep = 1;
+            var maxBalance = <%= wallet.available_inr %>;
+
+            window.validateWithdrawAmount = function() {
+              var amountInput = document.getElementById('wAmount');
+              var btn = document.getElementById('wNext1');
+              var errorDiv = document.getElementById('wAmountError');
+              var val = Number(amountInput.value);
+              
+              if (!val || val < 100) {
+                errorDiv.textContent = val > 0 && val < 100 ? 'Minimum withdrawal amount is ₹100.' : '';
+                errorDiv.style.display = val > 0 && val < 100 ? 'block' : 'none';
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+                return;
+              }
+              if (val > maxBalance) {
+                errorDiv.textContent = 'Amount exceeds your available balance of ₹' + maxBalance;
+                errorDiv.style.display = 'block';
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+                return;
+              }
+              errorDiv.style.display = 'none';
+              btn.disabled = false;
+              btn.style.opacity = '1';
+            };
+
+            window.togglePayoutFields = function() {
+              var method = document.querySelector('input[name="payoutMethod"]:checked').value;
+              document.getElementById('bankFields').style.display = method === 'bank' ? 'block' : 'none';
+              document.getElementById('upiFields').style.display = method === 'upi' ? 'block' : 'none';
+              document.getElementById('pmBank').style.borderColor = method === 'bank' ? 'rgba(16, 185, 129, 0.4)' : 'rgba(255,255,255,0.1)';
+              document.getElementById('pmBank').style.background = method === 'bank' ? 'rgba(16, 185, 129, 0.08)' : 'rgba(255,255,255,0.03)';
+              document.getElementById('pmBank').querySelector('strong').style.color = method === 'bank' ? '#34d399' : '#94a3b8';
+              document.getElementById('pmUpi').style.borderColor = method === 'upi' ? 'rgba(56, 189, 248, 0.4)' : 'rgba(255,255,255,0.1)';
+              document.getElementById('pmUpi').style.background = method === 'upi' ? 'rgba(56, 189, 248, 0.08)' : 'rgba(255,255,255,0.03)';
+              document.getElementById('pmUpi').querySelector('strong').style.color = method === 'upi' ? '#38bdf8' : '#94a3b8';
+            };
+
+            window.goToStep = function(step) {
+              // Validate before moving forward
+              if (step === 2 && currentStep === 1) {
+                var val = Number(document.getElementById('wAmount').value);
+                if (!val || val < 100 || val > maxBalance) return;
+              }
+              if (step === 3 && currentStep === 2) {
+                var method = document.querySelector('input[name="payoutMethod"]:checked').value;
+                var details = '';
+                if (method === 'bank') {
+                  var bankName = document.getElementById('wBankName').value.trim();
+                  var accHolder = document.getElementById('wAccHolder').value.trim();
+                  var accNo = document.getElementById('wAccNo').value.trim();
+                  var ifsc = document.getElementById('wIfsc').value.trim();
+                  if (!bankName || !accNo || !ifsc) {
+                    alert('Please fill in all bank details (Bank Name, Account Number, IFSC Code).');
+                    return;
+                  }
+                  details = 'Bank: ' + bankName + '\\nAccount Holder: ' + accHolder + '\\nAccount No: ' + accNo + '\\nIFSC: ' + ifsc;
+                } else {
+                  var upiId = document.getElementById('wUpiId').value.trim();
+                  if (!upiId || !upiId.includes('@')) {
+                    alert('Please enter a valid UPI ID (e.g., name@upi).');
+                    return;
+                  }
+                  details = 'UPI Transfer\\nUPI ID: ' + upiId;
+                }
+                document.getElementById('wBankDetailsHidden').value = details;
+
+                // Update review
+                var amount = Number(document.getElementById('wAmount').value);
+                document.getElementById('reviewAmount').textContent = '₹' + amount;
+                document.getElementById('reviewNetCredit').textContent = '₹' + amount;
+                document.getElementById('reviewMethod').textContent = method === 'bank' ? '🏦 Bank Transfer' : '📱 UPI Transfer';
+                document.getElementById('reviewDestination').textContent = method === 'bank' ? (accNo ? '****' + accNo.slice(-4) + ' (' + bankName + ')' : '—') : upiId;
+              }
+
+              // Switch panels
+              document.getElementById('wStep1').style.display = step === 1 ? 'block' : 'none';
+              document.getElementById('wStep2').style.display = step === 2 ? 'block' : 'none';
+              document.getElementById('wStep3').style.display = step === 3 ? 'block' : 'none';
+
+              // Update stepper
+              var steps = document.querySelectorAll('#withdraw-stepper .wstep, #withdraw-stepper .wstep-active');
+              steps.forEach(function(s) {
+                var sNum = Number(s.getAttribute('data-step'));
+                var circle = s.querySelector('.wstep-circle');
+                var label = s.querySelector('span:last-child');
+                if (sNum <= step) {
+                  circle.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+                  circle.style.color = '#fff';
+                  label.style.color = '#10b981';
+                } else {
+                  circle.style.background = 'rgba(255,255,255,0.08)';
+                  circle.style.color = '#64748b';
+                  label.style.color = '#64748b';
+                }
+              });
+
+              currentStep = step;
+            };
+          })();
+          </script>
         <% } %>
       </div>
 

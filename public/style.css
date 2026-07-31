@@ -408,7 +408,7 @@ button:disabled {
   width: 100%;
 }
 
-input,
+input:not([type="checkbox"]):not([type="radio"]),
 select,
 textarea {
   width: 100%;
@@ -423,6 +423,21 @@ textarea {
     border-color var(--transition),
     box-shadow var(--transition),
     background var(--transition);
+}
+
+input[type="radio"],
+input[type="checkbox"] {
+  width: auto !important;
+  height: auto !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  margin: 0;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  flex-shrink: 0 !important;
+  display: inline-block !important;
 }
 
 input:not([type="checkbox"]):not([type="radio"]),

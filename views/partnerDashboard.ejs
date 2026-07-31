@@ -62,7 +62,7 @@
       <div class="glass-panel" style="padding: 2rem; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); background: rgba(15,23,42,0.7);">
         <h2 style="font-family: 'Outfit', sans-serif; color: #fff; margin: 0 0 1.5rem;">Add Professional to Agency</h2>
 
-        <form action="/partner/professionals/create" method="POST" style="display: flex; flex-direction: column; gap: 1.25rem;">
+        <form action="/partner/professionals/create" method="POST" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 1.25rem;">
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
             <label class="field-group">
               <span style="font-size: 0.82rem; font-weight: 600; color: #94a3b8;">Full Name</span>
@@ -70,18 +70,21 @@
             </label>
             <label class="field-group">
               <span style="font-size: 0.82rem; font-weight: 600; color: #94a3b8;">Username</span>
-              <input type="text" name="username" required placeholder="unique_staff" class="form-input" style="width: 100%; padding: 0.75rem 1rem; border-radius: 12px; background: rgba(0,0,0,0.5); color: #fff; border: 1px solid rgba(255,255,255,0.15);">
+              <input type="text" name="username" id="staff_username_input" required placeholder="unique_staff" class="form-input" style="width: 100%; padding: 0.75rem 1rem; border-radius: 12px; background: rgba(0,0,0,0.5); color: #fff; border: 1px solid rgba(255,255,255,0.15);">
+              <div id="username_feedback_badge" style="font-size: 0.78rem; font-weight: 700; margin-top: 4px; display: none;"></div>
             </label>
           </div>
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
             <label class="field-group">
               <span style="font-size: 0.82rem; font-weight: 600; color: #94a3b8;">Email Address</span>
-              <input type="email" name="email" placeholder="Optional" class="form-input" style="width: 100%; padding: 0.75rem 1rem; border-radius: 12px; background: rgba(0,0,0,0.5); color: #fff; border: 1px solid rgba(255,255,255,0.15);">
+              <input type="email" name="email" id="staff_email_input" placeholder="Optional" class="form-input" style="width: 100%; padding: 0.75rem 1rem; border-radius: 12px; background: rgba(0,0,0,0.5); color: #fff; border: 1px solid rgba(255,255,255,0.15);">
+              <div id="email_feedback_badge" style="font-size: 0.78rem; font-weight: 700; margin-top: 4px; display: none;"></div>
             </label>
             <label class="field-group">
               <span style="font-size: 0.82rem; font-weight: 600; color: #94a3b8;">Phone Number</span>
-              <input type="tel" name="phone" required placeholder="Phone number" class="form-input" style="width: 100%; padding: 0.75rem 1rem; border-radius: 12px; background: rgba(0,0,0,0.5); color: #fff; border: 1px solid rgba(255,255,255,0.15);">
+              <input type="tel" name="phone" id="staff_phone_input" required placeholder="Phone number" class="form-input" style="width: 100%; padding: 0.75rem 1rem; border-radius: 12px; background: rgba(0,0,0,0.5); color: #fff; border: 1px solid rgba(255,255,255,0.15);">
+              <div id="phone_feedback_badge" style="font-size: 0.78rem; font-weight: 700; margin-top: 4px; display: none;"></div>
             </label>
           </div>
 
@@ -95,17 +98,22 @@
               <input type="password" name="password" required placeholder="Staff password" class="form-input" style="width: 100%; padding: 0.75rem 1rem; border-radius: 12px; background: rgba(0,0,0,0.5); color: #fff; border: 1px solid rgba(255,255,255,0.15);">
             </label>
           </div>
+
+          <label class="field-group">
+            <span style="font-size: 0.82rem; font-weight: 600; color: #94a3b8;">Staff Profile Photo (Optional)</span>
+            <input type="file" name="photo" accept="image/*" class="form-input" style="width: 100%; padding: 0.6rem 1rem; border-radius: 12px; background: rgba(0,0,0,0.5); color: #fff; border: 1px solid rgba(255,255,255,0.15);">
+          </label>
           
           <input type="hidden" name="city" value="<%= dashboardData.partner.city %>">
           <input type="hidden" name="area" value="Main">
           
-          <!-- Skill Category assignment -->
+          <!-- Skill Category & Subcategory Assignment -->
           <div style="background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem;">
-            <span style="font-size: 0.88rem; font-weight: 700; color: #38bdf8; display: block;">Assign Service Categories (Rates fixed by Admin)</span>
+            <span style="font-size: 0.88rem; font-weight: 700; color: #38bdf8; display: block;">Assign Service Category & Subcategories</span>
 
-            <div style="display: flex; gap: 1rem; align-items: flex-end;">
-              <label style="flex: 1;">
-                <span style="font-size: 0.8rem; font-weight: 600; color: #f8fafc; display: block; margin-bottom: 0.4rem;">Select Category</span>
+            <div style="display: flex; flex-direction: column; gap: 0.8rem;">
+              <label>
+                <span style="font-size: 0.8rem; font-weight: 600; color: #f8fafc; display: block; margin-bottom: 0.4rem;">Select Main Category</span>
                 <select id="builderCategorySelect" class="form-select" style="width: 100%; background: #1e293b; border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 10px 14px; color: #fff;">
                   <option value="">-- Select Service Category --</option>
                   <% services.forEach(function(svc) { %>
@@ -113,7 +121,15 @@
                   <% }) %>
                 </select>
               </label>
-              <button type="button" id="btnAddSkillToStaff" class="button button-primary" style="padding: 10px 16px; border-radius: 8px; font-weight: bold;">+ Add</button>
+
+              <!-- Dynamic Subcategories Picker -->
+              <div id="subskillPickerContainer" style="display: none; background: rgba(0,0,0,0.4); padding: 1rem; border-radius: 10px; border: 1px solid rgba(56, 189, 248, 0.2);">
+                <span style="font-size: 0.8rem; font-weight: 700; color: #a78bfa; display: block; margin-bottom: 0.5rem;">Select Subcategories / Specializations</span>
+                <div id="subskillCheckboxes" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.5rem; max-height: 160px; overflow-y: auto; padding: 0.4rem;">
+                </div>
+              </div>
+
+              <button type="button" id="btnAddSkillToStaff" class="button button-primary" style="padding: 10px 16px; border-radius: 8px; font-weight: bold; align-self: flex-start;">+ Add Category & Subcategories</button>
             </div>
 
             <!-- Assigned Skills Table -->
@@ -156,25 +172,210 @@
     <!-- RIGHT PANEL: Withdrawals & Billing Operations -->
     <div style="display: flex; flex-direction: column; gap: 2rem;">
       
-      <!-- Section A: Request Payout -->
-      <div class="glass-panel" style="padding: 2rem; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); background: rgba(15,23,42,0.7);">
-        <h2 style="font-family: 'Outfit', sans-serif; color: #fff; margin: 0 0 0.5rem;">Withdraw Payout</h2>
-        <p style="color: #94a3b8; font-size: 0.88rem; margin-bottom: 1.5rem;">Available earnings can be requested once every 7 days.</p>
+      <!-- Section A: Request Payout (PayU Integrated Multi-Step) -->
+      <div class="glass-panel" style="padding: 2rem; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); background: rgba(15,23,42,0.7); position: relative; overflow: hidden;">
+        <!-- PayU Accent Line -->
+        <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #10b981, #059669, #0d9488);"></div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.4rem; flex-wrap: wrap; gap: 0.5rem;">
+          <h2 style="font-family: 'Outfit', sans-serif; color: #fff; margin: 0;">Withdraw Payout</h2>
+          <span style="padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 800; color: #10b981; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); text-transform: uppercase;">PayU Secured</span>
+        </div>
+        <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 1.5rem;">Withdraw agency commission securely via Bank Transfer or UPI. Once per 7 days.</p>
 
         <% if (dashboardData.partner.is_verified) { %>
-          <form action="/partner/withdraw" method="POST" style="display: flex; flex-direction: column; gap: 1.25rem;">
-            <label class="field-group">
-              <span style="font-size: 0.85rem; font-weight: 600; color: #94a3b8;">Amount to Withdraw (₹)</span>
-              <input type="number" name="amount" min="1" max="<%= dashboardData.wallet.available_inr %>" required placeholder="Max ₹<%= dashboardData.wallet.available_inr %>" style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; padding: 12px 16px; color: #fff; font-size: 1.1rem; font-weight: bold; width: 100%;">
-            </label>
-            <label class="field-group">
-              <span style="font-size: 0.85rem; font-weight: 600; color: #94a3b8;">Bank Account Details</span>
-              <textarea name="bankDetails" required rows="3" placeholder="Bank Name / Acc No / IFSC" style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; padding: 12px 16px; color: #fff; font-size: 0.9rem; resize: none; width: 100%;"></textarea>
-            </label>
-            <button type="submit" class="button button-primary button-block" style="background: linear-gradient(135deg, #10b981, #059669); border: none; font-weight: bold; border-radius: 12px; padding: 12px; font-size: 1rem;">
-              Request Bank Payout
-            </button>
+          <!-- Stepper -->
+          <div id="partner-withdraw-stepper" style="display: flex; align-items: center; justify-content: center; gap: 0; margin-bottom: 1.5rem;">
+            <div class="pwstep pwstep-active" data-pstep="1" style="display: flex; align-items: center; gap: 0.35rem;">
+              <div class="pwstep-circle" style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #059669); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 800;">1</div>
+              <span style="font-size: 0.75rem; color: #10b981; font-weight: 700;">Amount</span>
+            </div>
+            <div style="flex: 0 0 30px; height: 2px; background: rgba(255,255,255,0.1); margin: 0 0.4rem;"></div>
+            <div class="pwstep" data-pstep="2" style="display: flex; align-items: center; gap: 0.35rem;">
+              <div class="pwstep-circle" style="width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.08); color: #64748b; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 800;">2</div>
+              <span style="font-size: 0.75rem; color: #64748b; font-weight: 700;">Method</span>
+            </div>
+            <div style="flex: 0 0 30px; height: 2px; background: rgba(255,255,255,0.1); margin: 0 0.4rem;"></div>
+            <div class="pwstep" data-pstep="3" style="display: flex; align-items: center; gap: 0.35rem;">
+              <div class="pwstep-circle" style="width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.08); color: #64748b; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 800;">3</div>
+              <span style="font-size: 0.75rem; color: #64748b; font-weight: 700;">Confirm</span>
+            </div>
+          </div>
+
+          <form action="/partner/withdraw" method="POST" id="partnerWithdrawForm">
+            <!-- Step 1 -->
+            <div id="pwStep1">
+              <label style="display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1rem;">
+                <span style="font-size: 0.85rem; font-weight: 600; color: #94a3b8;">Amount to Withdraw (₹)</span>
+                <div style="position: relative;">
+                  <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 1.2rem; color: #34d399; font-weight: 800;">₹</span>
+                  <input type="number" name="amount" id="pwAmount" min="100" max="<%= dashboardData.wallet.available_inr %>" required placeholder="Enter amount" style="width: 100%; box-sizing: border-box; padding: 12px 14px 12px 38px; background: rgba(0,0,0,0.5); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 10px; color: #fff; font-size: 1.1rem; font-weight: bold;" oninput="validatePartnerAmount()">
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.2rem;">
+                  <span style="font-size: 0.75rem; color: #64748b;">Available: ₹<%= dashboardData.wallet.available_inr %></span>
+                  <button type="button" onclick="document.getElementById('pwAmount').value='<%= dashboardData.wallet.available_inr %>';validatePartnerAmount();" style="font-size: 0.72rem; color: #10b981; font-weight: 700; background: none; border: 1px solid rgba(16,185,129,0.3); padding: 2px 8px; border-radius: 5px; cursor: pointer;">Max</button>
+                </div>
+              </label>
+              <div id="pwAmountError" style="display: none; color: #f43f5e; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.8rem;"></div>
+              <button type="button" id="pwNext1" onclick="goPartnerStep(2)" disabled style="width: 100%; padding: 12px; background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; border-radius: 10px; font-size: 0.95rem; font-weight: 800; cursor: pointer; opacity: 0.5;">Continue →</button>
+            </div>
+
+            <!-- Step 2 -->
+            <div id="pwStep2" style="display: none;">
+              <span style="font-size: 0.85rem; font-weight: 700; color: #e2e8f0; display: block; margin-bottom: 0.8rem;">Payout Method</span>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1.25rem;">
+                <label style="cursor: pointer;">
+                  <input type="radio" name="payoutMethod" value="bank" checked style="display: none;" onchange="togglePartnerPayoutFields()">
+                  <div id="ppmBank" style="padding: 1rem; border-radius: 12px; border: 2px solid rgba(16, 185, 129, 0.4); background: rgba(16, 185, 129, 0.08); text-align: center;">
+                    <span style="font-size: 1.5rem; display: block; margin-bottom: 0.2rem;">🏦</span>
+                    <strong style="color: #34d399; font-size: 0.85rem;">Bank Transfer</strong>
+                  </div>
+                </label>
+                <label style="cursor: pointer;">
+                  <input type="radio" name="payoutMethod" value="upi" style="display: none;" onchange="togglePartnerPayoutFields()">
+                  <div id="ppmUpi" style="padding: 1rem; border-radius: 12px; border: 2px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.03); text-align: center;">
+                    <span style="font-size: 1.5rem; display: block; margin-bottom: 0.2rem;">📱</span>
+                    <strong style="color: #94a3b8; font-size: 0.85rem;">UPI Transfer</strong>
+                  </div>
+                </label>
+              </div>
+
+              <!-- Bank Fields -->
+              <div id="pbankFields">
+                <div style="display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1rem;">
+                  <input type="text" id="pwBankName" placeholder="Bank Name (e.g. HDFC)" style="padding: 10px 12px; border-radius: 8px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.12); color: #fff; font-size: 0.85rem;">
+                  <input type="text" id="pwAccHolder" placeholder="Account Holder Name" style="padding: 10px 12px; border-radius: 8px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.12); color: #fff; font-size: 0.85rem;">
+                  <input type="text" id="pwAccNo" placeholder="Account Number" style="padding: 10px 12px; border-radius: 8px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.12); color: #fff; font-size: 0.85rem;">
+                  <input type="text" id="pwIfsc" placeholder="IFSC Code" style="padding: 10px 12px; border-radius: 8px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.12); color: #fff; font-size: 0.85rem; text-transform: uppercase;">
+                </div>
+              </div>
+
+              <!-- UPI Fields -->
+              <div id="pupiFields" style="display: none;">
+                <input type="text" id="pwUpiId" placeholder="UPI ID (e.g. agency@upi)" style="padding: 12px; border-radius: 8px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.12); color: #fff; font-size: 0.9rem; width: 100%; box-sizing: border-box; margin-bottom: 1rem;">
+              </div>
+
+              <input type="hidden" name="bankDetails" id="pwBankDetailsHidden">
+
+              <div style="display: flex; gap: 0.5rem;">
+                <button type="button" onclick="goPartnerStep(1)" style="flex: 1; padding: 10px; background: rgba(255,255,255,0.06); color: #94a3b8; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; font-weight: 700;">← Back</button>
+                <button type="button" onclick="goPartnerStep(3)" style="flex: 2; padding: 10px; background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; border-radius: 8px; font-weight: 800;">Review →</button>
+              </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div id="pwStep3" style="display: none;">
+              <div style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 1rem; margin-bottom: 1rem; font-size: 0.85rem;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                  <span style="color: #94a3b8;">Amount:</span>
+                  <strong id="previewAmount" style="color: #fff; font-size: 1rem;">₹0</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                  <span style="color: #94a3b8;">Fee:</span>
+                  <strong style="color: #34d399;">₹0 (Free)</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="color: #94a3b8;">Method:</span>
+                  <span id="previewMethod" style="color: #38bdf8; font-weight: 700;">Bank</span>
+                </div>
+              </div>
+              <div style="display: flex; gap: 0.5rem;">
+                <button type="button" onclick="goPartnerStep(2)" style="flex: 1; padding: 10px; background: rgba(255,255,255,0.06); color: #94a3b8; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; font-weight: 700;">← Back</button>
+                <button type="submit" style="flex: 2; padding: 10px; background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; border-radius: 8px; font-weight: 800;">Confirm Payout ✅</button>
+              </div>
+            </div>
           </form>
+
+          <script>
+          (function() {
+            var maxBal = <%= dashboardData.wallet.available_inr %>;
+            var cStep = 1;
+
+            window.validatePartnerAmount = function() {
+              var val = Number(document.getElementById('pwAmount').value);
+              var btn = document.getElementById('pwNext1');
+              var err = document.getElementById('pwAmountError');
+              if (!val || val < 100) {
+                err.textContent = val > 0 ? 'Minimum withdrawal is ₹100.' : '';
+                err.style.display = val > 0 ? 'block' : 'none';
+                btn.disabled = true; btn.style.opacity = '0.5';
+                return;
+              }
+              if (val > maxBal) {
+                err.textContent = 'Exceeds available balance of ₹' + maxBal;
+                err.style.display = 'block';
+                btn.disabled = true; btn.style.opacity = '0.5';
+                return;
+              }
+              err.style.display = 'none';
+              btn.disabled = false; btn.style.opacity = '1';
+            };
+
+            window.togglePartnerPayoutFields = function() {
+              var m = document.querySelector('input[name="payoutMethod"]:checked').value;
+              document.getElementById('pbankFields').style.display = m === 'bank' ? 'block' : 'none';
+              document.getElementById('pupiFields').style.display = m === 'upi' ? 'block' : 'none';
+              document.getElementById('ppmBank').style.borderColor = m === 'bank' ? 'rgba(16, 185, 129, 0.4)' : 'rgba(255,255,255,0.1)';
+              document.getElementById('ppmBank').style.background = m === 'bank' ? 'rgba(16, 185, 129, 0.08)' : 'rgba(255,255,255,0.03)';
+              document.getElementById('ppmUpi').style.borderColor = m === 'upi' ? 'rgba(56, 189, 248, 0.4)' : 'rgba(255,255,255,0.1)';
+              document.getElementById('ppmUpi').style.background = m === 'upi' ? 'rgba(56, 189, 248, 0.08)' : 'rgba(255,255,255,0.03)';
+            };
+
+            window.goPartnerStep = function(step) {
+              if (step === 2 && cStep === 1) {
+                var val = Number(document.getElementById('pwAmount').value);
+                if (!val || val < 100 || val > maxBal) return;
+              }
+              if (step === 3 && cStep === 2) {
+                var m = document.querySelector('input[name="payoutMethod"]:checked').value;
+                var details = '';
+                if (m === 'bank') {
+                  var bName = document.getElementById('pwBankName').value.trim();
+                  var accH = document.getElementById('pwAccHolder').value.trim();
+                  var accN = document.getElementById('pwAccNo').value.trim();
+                  var ifsc = document.getElementById('pwIfsc').value.trim();
+                  if (!bName || !accN || !ifsc) {
+                    alert('Please enter Bank Name, Account Number, and IFSC code.');
+                    return;
+                  }
+                  details = 'Bank: ' + bName + '\\nHolder: ' + accH + '\\nAcc No: ' + accN + '\\nIFSC: ' + ifsc;
+                } else {
+                  var upi = document.getElementById('pwUpiId').value.trim();
+                  if (!upi || !upi.includes('@')) {
+                    alert('Please enter a valid UPI ID.');
+                    return;
+                  }
+                  details = 'UPI: ' + upi;
+                }
+                document.getElementById('pwBankDetailsHidden').value = details;
+                document.getElementById('previewAmount').textContent = '₹' + document.getElementById('pwAmount').value;
+                document.getElementById('previewMethod').textContent = m === 'bank' ? '🏦 Bank Transfer' : '📱 UPI Transfer';
+              }
+
+              document.getElementById('pwStep1').style.display = step === 1 ? 'block' : 'none';
+              document.getElementById('pwStep2').style.display = step === 2 ? 'block' : 'none';
+              document.getElementById('pwStep3').style.display = step === 3 ? 'block' : 'none';
+
+              var steps = document.querySelectorAll('#partner-withdraw-stepper .pwstep');
+              steps.forEach(function(s) {
+                var sn = Number(s.getAttribute('data-pstep'));
+                var circle = s.querySelector('.pwstep-circle');
+                var label = s.querySelector('span:last-child');
+                if (sn <= step) {
+                  circle.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+                  circle.style.color = '#fff';
+                  label.style.color = '#10b981';
+                } else {
+                  circle.style.background = 'rgba(255,255,255,0.08)';
+                  circle.style.color = '#64748b';
+                  label.style.color = '#64748b';
+                }
+              });
+
+              cStep = step;
+            };
+          })();
+          </script>
         <% } else { %>
           <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 10px; padding: 1.25rem; font-size: 0.85rem; color: #fca5a5; line-height: 1.5; text-align: center;">
             🔒 Withdrawals are locked until your agency is verified by the administrator.
@@ -206,6 +407,68 @@
           </div>
         <% } %>
       </div>
+    </div>
+
+    <!-- Section: Client Uploaded Work & Job Requirements -->
+    <div class="glass-panel" style="margin-top: 2rem; padding: 2rem; border-radius: 20px; border: 1px solid rgba(56,189,248,0.2); background: rgba(15,23,42,0.85);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <h2 style="font-family: 'Outfit', sans-serif; color: #fff; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+            <span>📋</span> Client Uploaded Work & Job Requirements
+          </h2>
+          <p style="color: #94a3b8; font-size: 0.88rem; margin: 0.25rem 0 0;">View client requests posted in your service domain & location. Assign your managed professionals to fulfill them.</p>
+        </div>
+        <a href="/work" class="button button-primary" style="padding: 0.6rem 1.25rem; border-radius: 10px; font-weight: 700; font-size: 0.88rem; background: linear-gradient(135deg, #38bdf8, #2563eb); text-decoration: none;">
+          View Full Work Board ›
+        </a>
+      </div>
+
+      <% if (typeof workRequirements === 'undefined' || !workRequirements || workRequirements.length === 0) { %>
+        <div style="text-align: center; padding: 2.5rem 1rem; border: 1px dashed rgba(255,255,255,0.15); border-radius: 14px; background: rgba(0,0,0,0.2);">
+          <p style="font-size: 2.5rem; margin-bottom: 0.5rem;">📂</p>
+          <h3 style="margin-bottom: 0.4rem; color: #fff;">No client work requests yet</h3>
+          <p style="color: #64748b; font-size: 0.88rem; margin: 0;">Client job posts for your area will appear here automatically.</p>
+        </div>
+      <% } else { %>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr)); gap: 1.25rem;">
+          <% workRequirements.forEach(function(job) { %>
+            <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between; gap: 1rem; transition: transform 0.2s, border-color 0.2s;">
+              <div>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; gap: 0.5rem;">
+                  <span style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 0.75rem; font-weight: 800; padding: 3px 10px; border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.3);">
+                    <%= job.category || 'Service' %>
+                  </span>
+                  <span style="color: #4ade80; font-weight: 800; font-size: 1.05rem;">
+                    ₹<%= job.budget || 'Negotiable' %>
+                  </span>
+                </div>
+
+                <h3 style="color: #fff; font-size: 1.1rem; margin: 0.4rem 0 0.2rem; font-weight: 700;">
+                  <%= job.subCategory || job.category || 'Custom Service Requirement' %>
+                </h3>
+
+                <p style="color: #cbd5e1; font-size: 0.86rem; line-height: 1.4; margin: 0.5rem 0; max-height: 3.6em; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                  <%= job.description || 'No detailed description provided.' %>
+                </p>
+
+                <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; font-size: 0.78rem; color: #94a3b8; margin-top: 0.5rem;">
+                  <span>📍 <%= job.location || 'India' %></span>
+                  <span>👤 <%= job.clientName || 'Verified Client' %></span>
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 0.6rem; margin-top: 0.5rem;">
+                <a href="/work#job-<%= job.id %>" style="flex: 1; text-align: center; padding: 0.55rem 0.8rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: #fff; border-radius: 8px; font-size: 0.82rem; font-weight: 700; text-decoration: none;">
+                  View Details
+                </a>
+                <a href="/chat" style="flex: 1; text-align: center; padding: 0.55rem 0.8rem; background: linear-gradient(135deg, #10b981, #059669); color: #fff; border-radius: 8px; font-size: 0.82rem; font-weight: 800; text-decoration: none;">
+                  💬 Contact Client
+                </a>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
     </div>
   </div>
 
@@ -265,13 +528,44 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
+  let assignedSkillsList = [];
   const categorySelect = document.getElementById("builderCategorySelect");
   const btnAddSkill = document.getElementById("btnAddSkillToStaff");
   const assignedContainer = document.getElementById("assignedSkillsContainer");
   const noSkillsNotice = document.getElementById("noSkillsNotice");
   const assignedJsonInput = document.getElementById("assignedSkillsJsonInput");
 
-  let assignedSkillsList = [];
+  const subskillPickerContainer = document.getElementById("subskillPickerContainer");
+  const subskillCheckboxes = document.getElementById("subskillCheckboxes");
+
+  if (categorySelect) {
+    categorySelect.addEventListener("change", function() {
+      const selectedOpt = categorySelect.options[categorySelect.selectedIndex];
+      if (!selectedOpt || !selectedOpt.value) {
+        if (subskillPickerContainer) subskillPickerContainer.style.display = "none";
+        return;
+      }
+      let subskills = [];
+      try {
+        const raw = selectedOpt.getAttribute("data-subskills");
+        if (raw) subskills = JSON.parse(raw);
+      } catch(e) {}
+
+      if (subskills && subskills.length > 0) {
+        if (subskillCheckboxes) {
+          subskillCheckboxes.innerHTML = subskills.map(sub => `
+            <label style="display: flex; align-items: center; gap: 0.4rem; color: #e2e8f0; font-size: 0.82rem; cursor: pointer; background: rgba(255,255,255,0.04); padding: 5px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.08);">
+              <input type="checkbox" class="subskill-cb" value="${sub.replace(/"/g, '&quot;')}" checked>
+              <span>${sub}</span>
+            </label>
+          `).join("");
+        }
+        if (subskillPickerContainer) subskillPickerContainer.style.display = "block";
+      } else {
+        if (subskillPickerContainer) subskillPickerContainer.style.display = "none";
+      }
+    });
+  }
 
   function renderAssignedSkills() {
     if (!assignedContainer) return;
@@ -283,6 +577,7 @@ document.addEventListener("DOMContentLoaded", function() {
         <div style="background: rgba(30,41,59,0.75); border: 1px solid rgba(56,189,248,0.3); border-radius: 8px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
           <div>
             <strong style="color: #38bdf8; font-size: 0.96rem;">${item.categoryName}</strong>
+            ${item.subskills && item.subskills.length ? `<div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;">${item.subskills.map(s => `<span style="font-size: 0.72rem; color: #a78bfa; background: rgba(167,139,250,0.15); padding: 2px 6px; border-radius: 4px;">${s}</span>`).join('')}</div>` : ''}
           </div>
           <button type="button" onclick="removeAssignedSkill(${idx})" style="background: rgba(239,68,68,0.2); color: #f87171; border: 1px solid rgba(239,68,68,0.4); border-radius: 6px; padding: 5px 12px; font-size: 0.78rem; cursor: pointer; font-weight: bold;">Remove</button>
         </div>
@@ -308,13 +603,21 @@ document.addEventListener("DOMContentLoaded", function() {
       const categoryId = selectedOpt.value;
       const categoryName = selectedOpt.getAttribute("data-name") || selectedOpt.text;
       
+      const checkedSubskills = [];
+      document.querySelectorAll(".subskill-cb:checked").forEach(cb => {
+        checkedSubskills.push(cb.value);
+      });
+
       const existingIdx = assignedSkillsList.findIndex(item => item.categoryId == categoryId);
       if (existingIdx === -1) {
         assignedSkillsList.push({
           categoryId: Number(categoryId),
           categoryName: categoryName,
-          rate: 500 // placeholder since admin controls rate
+          subskills: checkedSubskills,
+          rate: 500
         });
+      } else {
+        assignedSkillsList[existingIdx].subskills = checkedSubskills;
       }
       renderAssignedSkills();
     });
@@ -328,6 +631,84 @@ document.addEventListener("DOMContentLoaded", function() {
         alert("Please assign at least one Service Category to this staff member before submitting.");
         return false;
       }
+    });
+  }
+
+  // Live Real-Time Username Check
+  const usernameInput = document.getElementById("staff_username_input");
+  const usernameBadge = document.getElementById("username_feedback_badge");
+  let uTimer = null;
+  if (usernameInput) {
+    usernameInput.addEventListener("input", function() {
+      clearTimeout(uTimer);
+      const val = this.value.trim();
+      if (!val || val.length < 3) {
+        if (usernameBadge) usernameBadge.style.display = "none";
+        return;
+      }
+      uTimer = setTimeout(async () => {
+        try {
+          const res = await fetch("/api/check-username/" + encodeURIComponent(val));
+          const data = await res.json();
+          if (usernameBadge) {
+            usernameBadge.textContent = data.message;
+            usernameBadge.style.color = data.available ? "#34d399" : "#f87171";
+            usernameBadge.style.display = "block";
+          }
+        } catch(e) {}
+      }, 250);
+    });
+  }
+
+  // Live Real-Time Phone Check
+  const phoneInput = document.getElementById("staff_phone_input");
+  const phoneBadge = document.getElementById("phone_feedback_badge");
+  let pTimer = null;
+  if (phoneInput) {
+    phoneInput.addEventListener("input", function() {
+      clearTimeout(pTimer);
+      const val = this.value.trim();
+      if (!val || val.length < 10) {
+        if (phoneBadge) phoneBadge.style.display = "none";
+        return;
+      }
+      pTimer = setTimeout(async () => {
+        try {
+          const res = await fetch("/api/check-phone/" + encodeURIComponent(val));
+          const data = await res.json();
+          if (phoneBadge) {
+            phoneBadge.textContent = data.message;
+            phoneBadge.style.color = data.available ? "#34d399" : "#f87171";
+            phoneBadge.style.display = "block";
+          }
+        } catch(e) {}
+      }, 250);
+    });
+  }
+
+  // Live Real-Time Email Check
+  const emailInput = document.getElementById("staff_email_input");
+  const emailBadge = document.getElementById("email_feedback_badge");
+  let eTimer = null;
+  if (emailInput) {
+    emailInput.addEventListener("input", function() {
+      clearTimeout(eTimer);
+      const val = this.value.trim();
+      if (!val || !val.includes("@")) {
+        if (emailBadge) emailBadge.style.display = "none";
+        return;
+      }
+      eTimer = setTimeout(async () => {
+        try {
+          const res = await fetch("/api/check-email/" + encodeURIComponent(val));
+          const data = await res.json();
+          if (emailBadge) {
+            emailBadge.textContent = data.message;
+            emailBadge.style.color = data.available ? "#34d399" : "#f87171";
+            emailBadge.style.display = "block";
+          }
+        } catch(e) {}
+      }, 250);
     });
   }
 });

@@ -1,99 +1,181 @@
 <section class="page-hero">
   <div class="shell page-hero-content">
-    <p class="eyebrow">Partner Portal</p>
-    <h1>Manage your professional profile.</h1>
-    <p>Update your details, select the services you offer, manage security, or delete your profile.</p>
+    <p class="eyebrow">Professional Portal</p>
+    <h1><%= profile.isPartnerManaged ? 'Agency Staff Profile' : 'Manage your professional profile.' %></h1>
+    <p><%= profile.isPartnerManaged ? 'View your registered details and skills assigned by your partner agency.' : 'Update your contact details and skill specializations.' %></p>
   </div>
 </section>
 
 <section class="section shell dashboard-shell">
   <%- include("partials/notice") %>
 
-  <div style="display: grid; grid-template-columns: 1fr; gap: 3rem; max-width: 800px; margin: 0 auto;">
-    <!-- Profile Information Form -->
-    <article class="glass-panel" style="padding: 2.5rem; border-radius: var(--radius-lg);">
-      <p class="card-kicker">Professional Profile</p>
-      <h2 style="margin-bottom: 1.5rem;">Edit Professional Details</h2>
+  <div style="display: grid; grid-template-columns: 1fr; gap: 2.5rem; max-width: 800px; margin: 0 auto;">
 
-      <form method="POST" action="/professional/profile" class="auth-form" enctype="multipart/form-data">
-        <div class="form-row">
-          <label class="field-group">
-            <span>Full name</span>
-            <input type="text" name="fullname" value="<%= profile.name %>" required>
-          </label>
+    <% if (profile.isPartnerManaged) { %>
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <!-- PARTNER-MANAGED STAFF PROFILE: READ-ONLY DETAILS ONLY       -->
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <%
+        let cleanBioText = (profile.description || '')
+          .replace(/\[Partner Managed Professional\]/gi, '')
+          .replace(/\[workModes?:[^\]]+\]/gi, '')
+          .replace(/\[partTimeRate:[^\]]+\]/gi, '')
+          .replace(/\[fullTimeRate:[^\]]+\]/gi, '')
+          .replace(/\[assignedSkillsJson:[^\]]+\]/gi, '')
+          .replace(/\[subskills:[^\]]+\]/gi, '')
+          .trim();
 
-          <label class="field-group">
-            <span>Email Address</span>
-            <input type="email" value="<%= profile.email %>" disabled style="background: rgba(0, 0, 0, 0.05); cursor: not-allowed;">
-          </label>
+        let assignedList = [];
+        const match = (profile.description || '').match(/\[assignedSkillsJson:([^\]]+)\]/i);
+        if (match) {
+          try { assignedList = JSON.parse(match[1]); } catch(e) {}
+        }
+      %>
+      <article class="glass-panel" style="padding: 2.5rem; border-radius: var(--radius-lg); background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(167, 139, 250, 0.35);">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+          <div style="display: flex; align-items: center; gap: 1.2rem;">
+            <img src="<%= profile.photo || '/assets/gigconnect.logo.png' %>" alt="<%= profile.name %>" style="width: 72px; height: 72px; border-radius: 50%; object-fit: cover; border: 2px solid #a78bfa;">
+            <div>
+              <h2 style="color: #fff; margin: 0 0 0.25rem; font-size: 1.6rem;"><%= profile.name %></h2>
+              <span style="font-size: 0.85rem; color: #38bdf8; font-family: monospace; background: rgba(56, 189, 248, 0.1); padding: 3px 10px; border-radius: 6px;">
+                @<%= profile.username || profile.email %>
+              </span>
+            </div>
+          </div>
+          <span style="padding: 6px 14px; border-radius: 20px; font-size: 0.78rem; font-weight: 800; color: #a78bfa; background: rgba(167, 139, 250, 0.15); border: 1px solid rgba(167, 139, 250, 0.3); text-transform: uppercase;">
+            🏢 Agency Managed Staff
+          </span>
         </div>
 
-        <div class="form-row">
-          <label class="field-group">
-            <span>Phone number</span>
-            <input type="tel" name="phone" value="<%= profile.phone %>" placeholder="e.g. 9876543210" required>
-          </label>
-
-          <label class="field-group">
-            <span>Pincode</span>
-            <input type="text" name="pincode" id="prof_pincode" maxlength="6" value="<%= profile.pincode || '' %>" placeholder="e.g. 226006">
-          </label>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; background: rgba(0,0,0,0.3); padding: 1.5rem; border-radius: 14px; border: 1px solid rgba(255,255,255,0.08);">
+          <div>
+            <span style="font-size: 0.78rem; text-transform: uppercase; color: #94a3b8; font-weight: 700; display: block; margin-bottom: 0.3rem;">Full Name</span>
+            <strong style="color: #fff; font-size: 1.05rem;"><%= profile.name %></strong>
+          </div>
+          <div>
+            <span style="font-size: 0.78rem; text-transform: uppercase; color: #94a3b8; font-weight: 700; display: block; margin-bottom: 0.3rem;">Username</span>
+            <strong style="color: #38bdf8; font-size: 1.05rem;">@<%= profile.username || 'N/A' %></strong>
+          </div>
+          <div>
+            <span style="font-size: 0.78rem; text-transform: uppercase; color: #94a3b8; font-weight: 700; display: block; margin-bottom: 0.3rem;">Phone Number</span>
+            <strong style="color: #fff; font-size: 1.05rem;"><%= profile.phone || 'N/A' %></strong>
+          </div>
+          <div>
+            <span style="font-size: 0.78rem; text-transform: uppercase; color: #94a3b8; font-weight: 700; display: block; margin-bottom: 0.3rem;">Location &amp; Pincode</span>
+            <strong style="color: #fff; font-size: 1.05rem;"><%= profile.city || 'N/A' %> <%= profile.area ? '(' + profile.area + ')' : '' %> <%= profile.pincode ? '- ' + profile.pincode : '' %></strong>
+          </div>
         </div>
 
-        <div class="form-row">
-          <label class="field-group">
-            <span>City</span>
-            <input type="text" name="city" id="prof_city" value="<%= profile.city %>" required>
-          </label>
-
-          <label class="field-group">
-            <span>Locality / Area</span>
-            <input type="text" name="area" id="prof_area" value="<%= profile.area || '' %>" placeholder="Exact area/sector">
-          </label>
-
-        <div class="form-row">
-          <label class="field-group">
-            <span>Years of experience</span>
-            <input type="number" name="experience" value="<%= profile.experience %>" min="0" max="60" required>
-          </label>
-        </div>
-
-        <label class="field-group">
-          <span>Profile photo (Choose from Gallery)</span>
-          <input type="file" id="photo" name="photo" accept="image/*">
-          <% if (profile.photo && profile.photo !== '/assets/gigconnect.logo.png') { %>
-            <small style="color: var(--text-muted); display: block; margin-top: 0.5rem;">Current Photo: <a href="<%= profile.photo %>" target="_blank" style="color: var(--accent); font-weight: 600;">View Image</a></small>
+        <!-- Assigned Skills Section -->
+        <div style="margin-top: 2rem;">
+          <h3 style="color: #a78bfa; font-size: 1.1rem; margin: 0 0 1rem;">🏷️ Skills Assigned by Partner Agency</h3>
+          <% if (assignedList && assignedList.length > 0) { %>
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+              <% assignedList.forEach(function(item) { %>
+                <div style="background: rgba(167, 139, 250, 0.08); border: 1px solid rgba(167, 139, 250, 0.25); border-radius: 12px; padding: 1rem 1.25rem;">
+                  <strong style="color: #fff; font-size: 1rem; display: block; margin-bottom: 0.4rem;"><%= item.categoryName %></strong>
+                  <% if (item.subskills && item.subskills.length > 0) { %>
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
+                      <% item.subskills.forEach(function(sub) { %>
+                        <span style="font-size: 0.78rem; color: #a78bfa; background: rgba(167, 139, 250, 0.2); padding: 3px 10px; border-radius: 6px; font-weight: 600;">
+                          • <%= sub %>
+                        </span>
+                      <% }); %>
+                    </div>
+                  <% } %>
+                </div>
+              <% }); %>
+            </div>
+          <% } else if (profile.skills && profile.skills.length > 0) { %>
+            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+              <% profile.skills.forEach(function(sk) { %>
+                <span style="font-size: 0.85rem; color: #a78bfa; background: rgba(167, 139, 250, 0.15); border: 1px solid rgba(167, 139, 250, 0.3); padding: 5px 12px; border-radius: 8px; font-weight: 600;">
+                  🏷️ <%= sk %>
+                </span>
+              <% }); %>
+            </div>
+          <% } else { %>
+            <p style="color: #64748b; font-size: 0.9rem;">No specific skills assigned yet.</p>
           <% } %>
-        </label>
+        </div>
 
-        <label class="field-group">
-          <span>Short professional biography</span>
-          <textarea name="description" rows="4" placeholder="Tell clients about your expertise, tools, and background..."><%= profile.description %></textarea>
-        </label>
+      </article>
 
-        <!-- Step 1: Choose Work Availability Upfront -->
-        <div id="hiring-modes-section" style="margin: 2rem 0 1.5rem 0; border-top: 1px solid var(--line); padding-top: 1.5rem;">
-          <div class="field-group glass-inset" style="padding: 1.25rem; border-radius: 14px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(56, 189, 248, 0.4); margin-bottom: 1.5rem;">
-            <span style="font-size: 1.05rem; font-weight: 800; color: #38bdf8; display: block; margin-bottom: 0.5rem;">Step 1: Choose Work Availability</span>
-            <p style="font-size: 0.85rem; color: #cbd5e1; margin-top:0; margin-bottom: 1rem;">Select your preferred hiring mode first. This dynamically updates which rate inputs appear when you add skills below!</p>
-            <% 
-              const ptActive = (!profile.workModes || profile.workModes.includes('Part Time'));
-              const ftActive = (profile.workModes && profile.workModes.includes('Full Time'));
-              let modeSelected = "Both / Flexible";
-              if (ptActive && !ftActive) modeSelected = "Part Time";
-              if (ftActive && !ptActive) modeSelected = "Full Time";
-            %>
-            <select name="jobType" id="builder-work-mode" required class="form-input" style="width: 100%; padding: 0.75rem 1rem; border-radius: 12px; background: rgba(0, 0, 0, 0.7); color: #fff; border: 1px solid rgba(56,189,248,0.5); font-weight: 700; font-size: 0.95rem; cursor: pointer;">
-              <option value="Both / Flexible" <%= modeSelected === 'Both / Flexible' ? 'selected' : '' %>>⏰ Both / Flexible Shift (Part Time & Full Time)</option>
-              <option value="Part Time" <%= modeSelected === 'Part Time' ? 'selected' : '' %>>⚡ Part Time Only (Daily / Hourly visits)</option>
-              <option value="Full Time" <%= modeSelected === 'Full Time' ? 'selected' : '' %>>🏢 Full Time Only (Dedicated monthly placement)</option>
-            </select>
+    <% } else { %>
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <!-- INDIVIDUAL PROFESSIONAL PROFILE (NO PRICE EDIT / PART TIME)  -->
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <article class="glass-panel" style="padding: 2.5rem; border-radius: var(--radius-lg);">
+        <p class="card-kicker">Professional Profile</p>
+        <h2 style="margin-bottom: 1.5rem;">Edit Profile Details</h2>
+
+        <form method="POST" action="/professional/profile" class="auth-form" enctype="multipart/form-data">
+          <div class="form-row">
+            <label class="field-group">
+              <span>Full name</span>
+              <input type="text" name="fullname" value="<%= profile.name %>" required>
+            </label>
+
+            <label class="field-group">
+              <span>Email Address</span>
+              <input type="email" value="<%= profile.email %>" disabled style="background: rgba(0, 0, 0, 0.05); cursor: not-allowed;">
+            </label>
           </div>
 
-          <!-- Step 2: Choose Category & Subcategory Skill -->
-          <div class="field-group glass-inset" style="padding: 1.25rem; border-radius: 14px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(168, 85, 247, 0.4); margin-bottom: 1.5rem;">
-            <span style="font-size: 1.05rem; font-weight: 800; color: #d8b4fe; display: block; margin-bottom: 0.5rem;">Step 2: Choose Your Skill Category &amp; Sub-Category</span>
-            <p style="font-size: 0.85rem; color: #cbd5e1; margin-top:0; margin-bottom: 1rem;">First select a broad category, then pick your exact sub-category/skill from the dropdown below.</p>
+          <div class="form-row">
+            <label class="field-group">
+              <span>Phone number</span>
+              <input type="tel" name="phone" value="<%= profile.phone %>" placeholder="e.g. 9876543210" required>
+            </label>
+
+            <label class="field-group">
+              <span>6-Digit Pincode</span>
+              <input type="text" name="pincode" id="prof_pincode" maxlength="6" value="<%= profile.pincode || '' %>" placeholder="e.g. 226006">
+            </label>
+          </div>
+
+          <div class="form-row">
+            <label class="field-group">
+              <span>City / Town</span>
+              <input type="text" name="city" id="prof_city" value="<%= profile.city %>" required>
+            </label>
+
+            <label class="field-group">
+              <span>Locality / Area</span>
+              <input type="text" name="area" id="prof_area" value="<%= profile.area || '' %>" placeholder="Exact area/sector">
+            </label>
+          </div>
+
+          <div class="form-row">
+            <label class="field-group">
+              <span>Years of experience</span>
+              <input type="number" name="experience" value="<%= profile.experience %>" min="0" max="60" required>
+            </label>
+            <div class="field-group" style="display: flex; flex-direction: column; justify-content: center;">
+              <span style="font-size: 0.82rem; color: #94a3b8; font-weight: 600;">Work Mode</span>
+              <div style="padding: 10px 14px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 10px; color: #38bdf8; font-weight: 700; font-size: 0.9rem;">
+                ⚡ Part Time Only
+              </div>
+            </div>
+          </div>
+
+          <label class="field-group">
+            <span>Profile photo (Choose from Gallery)</span>
+            <input type="file" id="photo" name="photo" accept="image/*">
+            <% if (profile.photo && profile.photo !== '/assets/gigconnect.logo.png') { %>
+              <small style="color: var(--text-muted); display: block; margin-top: 0.5rem;">Current Photo: <a href="<%= profile.photo %>" target="_blank" style="color: var(--accent); font-weight: 600;">View Image</a></small>
+            <% } %>
+          </label>
+
+          <label class="field-group">
+            <span>Short professional biography</span>
+            <textarea name="description" rows="4" placeholder="Tell clients about your expertise, tools, and background..."><%= profile.description %></textarea>
+          </label>
+
+          <!-- Skill Category & Sub-Category Selection (No Price Setting) -->
+          <div class="field-group glass-inset" style="padding: 1.25rem; border-radius: 14px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(168, 85, 247, 0.4); margin: 1.5rem 0;">
+            <span style="font-size: 1.05rem; font-weight: 800; color: #d8b4fe; display: block; margin-bottom: 0.5rem;">Select Your Skills &amp; Specializations</span>
+            <p style="font-size: 0.85rem; color: #cbd5e1; margin-top:0; margin-bottom: 1rem;">Choose your skill categories and sub-categories. (Rates are fixed standard platform rates set by Admin).</p>
             
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
               <div>
@@ -114,168 +196,130 @@
                 </select>
               </div>
             </div>
-            <button type="button" id="btn-add-skill-card" class="button button-primary" style="padding: 0.75rem 1.5rem; font-weight: 700; border-radius: 10px; background: linear-gradient(135deg, #a855f7, #3b82f6); border: none; cursor: pointer; color: #fff;">
-              ➕ Choose This Skill &amp; Set Price Below ›
+            <button type="button" id="btn-add-skill-card" class="button button-primary" style="padding: 0.65rem 1.25rem; font-weight: 700; border-radius: 10px; background: linear-gradient(135deg, #a855f7, #3b82f6); border: none; cursor: pointer; color: #fff;">
+              ➕ Add Skill
             </button>
           </div>
 
-          <!-- Step 3: Selected Skills & Custom Pricing Grid -->
+          <!-- Selected Skills Grid (No Rate Inputs) -->
           <div class="field-group glass-inset" style="padding: 1.25rem; border-radius: 14px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(52, 211, 153, 0.4); margin-bottom: 2rem;">
             <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem;">
-              <span style="font-size: 1.05rem; font-weight: 800; color: #34d399; display: block;">Step 3: Set Your Price For Chosen Skills</span>
+              <span style="font-size: 1rem; font-weight: 800; color: #34d399;">Selected Skills</span>
               <span id="selected-skill-count-badge" style="background: rgba(52,211,153,0.15); color: #34d399; padding: 4px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: 700;">0 Skills Added</span>
             </div>
-            <p style="font-size: 0.85rem; color: #cbd5e1; margin-top:0; margin-bottom: 1.25rem;">Enter your expected charges for each skill below. Clients can negotiate these rates directly with you!</p>
             
-            <div id="selected-skills-grid" style="display: flex; flex-direction: column; gap: 1rem;">
-              <div id="no-skills-placeholder" style="text-align: center; padding: 2rem; border: 1px dashed rgba(255,255,255,0.2); border-radius: 12px; color: #94a3b8;">
-                <p style="margin:0; font-size: 0.95rem;">No skills selected yet. Choose a category and sub-category above and click <strong>"➕ Choose This Skill"</strong>!</p>
+            <div id="selected-skills-grid" style="display: flex; flex-wrap: wrap; gap: 0.6rem;">
+              <div id="no-skills-placeholder" style="text-align: center; padding: 1.5rem; border: 1px dashed rgba(255,255,255,0.2); border-radius: 12px; color: #94a3b8; width: 100%;">
+                <p style="margin:0; font-size: 0.9rem;">No skills selected yet. Select a category and sub-category above!</p>
               </div>
             </div>
           </div>
-        </div>
 
-        <script>
-          document.addEventListener("DOMContentLoaded", function() {
-            const categoriesData = <%- JSON.stringify(typeof ottCategories !== 'undefined' ? ottCategories : []) %>;
-            const savedCustomRates = <%- JSON.stringify(profile.customRates || {}) %>;
-            const existingSkillsList = <%- JSON.stringify((profile.subcategorySkills || []).concat(profile.skills || [])) %>;
-            const catSelect = document.getElementById("builder-cat-select");
-            const subcatSelect = document.getElementById("builder-subcat-select");
-            const workModeSelect = document.getElementById("builder-work-mode");
-            const addBtn = document.getElementById("btn-add-skill-card");
-            const grid = document.getElementById("selected-skills-grid");
-            const placeholder = document.getElementById("no-skills-placeholder");
-            const badge = document.getElementById("selected-skill-count-badge");
+          <script>
+            document.addEventListener("DOMContentLoaded", function() {
+              const categoriesData = <%- JSON.stringify(typeof ottCategories !== 'undefined' ? ottCategories : []) %>;
+              const existingSkillsList = <%- JSON.stringify((profile.subcategorySkills || []).concat(profile.skills || [])) %>;
+              const catSelect = document.getElementById("builder-cat-select");
+              const subcatSelect = document.getElementById("builder-subcat-select");
+              const addBtn = document.getElementById("btn-add-skill-card");
+              const grid = document.getElementById("selected-skills-grid");
+              const placeholder = document.getElementById("no-skills-placeholder");
+              const badge = document.getElementById("selected-skill-count-badge");
 
-            let addedSkillsCount = 0;
+              let addedSkillsCount = 0;
 
-            function addSkillCard(skillName, catName, defaultPt, defaultFt) {
-              if (document.getElementById("card_skill_" + encodeURIComponent(skillName))) return;
-              if (placeholder) placeholder.style.display = "none";
-              addedSkillsCount++;
-              badge.textContent = addedSkillsCount + " Skills Added";
-
-              const card = document.createElement("div");
-              card.id = "card_skill_" + encodeURIComponent(skillName);
-              card.className = "skill-pricing-card glass-inset";
-              card.style.cssText = "padding: 1.1rem; border-radius: 12px; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(168,85,247,0.4); display: flex; flex-direction: column; gap: 0.8rem; position: relative;";
-              
-              const mode = workModeSelect.value;
-              const showPt = (mode === "Both / Flexible" || mode === "Part Time");
-              const showFt = (mode === "Both / Flexible" || mode === "Full Time");
-              const safeKey = encodeURIComponent(skillName);
-
-              const ptVal = savedCustomRates['sub_pt_' + skillName] || defaultPt || 500;
-              const ftVal = savedCustomRates['sub_ft_' + skillName] || defaultFt || 25000;
-
-              card.innerHTML = `
-                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">
-                  <div>
-                    <strong style="color: #fff; font-size: 1.05rem;">✨ \${skillName}</strong>
-                    <span style="font-size: 0.78rem; color: #a855f7; background: rgba(168,85,247,0.15); padding: 2px 8px; border-radius: 6px; margin-left: 8px;">\${catName}</span>
-                  </div>
-                  <button type="button" class="btn-remove-skill" style="background: rgba(244,63,94,0.15); color: #fb7185; border: 1px solid rgba(244,63,94,0.3); padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;">🗑️ Remove</button>
-                </div>
-                <input type="hidden" name="subcategorySkills" value="\${skillName}">
-                <div class="pricing-rows-box" style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center;">
-                  <div class="pt-box" style="flex: 1; min-width: 200px; display: \${showPt ? 'flex' : 'none'}; align-items: center; justify-content: space-between; background: rgba(56,189,248,0.1); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(56,189,248,0.3);">
-                    <span style="font-size: 0.85rem; color: #38bdf8; font-weight: 700;">⚡ Part-Time Rate (₹ / Day):</span>
-                    <input type="number" name="customSubRate_\${safeKey}" value="\${ptVal}" min="100" max="100000" class="subrate-pt-input" style="width: 110px; padding: 6px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.3); background: rgba(0,0,0,0.7); color: #fff; font-weight: 700; font-size: 0.95rem; text-align: right;">
-                  </div>
-                  <div class="ft-box" style="flex: 1; min-width: 200px; display: \${showFt ? 'flex' : 'none'}; align-items: center; justify-content: space-between; background: rgba(168,85,247,0.1); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(168,85,247,0.3);">
-                    <div>
-                      <span style="font-size: 0.85rem; color: #d8b4fe; font-weight: 700; display:block;">🏢 Full-Time Expected Salary (₹ / Month):</span>
-                      <small style="font-size: 0.7rem; color: #94a3b8;">* Client pays ₹250 platform fee on full-time hiring</small>
-                    </div>
-                    <input type="number" name="customSubFullRate_\${safeKey}" value="\${ftVal}" min="1000" max="500000" class="subrate-ft-input" style="width: 115px; padding: 6px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.3); background: rgba(0,0,0,0.7); color: #fff; font-weight: 700; font-size: 0.95rem; text-align: right;">
-                  </div>
-                </div>
-              `;
-
-              card.querySelector(".btn-remove-skill").addEventListener("click", function() {
-                card.remove();
-                addedSkillsCount--;
+              function addSkillCard(skillName, catName) {
+                if (document.getElementById("card_skill_" + encodeURIComponent(skillName))) return;
+                if (placeholder) placeholder.style.display = "none";
+                addedSkillsCount++;
                 badge.textContent = addedSkillsCount + " Skills Added";
-                if (addedSkillsCount === 0 && placeholder) placeholder.style.display = "block";
-              });
 
-              grid.appendChild(card);
-            }
+                const chip = document.createElement("div");
+                chip.id = "card_skill_" + encodeURIComponent(skillName);
+                chip.style.cssText = "padding: 8px 14px; border-radius: 10px; background: rgba(30, 41, 59, 0.9); border: 1px solid rgba(168,85,247,0.4); display: flex; align-items: center; gap: 0.6rem; color: #fff;";
+                
+                chip.innerHTML = `
+                  <strong style="color: #fff; font-size: 0.9rem;">✨ ${skillName}</strong>
+                  <span style="font-size: 0.72rem; color: #a855f7; background: rgba(168,85,247,0.15); padding: 2px 6px; border-radius: 4px;">${catName}</span>
+                  <input type="hidden" name="subcategorySkills" value="${skillName}">
+                  <button type="button" class="btn-remove-skill" style="background: none; border: none; color: #fb7185; cursor: pointer; font-size: 0.9rem; margin-left: 4px;">✖</button>
+                `;
 
-            if (catSelect && subcatSelect) {
-              catSelect.addEventListener("change", function() {
-                const catIdx = this.value;
-                subcatSelect.innerHTML = '<option value="">-- Choose Sub-Category --</option>';
-                if (catIdx !== "" && categoriesData[catIdx] && categoriesData[catIdx].items) {
-                  categoriesData[catIdx].items.forEach(function(item) {
-                    const opt = document.createElement("option");
-                    opt.value = item.name;
-                    opt.setAttribute("data-cat", categoriesData[catIdx].title);
-                    opt.textContent = item.name + " (" + item.desc + ")";
-                    subcatSelect.appendChild(opt);
-                  });
-                  subcatSelect.disabled = false;
-                } else {
-                  subcatSelect.disabled = true;
-                }
-              });
+                chip.querySelector(".btn-remove-skill").addEventListener("click", function() {
+                  chip.remove();
+                  addedSkillsCount--;
+                  badge.textContent = addedSkillsCount + " Skills Added";
+                  if (addedSkillsCount === 0 && placeholder) placeholder.style.display = "block";
+                });
 
-              addBtn.addEventListener("click", function() {
-                if (!subcatSelect.value) {
-                  alert("Please select a Category and Sub-Category first!");
-                  return;
-                }
-                const skillName = subcatSelect.value;
-                const selectedOpt = subcatSelect.options[subcatSelect.selectedIndex];
-                const catName = selectedOpt ? selectedOpt.getAttribute("data-cat") : "General";
-                addSkillCard(skillName, catName, 500, 25000);
-              });
+                grid.appendChild(chip);
+              }
 
-              workModeSelect.addEventListener("change", function() {
-                const mode = this.value;
-                const showPt = (mode === "Both / Flexible" || mode === "Part Time");
-                const showFt = (mode === "Both / Flexible" || mode === "Full Time");
-                document.querySelectorAll(".pt-box").forEach(el => el.style.display = showPt ? "flex" : "none");
-                document.querySelectorAll(".ft-box").forEach(el => el.style.display = showFt ? "flex" : "none");
-              });
-            }
+              if (catSelect && subcatSelect) {
+                catSelect.addEventListener("change", function() {
+                  const catIdx = this.value;
+                  subcatSelect.innerHTML = '<option value="">-- Choose Sub-Category --</option>';
+                  if (catIdx !== "" && categoriesData[catIdx] && categoriesData[catIdx].items) {
+                    categoriesData[catIdx].items.forEach(function(item) {
+                      const opt = document.createElement("option");
+                      opt.value = item.name;
+                      opt.setAttribute("data-cat", categoriesData[catIdx].title);
+                      opt.textContent = item.name;
+                      subcatSelect.appendChild(opt);
+                    });
+                    subcatSelect.disabled = false;
+                  } else {
+                    subcatSelect.disabled = true;
+                  }
+                });
 
-            // Auto-populate existing skills on load
-            const uniqueSkills = Array.from(new Set(existingSkillsList));
-            uniqueSkills.forEach(function(sk) {
-              if (!sk) return;
-              let foundCat = "Selected Skill";
-              categoriesData.forEach(function(c) {
-                if (c && c.items) {
-                  c.items.forEach(function(it) {
-                    if (it.name === sk) foundCat = c.title;
-                  });
-                }
+                addBtn.addEventListener("click", function() {
+                  if (!subcatSelect.value) {
+                    alert("Please select a Category and Sub-Category first!");
+                    return;
+                  }
+                  const skillName = subcatSelect.value;
+                  const selectedOpt = subcatSelect.options[subcatSelect.selectedIndex];
+                  const catName = selectedOpt ? selectedOpt.getAttribute("data-cat") : "General";
+                  addSkillCard(skillName, catName);
+                });
+              }
+
+              const uniqueSkills = Array.from(new Set(existingSkillsList));
+              uniqueSkills.forEach(function(sk) {
+                if (!sk) return;
+                let foundCat = "Selected Skill";
+                categoriesData.forEach(function(c) {
+                  if (c && c.items) {
+                    c.items.forEach(function(it) {
+                      if (it.name === sk) foundCat = c.title;
+                    });
+                  }
+                });
+                addSkillCard(sk, foundCat);
               });
-              addSkillCard(sk, foundCat, 500, 25000);
             });
-          });
-        </script>
-        <!-- End of Builder Script -->
+          </script>
 
-        <button type="submit" class="button button-primary" style="margin-top: 1rem;">Save &amp; Update Profile &amp; Charges</button>
-      </form>
-    </article>
+          <button type="submit" class="button button-primary" style="margin-top: 1rem;">Save &amp; Update Profile</button>
+        </form>
+      </article>
 
-    <!-- Change Password Form -->
-    <article class="glass-panel" style="padding: 2.5rem; border-radius: var(--radius-lg);">
-      <p class="card-kicker">Security</p>
-      <h2 style="margin-bottom: 1.5rem;">Change Password</h2>
+      <!-- Security / Change Password Form -->
+      <article class="glass-panel" style="padding: 2.5rem; border-radius: var(--radius-lg);">
+        <p class="card-kicker">Security</p>
+        <h2 style="margin-bottom: 1.5rem;">Change Password</h2>
 
-      <form method="POST" action="/professional/change-password" class="auth-form">
-        <label class="field-group">
-          <span>New Password</span>
-          <input type="password" name="newPassword" placeholder="Minimum 6 characters" required>
-        </label>
+        <form method="POST" action="/professional/change-password" class="auth-form">
+          <label class="field-group">
+            <span>New Password</span>
+            <input type="password" name="newPassword" placeholder="Minimum 6 characters" required>
+          </label>
 
-        <button type="submit" class="button button-secondary" style="margin-top: 1rem;">Update Password</button>
-      </form>
-    </article>
+          <button type="submit" class="button button-secondary" style="margin-top: 1rem;">Update Password</button>
+        </form>
+      </article>
+    <% } %>
+
   </div>
 </section>

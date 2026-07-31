@@ -15,7 +15,7 @@
     </div>
 
     <p style="color: #cbd5e1; font-size: 1.05rem; margin-bottom: 2rem;">
-      You are initiating a secure online payment for booking professional <strong style="color: #fff;"><%= professional.name %></strong>.
+      You are initiating a secure online payment for booking professional <strong style="color: #fff;"><%= (typeof professional !== 'undefined' && professional) ? professional.name : (typeof firstname !== 'undefined' ? firstname : 'Service Professional') %></strong>.
     </p>
 
     <div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 1.5rem; margin-bottom: 2.25rem; text-align: left;">
@@ -55,20 +55,11 @@
       <input type="hidden" name="hash" value="<%= hash %>">
       <input type="hidden" name="service_provider" value="payu_paisa">
 
-      <!-- Sandbox / Live Option Switch for testing seamless experience -->
-      <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-        <button type="submit" class="button button-primary" style="padding: 1.1rem 2.2rem; font-size: 1.05rem; font-weight: 800; border-radius: 12px; background: linear-gradient(135deg, #f59e0b, #d97706); border: none; cursor: pointer; color: #000; box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4);">
-          Proceed to PayU Gateway ›
-        </button>
-
-        <button type="button" onclick="simulatePayuSuccess()" class="button" style="padding: 1.1rem 2rem; font-size: 1rem; font-weight: 700; border-radius: 12px; background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.5); cursor: pointer;">
-          ⚡ Simulate PayU Success (Sandbox Test)
+      <div style="display: flex; justify-content: center;">
+        <button type="submit" id="btnPayuProceed" class="button button-primary" style="padding: 1.15rem 2.8rem; font-size: 1.1rem; font-weight: 800; border-radius: 14px; background: linear-gradient(135deg, #f59e0b, #d97706); border: none; cursor: pointer; color: #000; box-shadow: 0 6px 24px rgba(245, 158, 11, 0.45); display: flex; align-items: center; gap: 0.6rem;">
+          <span>🔒</span> Proceed to Official PayU Payment Gateway ›
         </button>
       </div>
-    </form>
-
-    <form action="/book-service/payu/success" method="POST" id="simulateSuccessForm" style="display: none;">
-      <input type="hidden" name="txnid" value="<%= txnid %>">
     </form>
 
     <div style="margin-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1.25rem; display: flex; justify-content: center; gap: 1.5rem; font-size: 0.82rem; color: #64748b;">
@@ -80,9 +71,3 @@
     </div>
   </div>
 </section>
-
-<script>
-  function simulatePayuSuccess() {
-    document.getElementById("simulateSuccessForm").submit();
-  }
-</script>

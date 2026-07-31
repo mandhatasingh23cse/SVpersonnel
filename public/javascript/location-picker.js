@@ -109,11 +109,12 @@ function initLocationPicker() {
       targetInput.dispatchEvent(new Event("change", { bubbles: true }));
     }
 
-    // Auto-fill area or address fields if present on the same form/page
+    // Auto-fill area, address, and pincode fields if present on the same form/page
     if (placeDetails) {
       const addr = placeDetails.address || {};
       const exactArea = addr.suburb || addr.neighbourhood || addr.residential || addr.road || addr.village || addr.quarter || addr.subdistrict || "";
       const fullFormatted = placeDetails.display_name || fullAddress || "";
+      const pincodeVal = addr.postcode || placeDetails.postcode || "";
 
       const areaInput = document.querySelector('input[name="area"], input#area, input[name="addressArea"], input#addressArea');
       if (areaInput && !areaInput.value.trim() && exactArea) {
@@ -125,6 +126,13 @@ function initLocationPicker() {
       if (streetInput && !streetInput.value.trim() && fullFormatted) {
         streetInput.value = fullFormatted;
         streetInput.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+
+      const pincodeInput = document.querySelector('input[name="pincode"], input#pincode, input#prof_pincode, input#addr_pincode, input[name="postalCode"], input#postalCode');
+      if (pincodeInput && pincodeVal) {
+        pincodeInput.value = pincodeVal;
+        pincodeInput.dispatchEvent(new Event("input", { bubbles: true }));
+        pincodeInput.dispatchEvent(new Event("change", { bubbles: true }));
       }
     }
 

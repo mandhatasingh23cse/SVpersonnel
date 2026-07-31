@@ -1,1 +1,41 @@
-[]
+[
+  {
+    "id": "work_1785488341979_959",
+    "clientId": 16,
+    "clientName": "Mandhata Singh",
+    "clientContact": "7054533509",
+    "category": "2. Housekeeping & Facility Management — Housekeeping Staff",
+    "subCategory": "Housekeeping Staff",
+    "location": "gorakhpur",
+    "budget": 100000000000,
+    "jobType": "Full Time",
+    "description": "2",
+    "createdAt": "2026-07-31T08:59:01.979Z",
+    "applications": []
+  },
+  {
+    "id": "work_1785488034301_863",
+    "clientId": 16,
+    "clientName": "Mandhata Singh",
+    "clientContact": "7054533509",
+    "category": "2. Housekeeping & Facility Management",
+    "subCategory": "",
+    "location": "gorakhpur",
+    "budget": 1000000,
+    "jobType": "Full Time",
+    "description": "na",
+    "createdAt": "2026-07-31T08:53:54.301Z",
+    "applications": [
+      {
+        "id": "app_1785488524834",
+        "professionalId": 5,
+        "professionalName": "Mandhata Singh",
+        "professionalPhone": "7054533509",
+        "professionalEmail": "mandhatas05@gmail.com",
+        "proposedRate": 1000000,
+        "message": "fe",
+        "createdAt": "2026-07-31T09:02:04.834Z"
+      }
+    ]
+  }
+]
