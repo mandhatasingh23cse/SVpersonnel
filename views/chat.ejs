@@ -1,8 +1,56 @@
-<section class="section shell" style="max-width: 1200px; margin: 2rem auto; padding: 0 1.25rem;">
-  <div class="glass-panel" style="display: grid; grid-template-columns: 320px 1fr; height: 75vh; border-radius: 24px; overflow: hidden; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 20px 50px rgba(0,0,0,0.6);">
+<section class="section shell" style="max-width: 1200px; margin: 1.5rem auto; padding: 0 1rem;">
+  <style>
+    .chat-card {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      height: 78vh;
+      min-height: 520px;
+      border-radius: 24px;
+      overflow: hidden;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+    }
+    .mobile-back-btn {
+      display: none !important;
+    }
+    @media (max-width: 768px) {
+      .chat-card {
+        grid-template-columns: 1fr !important;
+        height: calc(100vh - 120px) !important;
+        min-height: 480px !important;
+        border-radius: 16px !important;
+      }
+      .chat-sidebar-panel {
+        display: <%= activeContact ? 'none' : 'flex' %> !important;
+        width: 100% !important;
+      }
+      .chat-board-panel {
+        display: <%= activeContact ? 'flex' : 'none' %> !important;
+        width: 100% !important;
+      }
+      .mobile-back-btn {
+        display: inline-flex !important;
+      }
+      .message-bubble {
+        max-width: 88% !important;
+      }
+      .chat-header-container {
+        padding: 0.9rem 1rem !important;
+      }
+      .chat-messages-container {
+        padding: 1rem !important;
+      }
+      .chat-input-container {
+        padding: 0.9rem 1rem !important;
+      }
+    }
+  </style>
+
+  <div class="glass-panel chat-card">
     
     <!-- Contacts Sidebar -->
-    <div style="border-right: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; background: rgba(30, 41, 59, 0.3);">
+    <div class="chat-sidebar-panel" style="border-right: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; background: rgba(30, 41, 59, 0.3);">
       <div style="padding: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.08);">
         <h2 style="margin: 0; font-size: 1.35rem; color: #fff; font-weight: 800;">💬 Messages</h2>
       </div>
@@ -34,7 +82,7 @@
     </div>
 
     <!-- Active Chat Board -->
-    <div style="display: flex; flex-direction: column; height: 100%; background: rgba(15, 23, 42, 0.4);">
+    <div class="chat-board-panel" style="display: flex; flex-direction: column; height: 100%; background: rgba(15, 23, 42, 0.4);">
       <% if (!activeContact) { %>
         <!-- Empty State -->
         <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 3rem; color: #64748b;">
@@ -44,8 +92,11 @@
         </div>
       <% } else { %>
         <!-- Active Chat Header -->
-        <div style="padding: 1.25rem 2rem; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; background: rgba(30, 41, 59, 0.2);">
+        <div class="chat-header-container" style="padding: 1.25rem 2rem; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; background: rgba(30, 41, 59, 0.2);">
           <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <a href="/chat" class="mobile-back-btn" style="align-items: center; justify-content: center; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); color: #fff; text-decoration: none; padding: 0.4rem 0.75rem; border-radius: 8px; font-size: 0.85rem; font-weight: 700; margin-right: 0.25rem;">
+              ← Back
+            </a>
             <img src="<%= activeContact.photo || '/assets/default-user.png' %>" onerror="this.onerror=null; this.src='/assets/default-user.png';" alt="<%= activeContact.name %>" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
             <div>
               <h3 style="margin: 0; font-size: 1.05rem; color: #fff; font-weight: 700;"><%= activeContact.name %></h3>
