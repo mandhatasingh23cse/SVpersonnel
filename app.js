@@ -91,7 +91,8 @@ const {
   createServiceCategory,
   updateServiceCategory,
   deleteServiceCategory,
-  getProfessionalBookedSlots
+  getProfessionalBookedSlots,
+  getClientTotalPostedCount
 } = require("./lib/supabaseStore");
 
 const {
@@ -779,10 +780,7 @@ app.get("/work", async (req, res) => {
     const cJobs = await getWorkRequirementsByClient(user.id || user.email);
     displayedJobs = cJobs || [];
     clientJobsCount = displayedJobs.length;
-    postedCount = Math.max(
-      Number(user.totalWorksPosted || user.posted_work_count || user.total_works_posted || 0),
-      clientJobsCount
-    );
+    postedCount = await getClientTotalPostedCount(user.id || user.email, user.email, user);
   }
 
   const formNotice = req.session.workNotice || null;
@@ -812,10 +810,7 @@ app.post("/work/post", async (req, res) => {
 
     const clientJobs = await getWorkRequirementsByClient(user.id || user.email);
     const clientJobsCount = clientJobs ? clientJobs.length : 0;
-    const currentPostedCount = Math.max(
-      Number(user.totalWorksPosted || user.posted_work_count || user.total_works_posted || 0),
-      clientJobsCount
-    );
+    const currentPostedCount = await getClientTotalPostedCount(user.id || user.email, user.email, user);
     const credits = Number(user.workCredits || 0);
     const isPassActive = user.workPassActive && (!user.workPassExpiresAt || new Date(user.workPassExpiresAt) > new Date());
 
@@ -2076,14 +2071,24 @@ app.get("/professional/jobs", requireRole("professional"), async (req, res) => {
 
 app.get("/client/work-requirements/new", requireRole("client"), async (req, res) => {
   try {
+    const user = req.session.user;
     const services = await getServiceOptions();
-    const clientJobs = await getWorkRequirementsByClient(req.session.user.id || req.session.user.email);
+    const clientJobs = await getWorkRequirementsByClient(user.id || user.email);
+    const postedCount = await getClientTotalPostedCount(user.id || user.email, user.email, user);
+    const credits = Number(user.workCredits || 0);
+
+    if (postedCount >= 1 && credits <= 0 && !user.workPassActive) {
+      req.session.workNotice = createFormNotice("error", "⚡ You have used your 1st Free Work Upload! To post more custom jobs, please purchase a 5-Work Upload Bundle for just ₹50 via PayU.");
+      return res.redirect("/client/work-bundle/payu");
+    }
+
     return res.render("clientWorkRequirements", {
       title: "Post a Job | SV Personnels",
       pageClass: "page-create-requirement",
       services,
       user: req.session.user,
       clientJobsCount: clientJobs ? clientJobs.length : 0,
+      postedCount,
       formNotice: consumeSessionNotice(req, "clientWorkNotice")
     });
   } catch (err) {
@@ -2095,12 +2100,11 @@ app.get("/client/work-requirements/new", requireRole("client"), async (req, res)
 app.post("/client/work-requirements/new", requireRole("client"), async (req, res) => {
   try {
     const user = req.session.user;
-    const clientJobs = await getWorkRequirementsByClient(user.id || user.email);
-    const jobsCount = clientJobs ? clientJobs.length : 0;
+    const postedCount = await getClientTotalPostedCount(user.id || user.email, user.email, user);
     const credits = Number(user.workCredits || 0);
 
-    if (jobsCount >= 1 && credits <= 0 && !user.workPassActive) {
-      req.session.workNotice = createFormNotice("error", "⚡ You have used your 1st Free Work Upload! To post more custom jobs, please purchase a 5-Work Upload Bundle for just ₹250 via PayU.");
+    if (postedCount >= 1 && credits <= 0 && !user.workPassActive) {
+      req.session.workNotice = createFormNotice("error", "⚡ You have used your 1st Free Work Upload! To post more custom jobs, please purchase a 5-Work Upload Bundle for just ₹50 via PayU.");
       return res.redirect("/client/work-bundle/payu");
     }
 
@@ -2117,7 +2121,18 @@ app.post("/client/work-requirements/new", requireRole("client"), async (req, res
       description
     });
 
-    if (jobsCount >= 1 && credits > 0 && !user.workPassActive) {
+    const newPostedCount = postedCount + 1;
+    user.totalWorksPosted = newPostedCount;
+    user.posted_work_count = newPostedCount;
+    user.total_works_posted = newPostedCount;
+
+    try {
+      await updateClientProfile(user.id || user.email, {
+        total_works_posted: newPostedCount
+      });
+    } catch (e) {}
+
+    if (postedCount >= 1 && credits > 0 && !user.workPassActive) {
       user.workCredits = Math.max(0, credits - 1);
     }
 
