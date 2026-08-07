@@ -28,7 +28,7 @@
 
     <% const isPassActive = (user && user.role === "client" && user.workPassActive && (!user.workPassExpiresAt || new Date(user.workPassExpiresAt) > new Date())); %>
     <% const cCount = typeof clientJobsCount !== 'undefined' ? clientJobsCount : 0; %>
-    <% const pCount = typeof postedCount !== 'undefined' ? postedCount : (user ? (Number(user.totalWorksPosted || user.posted_work_count || user.total_works_posted || 0)) : cCount); %>
+    <% const pCount = Math.max(typeof postedCount !== 'undefined' ? postedCount : 0, cCount, user ? Number(user.totalWorksPosted || user.posted_work_count || user.total_works_posted || 0) : 0); %>
     <% const cCredits = (user && user.workCredits) ? Number(user.workCredits) : 0; %>
 
     <% if (user && user.role === "client") { %>
