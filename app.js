@@ -531,7 +531,15 @@ function requireRole(roleOrRoles) {
     }
 
     const userRole = req.session.user.role;
-    if (userRole !== "admin" && !req.session.user.onboarding_complete) {
+    const isCompleted = Boolean(
+      req.session.user.onboarding_complete ||
+      req.session.user.onboardingComplete ||
+      (req.session.user.name && req.session.user.phone && req.session.user.city) ||
+      req.session.user.primarySkill ||
+      (req.session.user.skills && req.session.user.skills.length > 0)
+    );
+
+    if (userRole !== "admin" && !isCompleted) {
       const p = req.path || "";
       if (!p.includes("/onboarding") && !p.includes("/logout") && !p.includes("/delete") && !p.includes("/api/")) {
         if (userRole === "client") return res.redirect("/client/onboarding");
