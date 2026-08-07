@@ -3577,39 +3577,231 @@ app.post("/client/disputes", requireRole("client"), async (req, res) => {
   }
 });
 
-app.get("/bookings/:id/invoice", requireRole(["client", "professional"]), async (req, res) => {
-  const bookingId = Number(req.params.id);
+// PayU Server-to-Server Payment Webhook Endpoint (IPN Notification)
+app.post(["/api/payu/webhook", "/payu/webhook", "/payu/callback", "/api/payments/payu/webhook"], async (req, res) => {
+  try {
+    const payload = req.body || {};
+    const key = (process.env.PAYU_MERCHANT_KEY || "owE3c7").trim();
+    const salt = (process.env.PAYU_MERCHANT_SALT || "murK9GVdBwy1JUraIKrw7iFHfLLqiV2k").trim();
+
+    const status = (payload.status || "").toLowerCase().trim();
+    const txnid = (payload.txnid || "").trim();
+    const amount = (payload.amount || "").trim();
+    const productinfo = (payload.productinfo || "").trim();
+    const firstname = (payload.firstname || "").trim();
+    const email = (payload.email || "").trim();
+    const phone = (payload.phone || "").trim();
+    const mihpayid = (payload.mihpayid || payload.payuMoneyId || "").trim();
+    const bankRefNum = (payload.bank_ref_num || payload.bank_ref_no || "").trim();
+    const errorMsg = (payload.error_Message || payload.field9 || "").trim();
+    const receivedHash = (payload.hash || "").trim();
+
+    console.log(`[PayU Webhook Notification Received] TxnID: ${txnid} | Status: ${status} | MihPayID: ${mihpayid}`);
+
+    // Verify Reverse PayU Hash
+    // Formula: salt|status|||||||||||email|firstname|productinfo|amount|txnid|key
+    const reverseHashSeq = `${salt}|${status}|||||||||||${email}|${firstname}|${productinfo}|${amount}|${txnid}|${key}`;
+    const calculatedHash = crypto.createHash("sha512").update(reverseHashSeq).digest("hex");
+    const isHashValid = receivedHash && calculatedHash.toLowerCase() === receivedHash.toLowerCase();
+
+    const paymentRecord = {
+      txnid,
+      mihpayid,
+      bankRefNum,
+      amount: Number(amount) || 0,
+      productinfo,
+      firstname,
+      email,
+      phone,
+      status,
+      errorMsg,
+      isHashValid,
+      payload
+    };
+
+    try {
+      const { savePaymentRecord } = require("./lib/supabaseStore");
+      if (typeof savePaymentRecord === "function") {
+        await savePaymentRecord(paymentRecord);
+      }
+    } catch(e) {}
+
+    if (status === "success" || status === "completed") {
+      // Fulfill 5-Work Upload Bundle (WB_...)
+      if (txnid.startsWith("WB_") || productinfo.toLowerCase().includes("bundle") || productinfo.toLowerCase().includes("upload")) {
+        try {
+          const { getLocalClients, updateClientProfile } = require("./lib/supabaseStore");
+          const clients = await getLocalClients();
+          const clientMatch = clients.find(c =>
+            (c.email && c.email.toLowerCase() === email.toLowerCase()) ||
+            (c.phone && phone && c.phone.replace(/\D/g, "") === phone.replace(/\D/g, ""))
+          );
+
+          if (clientMatch) {
+            const currentCredits = Number(clientMatch.work_credits || clientMatch.workCredits || 0);
+            const newCredits = currentCredits + 5;
+            await updateClientProfile(clientMatch.id, {
+              work_credits: newCredits,
+              work_pass_active: true,
+              workPassActive: true
+            });
+            console.log(`[PayU Webhook Fulfill Success] Granted 5 Work Credits to Client ${clientMatch.id}`);
+          }
+        } catch(err) {
+          console.error("Error fulfilling work bundle in PayU webhook:", err.message);
+        }
+      }
+
+      // Fulfill Service Booking (SV_...)
+      if (txnid.startsWith("SV_") || productinfo.toLowerCase().includes("service") || productinfo.toLowerCase().includes("fee")) {
+        try {
+          const { getLocalBookings, saveLocalBookings } = require("./lib/supabaseStore");
+          const localBookings = await getLocalBookings();
+          const matchBooking = localBookings.find(b =>
+            (b.details && b.details.includes(txnid)) ||
+            String(b.txnid) === String(txnid)
+          );
+
+          if (matchBooking) {
+            matchBooking.payment_status = "paid";
+            matchBooking.paymentStatus = "paid";
+            matchBooking.mihpayid = mihpayid;
+            matchBooking.txnid = txnid;
+            await saveLocalBookings(localBookings);
+          }
+        } catch(err) {
+          console.error("Error fulfilling service booking in PayU webhook:", err.message);
+        }
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: "PayU payment webhook processed successfully",
+        txnid,
+        status: "success",
+        hashVerified: isHashValid
+      });
+    } else {
+      console.warn(`[PayU Webhook Notification] Payment failure/cancelled for TxnID ${txnid}: ${errorMsg}`);
+      return res.status(200).json({
+        success: false,
+        message: "PayU payment failure logged successfully",
+        txnid,
+        status: "failed",
+        error: errorMsg
+      });
+    }
+  } catch (err) {
+    console.error("[PayU Webhook Error]:", err.message);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Universal Tax Invoice Route
+app.get(["/bookings/:id/invoice", "/client/bookings/:id/invoice", "/invoice/:id", "/invoice/txnid/:id"], async (req, res) => {
+  const rawId = req.params.id;
   const user = req.session.user;
 
   try {
-    const dbClient = getClient();
-    
-    const { data: booking } = await dbClient
-      .from("bookings")
-      .select("*, professionals(full_name, email, phone), clients(full_name, email, phone)")
-      .eq("id", bookingId)
-      .maybeSingle();
+    let booking = null;
+    const nid = Number(rawId);
 
+    // 1. Try Supabase Database lookup
+    try {
+      if (isDatabaseReady()) {
+        const dbClient = getClient();
+        if (dbClient) {
+          let q = dbClient.from("bookings").select("*, professionals(full_name, email, phone), clients(full_name, email, phone)");
+          if (!Number.isNaN(nid)) {
+            q = q.eq("id", nid);
+          } else {
+            q = q.eq("booking_code", rawId);
+          }
+          const { data } = await q.maybeSingle();
+          if (data) booking = data;
+        }
+      }
+    } catch (e) {}
+
+    // 2. Fallback to Local JSON Bookings lookup
     if (!booking) {
-      return res.status(404).send("Booking invoice not found.");
+      const { getLocalBookings } = require("./lib/supabaseStore");
+      const localBookings = await getLocalBookings();
+      booking = localBookings.find(b => 
+        String(b.id) === String(rawId) ||
+        String(b.booking_code) === String(rawId) ||
+        String(b.bookingCode) === String(rawId)
+      );
     }
 
-    if (user.role === "client" && Number(booking.client_id) !== Number(user.id)) {
-      return res.status(403).send("Unauthorized access to this invoice.");
-    }
-    if (user.role === "professional" && Number(booking.professional_id) !== Number(user.id)) {
-      return res.status(403).send("Unauthorized access to this invoice.");
+    // 3. Fallback to Payment Record lookup by TxnID (WB_... or SV_...)
+    if (!booking) {
+      try {
+        const { getPaymentRecordByTxnId } = require("./lib/supabaseStore");
+        if (typeof getPaymentRecordByTxnId === "function") {
+          const paymentRec = await getPaymentRecordByTxnId(rawId);
+          if (paymentRec) {
+            const amountNum = Number(paymentRec.amount || 50);
+            const baseAmount = (amountNum / 1.18).toFixed(2);
+            const gstAmount = (amountNum - baseAmount).toFixed(2);
+
+            return res.render("invoice", {
+              layout: false,
+              title: `Tax Invoice INV-${paymentRec.txnid} | SV Personnels`,
+              booking: {
+                booking_code: paymentRec.txnid,
+                created_at: paymentRec.createdAt || new Date().toISOString(),
+                budget_inr: amountNum,
+                base_amount: baseAmount,
+                gst_amount: gstAmount,
+                payment_status: (paymentRec.status === "success" || paymentRec.status === "completed") ? "paid" : paymentRec.status,
+                txnid: paymentRec.txnid,
+                mihpayid: paymentRec.mihpayid,
+                clients: {
+                  full_name: paymentRec.firstname || "Verified Customer",
+                  email: paymentRec.email || "customer@svpersonnels.in",
+                  phone: paymentRec.phone || ""
+                },
+                professionals: {
+                  full_name: "SV Personnels Official Service",
+                  email: "support@svpersonnels.in",
+                  phone: "+91 9999999999"
+                },
+                service_description: paymentRec.productinfo || "SV Personnels Work & Service Placement"
+              },
+              formatShortDate: (d) => new Date(d).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' })
+            });
+          }
+        }
+      } catch(e) {}
+
+      return res.status(404).send("Invoice not found for ID: " + rawId);
     }
 
-    res.render("invoice", {
+    const totalAmt = Number(booking.budget_inr || booking.budget || 500);
+    const baseAmt = (totalAmt / 1.18).toFixed(2);
+    const gstAmt = (totalAmt - baseAmt).toFixed(2);
+
+    return res.render("invoice", {
       layout: false,
-      title: `Invoice SV-${booking.booking_code} | SV Personnels`,
-      booking,
+      title: `Tax Invoice SV-${booking.booking_code || booking.id} | SV Personnels`,
+      booking: {
+        ...booking,
+        booking_code: booking.booking_code || booking.bookingCode || booking.id,
+        created_at: booking.created_at || booking.createdAt || new Date().toISOString(),
+        budget_inr: totalAmt,
+        base_amount: baseAmt,
+        gst_amount: gstAmt,
+        payment_status: booking.payment_status || booking.paymentStatus || 'paid',
+        clients: booking.clients || { full_name: booking.guestName || booking.guest_name || 'Client', email: booking.guestEmail || booking.guest_email || '', phone: booking.guestPhone || booking.guest_phone || '' },
+        professionals: booking.professionals || { full_name: booking.professionalName || 'Independent Contractor', email: '', phone: '' },
+        service_description: booking.serviceName || booking.service_name || 'Staffing & Hiring Placement Service'
+      },
       formatShortDate: (d) => new Date(d).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' })
     });
   } catch (err) {
     console.error("Invoice generation failed:", err.message);
-    res.status(500).send("Internal Server Error generating invoice.");
+    return res.status(500).send("Internal Server Error generating tax invoice.");
   }
 });
 
