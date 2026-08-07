@@ -55,6 +55,7 @@ const {
   getOAuthSignInUrl,
   exchangeAccessToken,
   getClientProfile,
+  findClientUserById,
   updateClientProfile,
   getAdminProfile,
   updateAdminProfile,
@@ -877,6 +878,37 @@ app.post(["/work/:workId/delete", "/client/work-requirements/:workId/delete"], a
 });
 
 // PayU 5-Work Upload Bundle (₹50) - First 1 Free, then ₹50 for 5 uploads
+// Helper to restore user session if stripped in cross-site PayU POST callback
+async function restoreUserSessionFromPayUToken(req) {
+  if (req.session && req.session.user) return req.session.user;
+  const token = req.query.st || req.body.st;
+  if (!token || token === "guest") return null;
+
+  try {
+    const raw = Buffer.from(token, "base64").toString("utf8");
+    const parsed = JSON.parse(raw);
+    if (parsed && parsed.id) {
+      const userObj = await findClientUserById(parsed.id);
+      if (userObj) {
+        req.session.user = userObj;
+        return userObj;
+      }
+    }
+  } catch(e) {
+    const [uId] = String(token).split(".");
+    if (uId && uId !== "guest") {
+      try {
+        const userObj = await findClientUserById(uId);
+        if (userObj) {
+          req.session.user = userObj;
+          return userObj;
+        }
+      } catch(err) {}
+    }
+  }
+  return null;
+}
+
 app.get(["/work/pass/buy", "/client/work-bundle/payu"], async (req, res) => {
   const user = req.session.user;
   if (!user || user.role !== "client") {
@@ -894,7 +926,7 @@ app.get(["/work/pass/buy", "/client/work-bundle/payu"], async (req, res) => {
   const email = (user.email || "client@svpersonnels.in").trim();
   const phone = (user.phone || "9999999999").replace(/[^0-9]/g, "").slice(-10) || "9999999999";
   const originUrl = getRequestOrigin(req);
-  const stToken = `${user.id}.client`;
+  const stToken = Buffer.from(JSON.stringify({ id: user.id, email: user.email, role: user.role })).toString("base64");
   const surl = `${originUrl}/work/pass/success?st=${encodeURIComponent(stToken)}`;
   const furl = `${originUrl}/work/pass/failure?st=${encodeURIComponent(stToken)}`;
 
@@ -925,20 +957,7 @@ app.get(["/work/pass/buy", "/client/work-bundle/payu"], async (req, res) => {
 });
 
 app.post(["/work/pass/success", "/client/work-bundle/success"], async (req, res) => {
-  let user = req.session.user;
-  const token = req.query.st || req.body.st;
-  if (!user && token && token !== "guest") {
-    const [uId] = String(token).split(".");
-    if (uId) {
-      try {
-        const client = await getClientById(uId);
-        if (client) {
-          user = { id: client.id, name: client.name || client.full_name, email: client.email, role: "client", workCredits: client.work_credits || 0, workPassActive: client.work_pass_active || false };
-          req.session.user = user;
-        }
-      } catch(e) {}
-    }
-  }
+  const user = await restoreUserSessionFromPayUToken(req);
 
   const txnid = req.body.txnid || (req.session.workPassPending ? req.session.workPassPending.txnid : "WB_" + Date.now());
   const mihpayid = req.body.mihpayid || req.body.payuMoneyId || "";
@@ -961,6 +980,34 @@ app.post(["/work/pass/success", "/client/work-bundle/success"], async (req, res)
   }
 
   req.session.workPassPending = null;
+
+  const redirectUrl = `/payment/success?txnid=${encodeURIComponent(txnid)}&mihpayid=${encodeURIComponent(mihpayid)}&amount=${encodeURIComponent(amount)}&productinfo=${encodeURIComponent(productinfo)}`;
+  if (req.session && req.session.save) {
+    return req.session.save(() => res.redirect(redirectUrl));
+  }
+  return res.redirect(redirectUrl);
+});
+
+app.post(["/work/pass/failure", "/client/work-bundle/failure"], async (req, res) => {
+  await restoreUserSessionFromPayUToken(req);
+
+  const txnid = req.body.txnid || (req.session.workPassPending ? req.session.workPassPending.txnid : "");
+  const errorMsg = req.body.error_Message || req.body.field9 || "Transaction cancelled or failed at PayU gateway";
+  req.session.workPassPending = null;
+
+  const redirectUrl = `/payment/failure?txnid=${encodeURIComponent(txnid)}&errorMsg=${encodeURIComponent(errorMsg)}`;
+  if (req.session && req.session.save) {
+    return req.session.save(() => res.redirect(redirectUrl));
+  }
+  return res.redirect(redirectUrl);
+});
+
+app.get("/payment/success", async (req, res) => {
+  const txnid = req.query.txnid || "WB_SUCCESS";
+  const mihpayid = req.query.mihpayid || "";
+  const amount = req.query.amount || "50.00";
+  const productinfo = req.query.productinfo || "SV Personnels Service";
+
   return res.render("paymentSuccess", {
     title: "Payment Successful | SV Personnels",
     pageClass: "page-payment-status",
@@ -971,25 +1018,9 @@ app.post(["/work/pass/success", "/client/work-bundle/success"], async (req, res)
   });
 });
 
-app.post(["/work/pass/failure", "/client/work-bundle/failure"], async (req, res) => {
-  let user = req.session.user;
-  const token = req.query.st || req.body.st;
-  if (!user && token && token !== "guest") {
-    const [uId] = String(token).split(".");
-    if (uId) {
-      try {
-        const client = await getClientById(uId);
-        if (client) {
-          user = { id: client.id, name: client.name || client.full_name, email: client.email, role: "client", workCredits: client.work_credits || 0, workPassActive: client.work_pass_active || false };
-          req.session.user = user;
-        }
-      } catch(e) {}
-    }
-  }
-
-  const txnid = req.body.txnid || (req.session.workPassPending ? req.session.workPassPending.txnid : "");
-  const errorMsg = req.body.error_Message || req.body.field9 || "Transaction cancelled or failed at PayU gateway";
-  req.session.workPassPending = null;
+app.get("/payment/failure", async (req, res) => {
+  const txnid = req.query.txnid || "";
+  const errorMsg = req.query.errorMsg || "Transaction cancelled or failed at PayU gateway";
 
   return res.render("paymentFailure", {
     title: "Payment Failed | SV Personnels",
@@ -3280,7 +3311,7 @@ app.post("/book-service/:professionalId/confirm", requireRole("client"), async (
   const phone = (draft.phone || "9999999999").replace(/[^0-9]/g, "").slice(-10) || "9999999999";
   const originUrl = getRequestOrigin(req);
   const sessionUser = req.session.user;
-  const stToken = sessionUser ? `${sessionUser.id}.client` : "guest";
+  const stToken = sessionUser ? Buffer.from(JSON.stringify({ id: sessionUser.id, email: sessionUser.email, role: sessionUser.role })).toString("base64") : "guest";
   const surl = `${originUrl}/book-service/payu/success?st=${encodeURIComponent(stToken)}`;
   const furl = `${originUrl}/book-service/payu/failure?st=${encodeURIComponent(stToken)}`;
 
@@ -3319,20 +3350,7 @@ app.post("/book-service/:professionalId/confirm", requireRole("client"), async (
 });
 
 app.post("/book-service/payu/success", async (req, res) => {
-  let user = req.session.user;
-  const token = req.query.st || req.body.st;
-  if (!user && token && token !== "guest") {
-    const [uId] = String(token).split(".");
-    if (uId) {
-      try {
-        const client = await getClientById(uId);
-        if (client) {
-          user = { id: client.id, name: client.name || client.full_name, email: client.email, role: "client", workCredits: client.work_credits || 0, workPassActive: client.work_pass_active || false };
-          req.session.user = user;
-        }
-      } catch(e) {}
-    }
-  }
+  const user = await restoreUserSessionFromPayUToken(req);
 
   const pending = req.session.payuPending || {};
   const draft = pending.draft;
@@ -3379,31 +3397,16 @@ app.post("/book-service/payu/success", async (req, res) => {
   req.session.payuPending = null;
   req.session.bookingDraft = null;
 
-  return res.render("paymentSuccess", {
-    title: "Booking Payment Successful | SV Personnels",
-    pageClass: "page-payment-status",
-    txnid: bookingCode,
-    mihpayid,
-    amount,
-    productinfo: `Staff Booking with ${professional ? professional.name : 'Professional'}`
-  });
+  const productinfo = `Staff Booking with ${professional ? professional.name : 'Professional'}`;
+  const redirectUrl = `/payment/success?txnid=${encodeURIComponent(bookingCode)}&mihpayid=${encodeURIComponent(mihpayid)}&amount=${encodeURIComponent(amount)}&productinfo=${encodeURIComponent(productinfo)}`;
+  if (req.session && req.session.save) {
+    return req.session.save(() => res.redirect(redirectUrl));
+  }
+  return res.redirect(redirectUrl);
 });
 
 app.post("/book-service/payu/failure", async (req, res) => {
-  let user = req.session.user;
-  const token = req.query.st || req.body.st;
-  if (!user && token && token !== "guest") {
-    const [uId] = String(token).split(".");
-    if (uId) {
-      try {
-        const client = await getClientById(uId);
-        if (client) {
-          user = { id: client.id, name: client.name || client.full_name, email: client.email, role: "client", workCredits: client.work_credits || 0, workPassActive: client.work_pass_active || false };
-          req.session.user = user;
-        }
-      } catch(e) {}
-    }
-  }
+  await restoreUserSessionFromPayUToken(req);
 
   const pending = req.session.payuPending;
   const professionalId = pending ? pending.professionalId : null;
@@ -3412,13 +3415,11 @@ app.post("/book-service/payu/failure", async (req, res) => {
 
   req.session.payuPending = null;
 
-  return res.render("paymentFailure", {
-    title: "Booking Payment Failed | SV Personnels",
-    pageClass: "page-payment-status",
-    txnid,
-    errorMsg,
-    retryUrl: professionalId ? `/book-service/${professionalId}/payment` : "/findHelpNow"
-  });
+  const redirectUrl = `/payment/failure?txnid=${encodeURIComponent(txnid)}&errorMsg=${encodeURIComponent(errorMsg)}`;
+  if (req.session && req.session.save) {
+    return req.session.save(() => res.redirect(redirectUrl));
+  }
+  return res.redirect(redirectUrl);
 });
 
 app.get("/api/workers", async (req, res) => {
