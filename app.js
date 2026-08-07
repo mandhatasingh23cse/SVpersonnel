@@ -925,6 +925,11 @@ app.get(["/work/pass/buy", "/client/work-bundle/payu"], async (req, res) => {
 
 app.post(["/work/pass/success", "/client/work-bundle/success"], async (req, res) => {
   const user = req.session.user;
+  const txnid = req.body.txnid || (req.session.workPassPending ? req.session.workPassPending.txnid : "WB_" + Date.now());
+  const mihpayid = req.body.mihpayid || req.body.payuMoneyId || "";
+  const amount = req.body.amount || "50.00";
+  const productinfo = req.body.productinfo || "5-Work Upload Bundle Credits";
+
   if (user) {
     user.workCredits = (user.workCredits || 0) + 5;
     user.workPassActive = true;
@@ -943,13 +948,30 @@ app.post(["/work/pass/success", "/client/work-bundle/success"], async (req, res)
       console.warn("Could not save work credits to DB:", err.message);
     }
   }
-  req.session.workNotice = createFormNotice("success", "🎉 5 Work Upload Credits added successfully! You can now post custom work requirements.");
-  return res.redirect("/work");
+
+  req.session.workPassPending = null;
+  return res.render("paymentSuccess", {
+    title: "Payment Successful | SV Personnels",
+    pageClass: "page-payment-status",
+    txnid,
+    mihpayid,
+    amount,
+    productinfo
+  });
 });
 
 app.post(["/work/pass/failure", "/client/work-bundle/failure"], async (req, res) => {
-  req.session.workNotice = createFormNotice("error", "Work Bundle payment failed or was cancelled. Please try again.");
-  return res.redirect("/work");
+  const txnid = req.body.txnid || (req.session.workPassPending ? req.session.workPassPending.txnid : "");
+  const errorMsg = req.body.error_Message || req.body.field9 || "Transaction cancelled or failed at PayU gateway";
+  req.session.workPassPending = null;
+
+  return res.render("paymentFailure", {
+    title: "Payment Failed | SV Personnels",
+    pageClass: "page-payment-status",
+    txnid,
+    errorMsg,
+    retryUrl: "/client/work-bundle/payu"
+  });
 });
 
 app.post("/work/apply/:id", async (req, res) => {
@@ -3269,63 +3291,76 @@ app.post("/book-service/:professionalId/confirm", requireRole("client"), async (
 });
 
 app.post("/book-service/payu/success", async (req, res) => {
-  const pending = req.session.payuPending;
-  if (!pending || !pending.draft) {
-    return res.redirect("/client/dashboard");
-  }
-
+  const pending = req.session.payuPending || {};
   const draft = pending.draft;
   const professionalId = pending.professionalId;
-  const professional = await getProfessionalById(professionalId);
+  const professional = professionalId ? await getProfessionalById(professionalId) : null;
+  const txnid = req.body.txnid || pending.txnid || ("SV_" + Date.now());
+  const mihpayid = req.body.mihpayid || req.body.payuMoneyId || "";
+  const amount = req.body.amount || pending.amount || "295.00";
 
-  const otp = Math.floor(100000 + Math.random() * 900000);
-  let paymentMethod = "Online Payment via PayU (Paid Online - TxnID: " + pending.txnid + ")";
-  if (pending.isFullTimeFee) {
-    paymentMethod = `Full Time Platform Fee Paid Online via PayU (TxnID: ${pending.txnid}) — Monthly Salary Negotiated On Site.`;
-  } else if (pending.paymentMethodChoice === "cod") {
-    paymentMethod = `Advance Platform Fee & GST (₹${pending.amount}) Paid via PayU (TxnID: ${pending.txnid}) — Balance ₹${pending.baseRate || 500} Cash/UPI to Professional on Completion.`;
-  } else {
-    paymentMethod = `Full Service & Platform Fee (₹${pending.amount}) Paid via PayU (TxnID: ${pending.txnid}).`;
+  let bookingCode = "SV-" + Date.now();
+  if (draft) {
+    const otp = Math.floor(100000 + Math.random() * 900000);
+    let paymentMethod = "Online Payment via PayU (Paid Online - TxnID: " + txnid + ")";
+    if (pending.isFullTimeFee) {
+      paymentMethod = `Full Time Platform Fee Paid Online via PayU (TxnID: ${txnid}) — Monthly Salary Negotiated On Site.`;
+    } else if (pending.paymentMethodChoice === "cod") {
+      paymentMethod = `Advance Platform Fee & GST (₹${amount}) Paid via PayU (TxnID: ${txnid}) — Balance ₹${pending.baseRate || 500} Cash/UPI to Professional on Completion.`;
+    } else {
+      paymentMethod = `Full Service & Platform Fee (₹${amount}) Paid via PayU (TxnID: ${txnid}).`;
+    }
+
+    let formattedDetails = `[Start OTP: ${otp}]\n[Payment Method: ${paymentMethod}]`;
+    if (draft.serviceAddress) {
+      formattedDetails += `\n[Complete Address: ${draft.serviceAddress}]`;
+    }
+
+    const fullCombinedAddress = draft.serviceAddress ? `${draft.addressArea} (${draft.serviceAddress})` : draft.addressArea;
+
+    bookingCode = await createBooking({
+      clientId: req.session.user ? req.session.user.id : null,
+      guestName: draft.fullName,
+      guestEmail: draft.email,
+      guestPhone: draft.phone,
+      professionalId,
+      serviceId: Number(draft.serviceId) || 1,
+      preferredDate: draft.preferredDate,
+      preferredTimeSlot: draft.preferredTimeSlot,
+      addressArea: fullCombinedAddress,
+      budgetInr: pending.amount || 0,
+      details: formattedDetails
+    });
   }
-
-  let formattedDetails = `[Start OTP: ${otp}]\n[Payment Method: ${paymentMethod}]`;
-  if (draft.serviceAddress) {
-    formattedDetails += `\n[Complete Address: ${draft.serviceAddress}]`;
-  }
-
-  const fullCombinedAddress = draft.serviceAddress ? `${draft.addressArea} (${draft.serviceAddress})` : draft.addressArea;
-
-  const bookingCode = await createBooking({
-    clientId: req.session.user ? req.session.user.id : null,
-    guestName: draft.fullName,
-    guestEmail: draft.email,
-    guestPhone: draft.phone,
-    professionalId,
-    serviceId: Number(draft.serviceId) || 1,
-    preferredDate: draft.preferredDate,
-    preferredTimeSlot: draft.preferredTimeSlot,
-    addressArea: fullCombinedAddress,
-    budgetInr: pending.amount || 0,
-    details: formattedDetails
-  });
 
   req.session.payuPending = null;
   req.session.bookingDraft = null;
-  req.session.dashboardNotice = createFormNotice(
-    "success",
-    `🎉 Online Payment Successful via PayU (Txn ID: ${pending.txnid})! Booking ${bookingCode} with ${professional ? professional.name : 'professional'} is confirmed.`
-  );
-  return res.redirect("/client/dashboard");
+
+  return res.render("paymentSuccess", {
+    title: "Booking Payment Successful | SV Personnels",
+    pageClass: "page-payment-status",
+    txnid: bookingCode,
+    mihpayid,
+    amount,
+    productinfo: `Staff Booking with ${professional ? professional.name : 'Professional'}`
+  });
 });
 
 app.post("/book-service/payu/failure", async (req, res) => {
   const pending = req.session.payuPending;
   const professionalId = pending ? pending.professionalId : null;
-  if (professionalId) {
-    req.session.formNotice = createFormNotice("error", "Online Payment via PayU failed or was cancelled. Please try again or select Cash/UPI on completion.");
-    return res.redirect(`/book-service/${professionalId}/payment`);
-  }
-  return res.redirect("/findHelpNow");
+  const txnid = req.body.txnid || (pending ? pending.txnid : "");
+  const errorMsg = req.body.error_Message || req.body.field9 || "Online Payment via PayU failed or was cancelled.";
+
+  req.session.payuPending = null;
+
+  return res.render("paymentFailure", {
+    title: "Booking Payment Failed | SV Personnels",
+    pageClass: "page-payment-status",
+    txnid,
+    errorMsg,
+    retryUrl: professionalId ? `/book-service/${professionalId}/payment` : "/findHelpNow"
+  });
 });
 
 app.get("/api/workers", async (req, res) => {
