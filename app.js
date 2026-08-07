@@ -531,7 +531,15 @@ function requireRole(roleOrRoles) {
     }
 
     const userRole = req.session.user.role;
-    if (userRole !== "admin" && !req.session.user.onboarding_complete) {
+    const isCompleted = Boolean(
+      req.session.user.onboarding_complete ||
+      req.session.user.onboardingComplete ||
+      (req.session.user.name && req.session.user.phone && req.session.user.city) ||
+      req.session.user.primarySkill ||
+      (req.session.user.skills && req.session.user.skills.length > 0)
+    );
+
+    if (userRole !== "admin" && !isCompleted) {
       const p = req.path || "";
       if (!p.includes("/onboarding") && !p.includes("/logout") && !p.includes("/delete") && !p.includes("/api/")) {
         if (userRole === "client") return res.redirect("/client/onboarding");
@@ -860,14 +868,15 @@ app.get(["/work/pass/buy", "/client/work-bundle/payu"], async (req, res) => {
     return res.redirect("/clientlogin");
   }
 
-  const key = process.env.PAYU_MERCHANT_KEY || "owE3c7";
-  const salt = process.env.PAYU_MERCHANT_SALT || "murK9GVdBwy1JUraIKrw7iFHfLLqiV2k";
+  const key = (process.env.PAYU_MERCHANT_KEY || "owE3c7").trim();
+  const salt = (process.env.PAYU_MERCHANT_SALT || "murK9GVdBwy1JUraIKrw7iFHfLLqiV2k").trim();
   const txnid = "WB_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
-  const amount = 250;
-  const productinfo = "5-Work Upload Bundle (₹250 for 5 Custom Job Postings)";
-  const firstname = user.name || "Verified Client";
-  const email = user.email || "client@svpersonnels.in";
-  const phone = user.phone || "9999999999";
+  const numericAmount = 250;
+  const amount = "250.00";
+  const productinfo = "Work Upload Bundle 5 Credits";
+  const firstname = (user.name || "Verified Client").replace(/[^a-zA-Z0-9\s]/g, "").trim() || "Client";
+  const email = (user.email || "client@svpersonnels.in").trim();
+  const phone = (user.phone || "9999999999").replace(/[^0-9]/g, "").slice(-10) || "9999999999";
   const originUrl = getRequestOrigin(req);
   const surl = originUrl + "/work/pass/success";
   const furl = originUrl + "/work/pass/failure";
@@ -875,9 +884,10 @@ app.get(["/work/pass/buy", "/client/work-bundle/payu"], async (req, res) => {
   const hashString = `${key}|${txnid}|${amount}|${productinfo}|${firstname}|${email}|||||||||||${salt}`;
   const hash = crypto.createHash("sha512").update(hashString).digest("hex");
 
-  req.session.workPassPending = { txnid, userId: user.id, amount, creditsToAdd: 5 };
+  req.session.workPassPending = { txnid, userId: user.id, amount: numericAmount, creditsToAdd: 5 };
 
-  const payuUrl = process.env.PAYU_MODE === "live" ? "https://secure.payu.in/_payment" : "https://test.payu.in/_payment";
+  const payuMode = (process.env.PAYU_MODE || "live").toLowerCase().trim();
+  const payuUrl = (payuMode === "test" || payuMode === "sandbox") ? "https://test.payu.in/_payment" : "https://secure.payu.in/_payment";
 
   return res.render("payuCheckout", {
     title: "Buy 5-Work Upload Bundle (₹250 via PayU) | SV Personnels",
@@ -3163,24 +3173,27 @@ app.post("/book-service/:professionalId/confirm", requireRole("client"), async (
   const advanceFeeOnline = platformFee + gst;
   const fullOnlineAmount = baseRate + advanceFeeOnline;
 
-  const key = process.env.PAYU_MERCHANT_KEY || "owE3c7";
-  const salt = process.env.PAYU_MERCHANT_SALT || "murK9GVdBwy1JUraIKrw7iFHfLLqiV2k";
+  const key = (process.env.PAYU_MERCHANT_KEY || "owE3c7").trim();
+  const salt = (process.env.PAYU_MERCHANT_SALT || "murK9GVdBwy1JUraIKrw7iFHfLLqiV2k").trim();
   const txnid = "SV_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
   
-  let amount = fullOnlineAmount;
-  let productinfo = "Full Service & Platform Fee Online - " + professional.name;
+  let rawAmount = fullOnlineAmount;
+  let rawProductinfo = "Full Service Fee Online - " + (professional.name || "Staff");
 
   if (isFullTime) {
-    amount = 295; // 250 + 45 GST
-    productinfo = "Full Time Platform Booking Fee + GST (₹295) - " + professional.name;
+    rawAmount = 295; // 250 + 45 GST
+    rawProductinfo = "Full Time Booking Fee";
   } else if (paymentMethodChoice === "cod") {
-    amount = advanceFeeOnline;
-    productinfo = `Advance Platform Fee & GST (₹${advanceFeeOnline}) - ${professional.name}`;
+    rawAmount = advanceFeeOnline;
+    rawProductinfo = "Advance Platform Fee";
   }
 
-  const firstname = draft.fullName || "Verified Client";
-  const email = draft.email || "client@svpersonnels.in";
-  const phone = draft.phone || "9999999999";
+  const numericAmount = Number(rawAmount);
+  const amount = numericAmount.toFixed(2);
+  const productinfo = String(rawProductinfo).replace(/[^a-zA-Z0-9\s_-]/g, "").trim();
+  const firstname = (draft.fullName || "Verified Client").replace(/[^a-zA-Z0-9\s]/g, "").trim() || "Client";
+  const email = (draft.email || "client@svpersonnels.in").trim();
+  const phone = (draft.phone || "9999999999").replace(/[^0-9]/g, "").slice(-10) || "9999999999";
   const originUrl = getRequestOrigin(req);
   const surl = originUrl + "/book-service/payu/success";
   const furl = originUrl + "/book-service/payu/failure";
@@ -3192,13 +3205,14 @@ app.post("/book-service/:professionalId/confirm", requireRole("client"), async (
     txnid,
     professionalId,
     draft,
-    amount,
+    amount: numericAmount,
     isFullTimeFee: isFullTime,
     paymentMethodChoice,
     baseRate
   };
 
-  const payuUrl = process.env.PAYU_MODE === "live" ? "https://secure.payu.in/_payment" : "https://test.payu.in/_payment";
+  const payuMode = (process.env.PAYU_MODE || "live").toLowerCase().trim();
+  const payuUrl = (payuMode === "test" || payuMode === "sandbox") ? "https://test.payu.in/_payment" : "https://secure.payu.in/_payment";
 
   return res.render("payuCheckout", {
     title: "PayU Payment Gateway | SV Personnels",
