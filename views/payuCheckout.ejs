@@ -41,7 +41,7 @@
       </div>
     </div>
 
-    <!-- Official PayU POST form (Redirects to PayU checkout or sandbox simulation if test keys) -->
+    <!-- Official PayU POST form -->
     <form action="<%= payuUrl %>" method="POST" id="payuRedirectForm">
       <input type="hidden" name="key" value="<%= key %>">
       <input type="hidden" name="txnid" value="<%= txnid %>">
@@ -53,11 +53,10 @@
       <input type="hidden" name="surl" value="<%= surl %>">
       <input type="hidden" name="furl" value="<%= furl %>">
       <input type="hidden" name="hash" value="<%= hash %>">
-      <input type="hidden" name="service_provider" value="payu_paisa">
 
       <div style="display: flex; justify-content: center;">
         <button type="submit" id="btnPayuProceed" class="button button-primary" style="padding: 1.15rem 2.8rem; font-size: 1.1rem; font-weight: 800; border-radius: 14px; background: linear-gradient(135deg, #f59e0b, #d97706); border: none; cursor: pointer; color: #000; box-shadow: 0 6px 24px rgba(245, 158, 11, 0.45); display: flex; align-items: center; gap: 0.6rem;">
-          <span>🔒</span> Proceed to Official PayU Payment Gateway ›
+          <span>🔒</span> Proceeding to PayU Live Gateway...
         </button>
       </div>
     </form>
@@ -71,3 +70,14 @@
     </div>
   </div>
 </section>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    var form = document.getElementById("payuRedirectForm");
+    if (form) {
+      setTimeout(function() {
+        form.submit();
+      }, 400);
+    }
+  });
+</script>
