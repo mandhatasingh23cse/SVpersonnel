@@ -769,6 +769,7 @@ app.get("/work", async (req, res) => {
   const user = req.session.user;
   let displayedJobs = allJobs;
   let clientJobsCount = 0;
+  let postedCount = 0;
 
   if (user && user.role === "professional") {
     displayedJobs = await getWorkRequirementsForProfessional(user);
@@ -778,6 +779,10 @@ app.get("/work", async (req, res) => {
     const cJobs = await getWorkRequirementsByClient(user.id || user.email);
     displayedJobs = cJobs || [];
     clientJobsCount = displayedJobs.length;
+    postedCount = Math.max(
+      Number(user.totalWorksPosted || user.posted_work_count || user.total_works_posted || 0),
+      clientJobsCount
+    );
   }
 
   const formNotice = req.session.workNotice || null;
@@ -792,6 +797,7 @@ app.get("/work", async (req, res) => {
     allJobs,
     user,
     clientJobsCount,
+    postedCount,
     formNotice
   });
 });
@@ -805,12 +811,16 @@ app.post("/work/post", async (req, res) => {
     }
 
     const clientJobs = await getWorkRequirementsByClient(user.id || user.email);
-    const jobsCount = clientJobs ? clientJobs.length : 0;
+    const clientJobsCount = clientJobs ? clientJobs.length : 0;
+    const currentPostedCount = Math.max(
+      Number(user.totalWorksPosted || user.posted_work_count || user.total_works_posted || 0),
+      clientJobsCount
+    );
     const credits = Number(user.workCredits || 0);
     const isPassActive = user.workPassActive && (!user.workPassExpiresAt || new Date(user.workPassExpiresAt) > new Date());
 
-    if (jobsCount >= 1 && credits <= 0 && !isPassActive) {
-      req.session.workNotice = createFormNotice("error", "⚡ You have used your 1st Free Work Upload! To post more custom jobs, please purchase a 5-Work Upload Bundle for just ₹250 via PayU.");
+    if (currentPostedCount >= 1 && credits <= 0 && !isPassActive) {
+      req.session.workNotice = createFormNotice("error", "⚡ You have used your 1st Free Work Upload! To post more custom jobs, please purchase a 5-Work Upload Bundle for just ₹50 via PayU.");
       return res.redirect("/client/work-bundle/payu");
     }
 
@@ -828,7 +838,18 @@ app.post("/work/post", async (req, res) => {
       description: description || ""
     });
 
-    if (jobsCount >= 1 && credits > 0 && !isPassActive) {
+    const newPostedCount = currentPostedCount + 1;
+    user.totalWorksPosted = newPostedCount;
+    user.posted_work_count = newPostedCount;
+    user.total_works_posted = newPostedCount;
+
+    try {
+      await updateClientProfile(user.id || user.email, {
+        total_works_posted: newPostedCount
+      });
+    } catch (e) {}
+
+    if (currentPostedCount >= 1 && credits > 0 && !isPassActive) {
       user.workCredits = Math.max(0, credits - 1);
     }
 
@@ -860,7 +881,7 @@ app.post(["/work/:workId/delete", "/client/work-requirements/:workId/delete"], a
   }
 });
 
-// PayU 5-Work Upload Bundle (₹250) - First 1 Free, then ₹250 for 5 uploads
+// PayU 5-Work Upload Bundle (₹50) - First 1 Free, then ₹50 for 5 uploads
 app.get(["/work/pass/buy", "/client/work-bundle/payu"], async (req, res) => {
   const user = req.session.user;
   if (!user || user.role !== "client") {
@@ -871,8 +892,8 @@ app.get(["/work/pass/buy", "/client/work-bundle/payu"], async (req, res) => {
   const key = (process.env.PAYU_MERCHANT_KEY || "owE3c7").trim();
   const salt = (process.env.PAYU_MERCHANT_SALT || "murK9GVdBwy1JUraIKrw7iFHfLLqiV2k").trim();
   const txnid = "WB_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
-  const numericAmount = 250;
-  const amount = "250.00";
+  const numericAmount = 50;
+  const amount = "50.00";
   const productinfo = "Work Upload Bundle 5 Credits";
   const firstname = (user.name || "Verified Client").replace(/[^a-zA-Z0-9\s]/g, "").trim() || "Client";
   const email = (user.email || "client@svpersonnels.in").trim();
@@ -890,7 +911,7 @@ app.get(["/work/pass/buy", "/client/work-bundle/payu"], async (req, res) => {
   const payuUrl = (payuMode === "test" || payuMode === "sandbox") ? "https://test.payu.in/_payment" : "https://secure.payu.in/_payment";
 
   return res.render("payuCheckout", {
-    title: "Buy 5-Work Upload Bundle (₹250 via PayU) | SV Personnels",
+    title: "Buy 5-Work Upload Bundle (₹50 via PayU) | SV Personnels",
     pageClass: "page-payu",
     key,
     txnid,
