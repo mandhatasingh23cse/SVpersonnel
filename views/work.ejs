@@ -28,6 +28,7 @@
 
     <% const isPassActive = (user && user.role === "client" && user.workPassActive && (!user.workPassExpiresAt || new Date(user.workPassExpiresAt) > new Date())); %>
     <% const cCount = typeof clientJobsCount !== 'undefined' ? clientJobsCount : 0; %>
+    <% const pCount = typeof postedCount !== 'undefined' ? postedCount : (user ? (Number(user.totalWorksPosted || user.posted_work_count || user.total_works_posted || 0)) : cCount); %>
     <% const cCredits = (user && user.workCredits) ? Number(user.workCredits) : 0; %>
 
     <% if (user && user.role === "client") { %>
@@ -42,7 +43,7 @@
           </div>
           <span style="font-size: 0.78rem; background: #22c55e; color: #000; font-weight: 800; padding: 4px 10px; border-radius: 6px;">ACTIVE</span>
         </div>
-      <% } else if (cCount === 0) { %>
+      <% } else if (pCount === 0) { %>
         <div style="margin-bottom: 1.5rem; padding: 1rem 1.25rem; border-radius: 12px; background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.4); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
           <div style="display: flex; align-items: center; gap: 0.6rem; color: #e9d5ff; font-size: 0.92rem;">
             <span style="font-size: 1.3rem;">🎁</span>
@@ -58,14 +59,14 @@
           <div style="max-width: 540px;">
             <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
               <span style="background: #f59e0b; color: #000; font-size: 0.72rem; font-weight: 800; padding: 2px 8px; border-radius: 4px;">FREE UPLOAD USED</span>
-              <strong style="color: #fbbf24; font-size: 1.1rem;">💎 Purchase 5-Work Upload Bundle (₹250 only)</strong>
+              <strong style="color: #fbbf24; font-size: 1.1rem;">💎 Purchase 5-Work Upload Bundle (₹50 only)</strong>
             </div>
             <p style="margin: 0; color: #fde68a; font-size: 0.9rem; line-height: 1.45;">
-              You have used your 1st free work upload. To continue posting custom requirements and connecting with local verified professionals & partners, get our 5-Job Bundle for just ₹250!
+              You have used your 1st free work upload. To continue posting custom requirements and connecting with local verified professionals & partners, get our 5-Job Bundle for just ₹50!
             </p>
           </div>
           <a href="/client/work-bundle/payu" class="button button-primary" style="padding: 0.75rem 1.25rem; font-size: 0.9rem; font-weight: 800; border-radius: 12px; background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; text-decoration: none; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4); display: inline-flex; align-items: center; justify-content: center; text-align: center; max-width: 100%; box-sizing: border-box; white-space: normal; word-break: break-word;">
-            ⚡ Buy 5-Job Bundle (₹250 via PayU) ›
+            ⚡ Buy 5-Job Bundle (₹50 via PayU) ›
           </a>
         </div>
       <% } %>
@@ -170,13 +171,13 @@
           🔒 Only professionals specifically categorized under this skill will be notified and granted access.
         </span>
         <% if (user && user.role === "client") { %>
-          <% if (isPassActive || cCredits > 0 || cCount === 0) { %>
+          <% if (isPassActive || cCredits > 0 || pCount === 0) { %>
             <button type="submit" class="button button-primary" style="padding: 0.85rem 2rem; font-weight: 700; border-radius: 10px;">
               Notify Professionals & Post Work ›
             </button>
           <% } else { %>
             <a href="/client/work-bundle/payu" class="button button-primary" style="padding: 0.75rem 1.25rem; font-size: 0.9rem; font-weight: 800; border-radius: 10px; background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; text-align: center; max-width: 100%; box-sizing: border-box; white-space: normal; word-break: break-word;">
-              ⚡ Buy 5-Job Bundle (₹250) to Post More Work ›
+              ⚡ Buy 5-Job Bundle (₹50) to Post More Work ›
             </a>
           <% } %>
         <% } else { %>
