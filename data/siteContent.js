@@ -6,13 +6,13 @@ const navigation = [
 ];
 
 const services = [
+  { name: "Healthcare & Hospital Staffing", slug: "healthcare-hospital-staffing", icon: "/assets/fitness.png", description: "Doctors, ICU/ward nurses, ward boys, pharmacists, OT/lab technicians, and caregivers" },
   { name: "Security Services", slug: "security-services", icon: "/assets/driver.png", description: "Trained residential & commercial security, armed guards, bouncers, and supervisors" },
   { name: "Housekeeping & Facility Management", slug: "housekeeping-facility-management", icon: "/assets/home cleaning.png", description: "Daily maintenance, office boys, janitors, deep cleaning, and waste management" },
   { name: "Office & Corporate Staff", slug: "office-corporate-staff", icon: "/assets/it support.png", description: "Receptionists, front desk, data entry, telecallers, and administrative staff" },
   { name: "Industrial & Factory Workforce", slug: "industrial-factory-workforce", icon: "/assets/connect.png", description: "Skilled/unskilled labour, factory workers, machine operators, and supervisors" },
   { name: "Construction & Civil Workers", slug: "construction-civil-workers", icon: "/assets/plumbing.png", description: "Masons, carpenters, painters, welders, fabricators, tile fitters, and scaffolders" },
   { name: "Technical & Maintenance Staff", slug: "technical-maintenance-staff", icon: "/assets/electrician.png", description: "Electricians, plumbers, AC technicians, lift servicing, solar, and mechanics" },
-  { name: "Healthcare & Hospital Staffing", slug: "healthcare-hospital-staffing", icon: "/assets/fitness.png", description: "Doctors, ICU/ward nurses, ward boys, pharmacists, OT/lab technicians, and caregivers" },
   { name: "Hospitality & Hotel Staff", slug: "hospitality-hotel-staff", icon: "/assets/cooking.png", description: "Executive chefs, cooks, polished waiters, stewards, bartenders, and kitchen helpers" },
   { name: "Domestic & Personal Staff", slug: "domestic-personal-staff", icon: "/assets/home cleaning.png", description: "Trusted maids, babysitters, live-in nannies, elder care, and personal drivers" },
   { name: "Logistics & Transportation", slug: "logistics-transportation", icon: "/assets/driver.png", description: "Commercial drivers, delivery executives, truck drivers, and forklift operators" },
@@ -26,7 +26,28 @@ const services = [
 const ottCategories = [
   {
     id: 1,
-    title: "1. Security Services",
+    title: "1. Healthcare & Hospital Staffing",
+    headerIcon: "🏥",
+    badge: "URGENT CARE",
+    badgeColor: "linear-gradient(135deg, #ec4899, #f43f5e)",
+    items: [
+      { name: "Doctors", tag: "VERIFIED", icon: "👨‍⚕️", desc: "Qualified resident & visiting medical officers" },
+      { name: "Nurses", tag: "TOP 10", icon: "👩‍⚕️", desc: "Certified ICU, ward & emergency nurses" },
+      { name: "Ward Boys", tag: "ESSENTIAL", icon: "🏥", desc: "Patient shifting & bedside support staff" },
+      { name: "Ward Girls", tag: "COMPASSIONATE", icon: "🏩", desc: "Attentive female hospital care attendants" },
+      { name: "Pharmacists", tag: "LICENSED", icon: "💊", desc: "Hospital & clinical dispensary pharmacists" },
+      { name: "Lab Technicians", tag: "DIAGNOSTICS", icon: "🔬", desc: "Pathology, blood test & lab operators" },
+      { name: "OT Technicians", tag: "CRITICAL CARE", icon: "🩺", desc: "Operation theatre setup & surgeon assistance" },
+      { name: "ICU Staff", tag: "SPECIALIZED", icon: "🫀", desc: "Highly trained intensive care support team" },
+      { name: "Ambulance Drivers", tag: "EMERGENCY", icon: "🚑", desc: "Fast-response emergency medical drivers" },
+      { name: "Hospital Receptionists", tag: "FRONT DESK", icon: "📋", desc: "Patient admission & billing receptionists" },
+      { name: "Caregivers", tag: "ELDER CARE", icon: "🤍", desc: "Dedicated home care & senior citizen companions" },
+      { name: "Home Nurses", tag: "HOME MEDICAL", icon: "🏡", desc: "Post-surgery & chronic care home nurses" }
+    ]
+  },
+  {
+    id: 2,
+    title: "2. Security Services",
     headerIcon: "🛡️",
     badge: "TOP CATEGORY",
     badgeColor: "linear-gradient(135deg, #f43f5e, #ec4899)",
@@ -41,8 +62,8 @@ const ottCategories = [
     ]
   },
   {
-    id: 2,
-    title: "2. Housekeeping & Facility Management",
+    id: 3,
+    title: "3. Housekeeping & Facility Management",
     headerIcon: "🧹",
     badge: "HIGH DEMAND",
     badgeColor: "linear-gradient(135deg, #8b5cf6, #3b82f6)",
@@ -57,8 +78,8 @@ const ottCategories = [
     ]
   },
   {
-    id: 3,
-    title: "3. Office & Corporate Staff",
+    id: 4,
+    title: "4. Office & Corporate Staff",
     headerIcon: "🏢",
     badge: "CORPORATE HUB",
     badgeColor: "linear-gradient(135deg, #06b6d4, #3b82f6)",
@@ -77,8 +98,8 @@ const ottCategories = [
     ]
   },
   {
-    id: 4,
-    title: "4. Industrial & Factory Workforce",
+    id: 5,
+    title: "5. Industrial & Factory Workforce",
     headerIcon: "🏭",
     badge: "BULK MANPOWER",
     badgeColor: "linear-gradient(135deg, #f59e0b, #ef4444)",
@@ -96,8 +117,8 @@ const ottCategories = [
     ]
   },
   {
-    id: 5,
-    title: "5. Construction & Civil Workers",
+    id: 6,
+    title: "6. Construction & Civil Workers",
     headerIcon: "👷",
     badge: "INFRASTRUCTURE",
     badgeColor: "linear-gradient(135deg, #10b981, #059669)",
@@ -114,8 +135,8 @@ const ottCategories = [
     ]
   },
   {
-    id: 6,
-    title: "6. Technical & Maintenance Staff",
+    id: 7,
+    title: "7. Technical & Maintenance Staff",
     headerIcon: "🔧",
     badge: "24/7 REPAIR",
     badgeColor: "linear-gradient(135deg, #6366f1, #8b5cf6)",
@@ -129,27 +150,6 @@ const ottCategories = [
       { name: "Mechanics", tag: "MACHINERY", icon: "🔩", desc: "Multi-utility pump & motor repair mechanics" },
       { name: "Diesel Mechanics", tag: "POWER GEN", icon: "⛽", desc: "DG set maintenance & diesel engine overhaul" },
       { name: "Maintenance Technicians", tag: "ALL ROUNDER", icon: "🛠️", desc: "Comprehensive building multi-technicians" }
-    ]
-  },
-  {
-    id: 7,
-    title: "7. Healthcare & Hospital Staffing",
-    headerIcon: "🏥",
-    badge: "MEDICAL CARE",
-    badgeColor: "linear-gradient(135deg, #ec4899, #f43f5e)",
-    items: [
-      { name: "Doctors", tag: "VERIFIED", icon: "👨‍⚕️", desc: "Qualified resident & visiting medical officers" },
-      { name: "Nurses", tag: "TOP 10", icon: "👩‍⚕️", desc: "Certified ICU, ward & emergency nurses" },
-      { name: "Ward Boys", tag: "ESSENTIAL", icon: "🏥", desc: "Patient shifting & bedside support staff" },
-      { name: "Ward Girls", tag: "COMPASSIONATE", icon: "🏩", desc: "Attentive female hospital care attendants" },
-      { name: "Pharmacists", tag: "LICENSED", icon: "💊", desc: "Hospital & clinical dispensary pharmacists" },
-      { name: "Lab Technicians", tag: "DIAGNOSTICS", icon: "🔬", desc: "Pathology, blood test & lab operators" },
-      { name: "OT Technicians", tag: "CRITICAL CARE", icon: "🩺", desc: "Operation theatre setup & surgeon assistance" },
-      { name: "ICU Staff", tag: "SPECIALIZED", icon: "🫀", desc: "Highly trained intensive care support team" },
-      { name: "Ambulance Drivers", tag: "EMERGENCY", icon: "🚑", desc: "Fast-response emergency medical drivers" },
-      { name: "Hospital Receptionists", tag: "FRONT DESK", icon: "📋", desc: "Patient admission & billing receptionists" },
-      { name: "Caregivers", tag: "ELDER CARE", icon: "🤍", desc: "Dedicated home care & senior citizen companions" },
-      { name: "Home Nurses", tag: "HOME MEDICAL", icon: "🏡", desc: "Post-surgery & chronic care home nurses" }
     ]
   },
   {
