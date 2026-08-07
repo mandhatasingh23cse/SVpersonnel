@@ -894,8 +894,9 @@ app.get(["/work/pass/buy", "/client/work-bundle/payu"], async (req, res) => {
   const email = (user.email || "client@svpersonnels.in").trim();
   const phone = (user.phone || "9999999999").replace(/[^0-9]/g, "").slice(-10) || "9999999999";
   const originUrl = getRequestOrigin(req);
-  const surl = originUrl + "/work/pass/success";
-  const furl = originUrl + "/work/pass/failure";
+  const stToken = `${user.id}.client`;
+  const surl = `${originUrl}/work/pass/success?st=${encodeURIComponent(stToken)}`;
+  const furl = `${originUrl}/work/pass/failure?st=${encodeURIComponent(stToken)}`;
 
   const hashString = `${key}|${txnid}|${amount}|${productinfo}|${firstname}|${email}|||||||||||${salt}`;
   const hash = crypto.createHash("sha512").update(hashString).digest("hex");
@@ -924,7 +925,21 @@ app.get(["/work/pass/buy", "/client/work-bundle/payu"], async (req, res) => {
 });
 
 app.post(["/work/pass/success", "/client/work-bundle/success"], async (req, res) => {
-  const user = req.session.user;
+  let user = req.session.user;
+  const token = req.query.st || req.body.st;
+  if (!user && token && token !== "guest") {
+    const [uId] = String(token).split(".");
+    if (uId) {
+      try {
+        const client = await getClientById(uId);
+        if (client) {
+          user = { id: client.id, name: client.name || client.full_name, email: client.email, role: "client", workCredits: client.work_credits || 0, workPassActive: client.work_pass_active || false };
+          req.session.user = user;
+        }
+      } catch(e) {}
+    }
+  }
+
   const txnid = req.body.txnid || (req.session.workPassPending ? req.session.workPassPending.txnid : "WB_" + Date.now());
   const mihpayid = req.body.mihpayid || req.body.payuMoneyId || "";
   const amount = req.body.amount || "50.00";
@@ -935,15 +950,11 @@ app.post(["/work/pass/success", "/client/work-bundle/success"], async (req, res)
     user.workPassActive = true;
     user.workPassExpiresAt = new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString();
     try {
-      if (isDatabaseReady()) {
-        const supabase = getClient();
-        if (supabase) {
-          await supabase.from("clients").update({
-            work_pass_active: true,
-            work_pass_expires_at: user.workPassExpiresAt
-          }).eq("id", user.id);
-        }
-      }
+      await updateClientProfile(user.id, {
+        work_credits: user.workCredits,
+        work_pass_active: true,
+        work_pass_expires_at: user.workPassExpiresAt
+      });
     } catch (err) {
       console.warn("Could not save work credits to DB:", err.message);
     }
@@ -961,6 +972,21 @@ app.post(["/work/pass/success", "/client/work-bundle/success"], async (req, res)
 });
 
 app.post(["/work/pass/failure", "/client/work-bundle/failure"], async (req, res) => {
+  let user = req.session.user;
+  const token = req.query.st || req.body.st;
+  if (!user && token && token !== "guest") {
+    const [uId] = String(token).split(".");
+    if (uId) {
+      try {
+        const client = await getClientById(uId);
+        if (client) {
+          user = { id: client.id, name: client.name || client.full_name, email: client.email, role: "client", workCredits: client.work_credits || 0, workPassActive: client.work_pass_active || false };
+          req.session.user = user;
+        }
+      } catch(e) {}
+    }
+  }
+
   const txnid = req.body.txnid || (req.session.workPassPending ? req.session.workPassPending.txnid : "");
   const errorMsg = req.body.error_Message || req.body.field9 || "Transaction cancelled or failed at PayU gateway";
   req.session.workPassPending = null;
@@ -3253,8 +3279,10 @@ app.post("/book-service/:professionalId/confirm", requireRole("client"), async (
   const email = (draft.email || "client@svpersonnels.in").trim();
   const phone = (draft.phone || "9999999999").replace(/[^0-9]/g, "").slice(-10) || "9999999999";
   const originUrl = getRequestOrigin(req);
-  const surl = originUrl + "/book-service/payu/success";
-  const furl = originUrl + "/book-service/payu/failure";
+  const sessionUser = req.session.user;
+  const stToken = sessionUser ? `${sessionUser.id}.client` : "guest";
+  const surl = `${originUrl}/book-service/payu/success?st=${encodeURIComponent(stToken)}`;
+  const furl = `${originUrl}/book-service/payu/failure?st=${encodeURIComponent(stToken)}`;
 
   const hashString = `${key}|${txnid}|${amount}|${productinfo}|${firstname}|${email}|||||||||||${salt}`;
   const hash = crypto.createHash("sha512").update(hashString).digest("hex");
@@ -3291,6 +3319,21 @@ app.post("/book-service/:professionalId/confirm", requireRole("client"), async (
 });
 
 app.post("/book-service/payu/success", async (req, res) => {
+  let user = req.session.user;
+  const token = req.query.st || req.body.st;
+  if (!user && token && token !== "guest") {
+    const [uId] = String(token).split(".");
+    if (uId) {
+      try {
+        const client = await getClientById(uId);
+        if (client) {
+          user = { id: client.id, name: client.name || client.full_name, email: client.email, role: "client", workCredits: client.work_credits || 0, workPassActive: client.work_pass_active || false };
+          req.session.user = user;
+        }
+      } catch(e) {}
+    }
+  }
+
   const pending = req.session.payuPending || {};
   const draft = pending.draft;
   const professionalId = pending.professionalId;
@@ -3319,7 +3362,7 @@ app.post("/book-service/payu/success", async (req, res) => {
     const fullCombinedAddress = draft.serviceAddress ? `${draft.addressArea} (${draft.serviceAddress})` : draft.addressArea;
 
     bookingCode = await createBooking({
-      clientId: req.session.user ? req.session.user.id : null,
+      clientId: user ? user.id : (req.session.user ? req.session.user.id : null),
       guestName: draft.fullName,
       guestEmail: draft.email,
       guestPhone: draft.phone,
@@ -3347,6 +3390,21 @@ app.post("/book-service/payu/success", async (req, res) => {
 });
 
 app.post("/book-service/payu/failure", async (req, res) => {
+  let user = req.session.user;
+  const token = req.query.st || req.body.st;
+  if (!user && token && token !== "guest") {
+    const [uId] = String(token).split(".");
+    if (uId) {
+      try {
+        const client = await getClientById(uId);
+        if (client) {
+          user = { id: client.id, name: client.name || client.full_name, email: client.email, role: "client", workCredits: client.work_credits || 0, workPassActive: client.work_pass_active || false };
+          req.session.user = user;
+        }
+      } catch(e) {}
+    }
+  }
+
   const pending = req.session.payuPending;
   const professionalId = pending ? pending.professionalId : null;
   const txnid = req.body.txnid || (pending ? pending.txnid : "");
