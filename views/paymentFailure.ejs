@@ -1,0 +1,46 @@
+<section class="section shell animate-fade-in" style="max-width: 680px; margin: 3rem auto;">
+  <div class="glass-panel" style="padding: 3rem 2.5rem; border-radius: 24px; border: 1px solid rgba(239, 68, 68, 0.4); background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(153, 27, 27, 0.15)); text-align: center; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);">
+    
+    <div style="width: 80px; height: 80px; margin: 0 auto 1.5rem auto; border-radius: 50%; background: linear-gradient(135deg, #ef4444, #b91c1c); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; color: #fff; box-shadow: 0 10px 25px rgba(239, 68, 68, 0.4);">
+      ✕
+    </div>
+
+    <span style="background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4); padding: 4px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; display: inline-block; margin-bottom: 1rem;">
+      Transaction Failed or Cancelled
+    </span>
+
+    <h1 style="color: #fff; font-size: 2rem; font-weight: 800; margin: 0 0 0.5rem 0;">Payment Not Completed</h1>
+    <p style="color: #94a3b8; font-size: 1rem; margin: 0 0 2rem 0; line-height: 1.5;">
+      Your transaction could not be processed or was cancelled. If any amount was debited from your bank, PayU will automatically refund it within 3-5 business days.
+    </p>
+
+    <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 1.5rem; text-align: left; margin-bottom: 2rem;">
+      <h4 style="color: #cbd5e1; margin: 0 0 1rem 0; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 0.5rem;">
+        Transaction Details
+      </h4>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; font-size: 0.9rem;">
+        <div>
+          <span style="color: #64748b; font-size: 0.8rem; display: block;">Transaction ID</span>
+          <strong style="color: #f1f5f9; font-family: monospace; font-size: 0.95rem;"><%= txnid || 'N/A' %></strong>
+        </div>
+        <div>
+          <span style="color: #64748b; font-size: 0.8rem; display: block;">Status Reason</span>
+          <strong style="color: #f87171;"><%= errorMsg || 'Transaction cancelled or timed out' %></strong>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; align-items: center;">
+      <a href="<%= retryUrl || '/client/work-bundle/payu' %>" class="button button-primary" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; border: none; padding: 0.85rem 1.8rem; border-radius: 12px; font-weight: 800; text-decoration: none;">
+        🔄 Retry Payment Now ›
+      </a>
+      <a href="/contactus" class="button" style="background: rgba(255, 255, 255, 0.08); color: #cbd5e1; border: 1px solid rgba(255, 255, 255, 0.2); padding: 0.85rem 1.5rem; border-radius: 12px; font-weight: 600; text-decoration: none;">
+        💬 Contact Support ›
+      </a>
+      <a href="/client/dashboard" class="button" style="background: rgba(255, 255, 255, 0.05); color: #94a3b8; border: 1px solid rgba(255, 255, 255, 0.1); padding: 0.85rem 1.5rem; border-radius: 12px; font-weight: 600; text-decoration: none;">
+        🏠 Dashboard ›
+      </a>
+    </div>
+
+  </div>
+</section>
