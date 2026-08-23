@@ -15,14 +15,20 @@
 
   <!-- Search & City Filter Control Panel -->
   <div class="glass-panel" style="padding: 1.5rem 2rem; border-radius: 18px; background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(255,255,255,0.12); margin-bottom: 2rem;">
-    <form method="GET" action="/partner/clients" style="display: flex; flex-wrap: wrap; align-items: center; gap: 1.25rem; justify-content: space-between;">
+    <form method="GET" action="/partner/clients" style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 1.25rem; justify-content: space-between;">
       
-      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; flex: 1; min-width: 280px;">
+      <div style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 1rem; flex: 1; min-width: 280px;">
+        <!-- Google Location Picker City Input -->
+        <div style="display: flex; flex-direction: column; gap: 0.35rem; min-width: 220px; flex: 1;">
+          <label style="font-size: 0.8rem; font-weight: 700; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.05em;">📍 Filter City (Google Location)</label>
+          <input type="text" id="city" name="city" value="<%= selectedCity %>" placeholder="Click to select city via Google Location..." class="location-input" style="background: rgba(30, 41, 59, 0.9); color: #fff; border: 1px solid rgba(56,189,248,0.3); border-radius: 10px; padding: 0.7rem 1.2rem; font-size: 0.9rem; font-weight: 600; cursor: pointer; width: 100%; box-sizing: border-box;">
+        </div>
+
         <!-- City Filter Dropdown -->
         <div style="display: flex; flex-direction: column; gap: 0.35rem;">
-          <label style="font-size: 0.8rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">Filter by City</label>
-          <select name="city" id="citySelectFilter" onchange="this.form.submit()" style="background: rgba(30, 41, 59, 0.9); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; padding: 0.7rem 1.2rem; font-size: 0.9rem; font-weight: 600; min-width: 180px; cursor: pointer;">
-            <option value="">All Cities (<%= clients ? clients.length : 0 %>)</option>
+          <label style="font-size: 0.8rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">Quick Cities</label>
+          <select id="citySelectFilter" onchange="if(this.value){ document.getElementById('city').value = this.value; this.form.submit(); }" style="background: rgba(30, 41, 59, 0.9); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; padding: 0.7rem 1.2rem; font-size: 0.9rem; font-weight: 600; min-width: 160px; cursor: pointer;">
+            <option value="">All Cities</option>
             <% (allCities || []).forEach(function(c) { %>
               <option value="<%= c %>" <%= (selectedCity && selectedCity.toLowerCase() === c.toLowerCase()) ? 'selected' : '' %>><%= c %></option>
             <% }); %>
@@ -30,18 +36,18 @@
         </div>
 
         <!-- Realtime Search Bar -->
-        <div style="display: flex; flex-direction: column; gap: 0.35rem; flex: 1; min-width: 200px;">
+        <div style="display: flex; flex-direction: column; gap: 0.35rem; flex: 1; min-width: 180px;">
           <label style="font-size: 0.8rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">Instant Search</label>
-          <input type="text" id="clientSearchInput" placeholder="Search name, phone, email, or city..." style="background: rgba(30, 41, 59, 0.9); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; padding: 0.7rem 1.2rem; font-size: 0.9rem; width: 100%; box-sizing: border-box;">
+          <input type="text" id="clientSearchInput" placeholder="Search name, phone, email..." style="background: rgba(30, 41, 59, 0.9); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; padding: 0.7rem 1.2rem; font-size: 0.9rem; width: 100%; box-sizing: border-box;">
         </div>
       </div>
 
-      <div style="display: flex; align-items: center; gap: 1rem;">
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
         <button type="submit" class="button button-primary" style="padding: 0.7rem 1.4rem; border-radius: 10px; font-weight: 700; background: linear-gradient(135deg, #38bdf8, #0284c7); color: #0f172a; border: none; cursor: pointer;">
-          🔍 Apply Filter
+          🔍 Filter
         </button>
         <% if (selectedCity) { %>
-          <a href="/partner/clients" style="color: #f43f5e; font-size: 0.85rem; font-weight: 600; text-decoration: none;">✕ Clear Filter</a>
+          <a href="/partner/clients" style="color: #f43f5e; font-size: 0.85rem; font-weight: 600; text-decoration: none;">✕ Clear</a>
         <% } %>
       </div>
 

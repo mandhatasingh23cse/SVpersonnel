@@ -47,6 +47,7 @@
           
           <% if (sessionUser && sessionUser.role === 'client') { %>
           <li><a href="/findHelpNow" class="premium-nav-link <%= currentPath === '/findHelpNow' ? 'active' : '' %>" style="color: var(--premium-accent);">Find Professional</a></li>
+          <li><a href="/client/partners" class="premium-nav-link <%= currentPath === '/client/partners' ? 'active' : '' %>" style="color: #f59e0b;">Partner Agencies</a></li>
           <li><a href="/client/dashboard" class="premium-nav-link <%= currentPath === '/client/dashboard' ? 'active' : '' %>">Dashboard</a></li>
           <li><a href="/chat" class="premium-nav-link" style="color: #4ade80;">Messages</a></li>
           <% } %>
@@ -58,6 +59,8 @@
           
           <% if (sessionUser && sessionUser.role === 'partner') { %>
           <li><a href="/partner/dashboard" class="premium-nav-link <%= currentPath === '/partner/dashboard' ? 'active' : '' %>">Dashboard</a></li>
+          <li><a href="/partner/professionals" class="premium-nav-link <%= currentPath === '/partner/professionals' ? 'active' : '' %>" style="color: #a78bfa;">Sub-Professionals</a></li>
+          <li><a href="/partner/clients" class="premium-nav-link <%= currentPath === '/partner/clients' ? 'active' : '' %>" style="color: #38bdf8;">Clients Directory</a></li>
           <li><a href="/chat" class="premium-nav-link" style="color: #4ade80;">Messages</a></li>
           <% } %>
           
