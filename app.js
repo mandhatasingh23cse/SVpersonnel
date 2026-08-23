@@ -3051,7 +3051,7 @@ app.get("/reset-password", (req, res) => renderResetPasswordPage(res));
 app.post(
   "/reset-password",
   [
-    body("role").trim().isIn(["client", "professional"]).withMessage("Invalid account role."),
+    body("role").trim().isIn(["client", "professional", "partner"]).withMessage("Invalid account role."),
     body("email").trim().isEmail().withMessage("Please enter a valid email address."),
     body("phone").trim().isLength({ min: 10, max: 20 }).withMessage("Please enter a valid phone number."),
     body("password")
@@ -3095,7 +3095,7 @@ app.post(
         newPassword: req.body.password
       });
 
-      const redirectUrl = formData.role === "client" ? "/clientlogin" : "/professionallogin";
+      const redirectUrl = formData.role === "client" ? "/clientlogin" : (formData.role === "partner" ? "/partnerlogin" : "/professionallogin");
       req.session.loginNotice = createFormNotice("success", "Password updated successfully! You can now log in with your new password.");
       return res.redirect(redirectUrl);
     } catch (error) {

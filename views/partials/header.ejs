@@ -46,8 +46,8 @@
           <li><a href="/contactus" class="premium-nav-link <%= currentPath === '/contactus' ? 'active' : '' %>">Contact</a></li>
           
           <% if (sessionUser && sessionUser.role === 'client') { %>
-          <li><a href="/findHelpNow" class="premium-nav-link <%= currentPath === '/findHelpNow' ? 'active' : '' %>">Find Professional</a></li>
-          <li><a href="/client/partners" class="premium-nav-link <%= currentPath === '/client/partners' ? 'active' : '' %>">Partner Agencies</a></li>
+          <li><a href="/findHelpNow" class="premium-nav-link <%= currentPath === '/findHelpNow' ? 'active' : '' %>">Professional</a></li>
+          <li><a href="/client/partners" class="premium-nav-link <%= currentPath === '/client/partners' ? 'active' : '' %>">Agencies</a></li>
           <li><a href="/client/dashboard" class="premium-nav-link <%= currentPath === '/client/dashboard' ? 'active' : '' %>">Dashboard</a></li>
           <li><a href="/chat" class="premium-nav-link <%= currentPath === '/chat' ? 'active' : '' %>">Messages</a></li>
           <% } %>
@@ -59,8 +59,8 @@
           
           <% if (sessionUser && sessionUser.role === 'partner') { %>
           <li><a href="/partner/dashboard" class="premium-nav-link <%= currentPath === '/partner/dashboard' ? 'active' : '' %>">Dashboard</a></li>
-          <li><a href="/partner/professionals" class="premium-nav-link <%= currentPath === '/partner/professionals' ? 'active' : '' %>">Sub-Professionals</a></li>
-          <li><a href="/partner/clients" class="premium-nav-link <%= currentPath === '/partner/clients' ? 'active' : '' %>">Clients Directory</a></li>
+          <li><a href="/partner/professionals" class="premium-nav-link <%= currentPath === '/partner/professionals' ? 'active' : '' %>">Professionals</a></li>
+          <li><a href="/partner/clients" class="premium-nav-link <%= currentPath === '/partner/clients' ? 'active' : '' %>">Clients</a></li>
           <li><a href="/chat" class="premium-nav-link <%= currentPath === '/chat' ? 'active' : '' %>">Messages</a></li>
           <% } %>
           
