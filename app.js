@@ -81,6 +81,8 @@ const {
   approveWithdrawal,
   getAllClients,
   getAllPartners,
+  getPartnerClientContacts,
+  togglePartnerClientContact,
   saveChatMessage,
   getChatHistory,
   markChatAsRead,
@@ -1921,6 +1923,18 @@ app.get("/partner/professionals", requireRole("partner"), async (req, res) => {
 
 app.get("/partner/clients", requireRole("partner"), async (req, res) => {
   try {
+    const dashboardData = await getPartnerDashboardData(req.session.user.id);
+    const isVerified = Boolean(dashboardData?.partner?.is_verified);
+    req.session.user.isVerified = isVerified;
+
+    if (!isVerified) {
+      req.session.partnerDashboardNotice = createFormNotice(
+        "error",
+        "🔒 Privacy Restriction: Only verified partner agencies are authorized to view the Client Directory. Your agency verification is currently under review by admin."
+      );
+      return res.redirect("/partner/dashboard");
+    }
+
     const selectedCity = (req.query.city || "").trim();
     const clients = await getAllClients(selectedCity);
     const allClientsRaw = await getAllClients(null);
@@ -1931,6 +1945,7 @@ app.get("/partner/clients", requireRole("partner"), async (req, res) => {
       }
     });
     const allCities = Array.from(citiesSet).sort();
+    const contactedMap = await getPartnerClientContacts(req.session.user.id);
 
     return res.render("partnerClients", {
       title: "Registered Clients Directory | Partner Agency Portal",
@@ -1938,12 +1953,32 @@ app.get("/partner/clients", requireRole("partner"), async (req, res) => {
       clients,
       selectedCity,
       allCities,
+      contactedMap,
       user: req.session.user,
       formNotice: consumeSessionNotice(req, "partnerDashboardNotice")
     });
   } catch (err) {
     req.session.partnerDashboardNotice = createFormNotice("error", `Could not load clients directory: ${err.message}`);
     return res.redirect("/partner/dashboard");
+  }
+});
+
+app.post("/partner/clients/:clientId/toggle-contact", requireRole("partner"), async (req, res) => {
+  try {
+    const dashboardData = await getPartnerDashboardData(req.session.user.id);
+    if (!dashboardData?.partner?.is_verified) {
+      return res.status(403).json({ error: "Only verified partners can track client contact status." });
+    }
+    const newStatus = await togglePartnerClientContact(req.session.user.id, req.params.clientId);
+    if (req.xhr || (req.headers.accept && req.headers.accept.includes("json"))) {
+      return res.json({ success: true, status: newStatus });
+    }
+    return res.redirect("/partner/clients");
+  } catch (err) {
+    if (req.xhr || (req.headers.accept && req.headers.accept.includes("json"))) {
+      return res.status(500).json({ error: err.message });
+    }
+    return res.redirect("/partner/clients");
   }
 });
 
