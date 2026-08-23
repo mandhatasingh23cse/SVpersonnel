@@ -3,7 +3,7 @@
 </script>
 
 <% if (typeof cmsSettings !== 'undefined' && cmsSettings && cmsSettings.announcementActive && cmsSettings.announcementBanner) { %>
-<div class="announcement-banner" style="background: linear-gradient(90deg, var(--premium-primary), var(--premium-secondary)); color: #fff; text-align: center; padding: 0.55rem 1rem; font-size: 0.85rem; font-weight: 700; position: relative; z-index: 10000; width: 100%;">
+<div class="announcement-banner">
   <span><%= cmsSettings.announcementBanner %></span>
 </div>
 <% } %>
@@ -22,14 +22,14 @@
         }
       %>
       <a href="<%= brandHref %>" class="premium-brand" aria-label="SV Personnels home">
-        <img src="/assets/svpersonnel-logo.png" alt="SV Personnels logo" style="height: 42px; width: auto;">
+        <img src="/assets/svpersonnel-logo.png" alt="SV Personnels logo">
         <span class="premium-brand-text">
           <span class="premium-brand-title"><%= brand.name %></span>
           <span class="premium-brand-tagline"><%= brand.tagline %></span>
         </span>
       </a>
 
-      <button type="button" class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="navPanel" style="display: none; flex-direction: column; justify-content: center; align-items: center; gap: 5px; width: 44px; height: 44px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; cursor: pointer; padding: 0;">
+      <button type="button" class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="navPanel">
         <span style="display: block; width: 20px; height: 2px; background: #fff; border-radius: 2px; transition: all 0.25s;"></span>
         <span style="display: block; width: 20px; height: 2px; background: #fff; border-radius: 2px; transition: all 0.25s;"></span>
         <span style="display: block; width: 20px; height: 2px; background: #fff; border-radius: 2px; transition: all 0.25s;"></span>
@@ -46,26 +46,26 @@
           <li><a href="/contactus" class="premium-nav-link <%= currentPath === '/contactus' ? 'active' : '' %>">Contact</a></li>
           
           <% if (sessionUser && sessionUser.role === 'client') { %>
-          <li><a href="/findHelpNow" class="premium-nav-link <%= currentPath === '/findHelpNow' ? 'active' : '' %>" style="color: var(--premium-accent);">Find Professional</a></li>
-          <li><a href="/client/partners" class="premium-nav-link <%= currentPath === '/client/partners' ? 'active' : '' %>" style="color: #f59e0b;">Partner Agencies</a></li>
+          <li><a href="/findHelpNow" class="premium-nav-link <%= currentPath === '/findHelpNow' ? 'active' : '' %>">Find Professional</a></li>
+          <li><a href="/client/partners" class="premium-nav-link <%= currentPath === '/client/partners' ? 'active' : '' %>">Partner Agencies</a></li>
           <li><a href="/client/dashboard" class="premium-nav-link <%= currentPath === '/client/dashboard' ? 'active' : '' %>">Dashboard</a></li>
-          <li><a href="/chat" class="premium-nav-link" style="color: #4ade80;">Messages</a></li>
+          <li><a href="/chat" class="premium-nav-link <%= currentPath === '/chat' ? 'active' : '' %>">Messages</a></li>
           <% } %>
           
           <% if (sessionUser && sessionUser.role === 'professional') { %>
           <li><a href="/professional/dashboard" class="premium-nav-link <%= currentPath === '/professional/dashboard' ? 'active' : '' %>">Dashboard</a></li>
-          <li><a href="/chat" class="premium-nav-link" style="color: #4ade80;">Messages</a></li>
+          <li><a href="/chat" class="premium-nav-link <%= currentPath === '/chat' ? 'active' : '' %>">Messages</a></li>
           <% } %>
           
           <% if (sessionUser && sessionUser.role === 'partner') { %>
           <li><a href="/partner/dashboard" class="premium-nav-link <%= currentPath === '/partner/dashboard' ? 'active' : '' %>">Dashboard</a></li>
-          <li><a href="/partner/professionals" class="premium-nav-link <%= currentPath === '/partner/professionals' ? 'active' : '' %>" style="color: #a78bfa;">Sub-Professionals</a></li>
-          <li><a href="/partner/clients" class="premium-nav-link <%= currentPath === '/partner/clients' ? 'active' : '' %>" style="color: #38bdf8;">Clients Directory</a></li>
-          <li><a href="/chat" class="premium-nav-link" style="color: #4ade80;">Messages</a></li>
+          <li><a href="/partner/professionals" class="premium-nav-link <%= currentPath === '/partner/professionals' ? 'active' : '' %>">Sub-Professionals</a></li>
+          <li><a href="/partner/clients" class="premium-nav-link <%= currentPath === '/partner/clients' ? 'active' : '' %>">Clients Directory</a></li>
+          <li><a href="/chat" class="premium-nav-link <%= currentPath === '/chat' ? 'active' : '' %>">Messages</a></li>
           <% } %>
           
           <% if (sessionUser && sessionUser.role === 'admin') { %>
-          <li><a href="/admin/dashboard" class="premium-nav-link" style="color: #f59e0b;">Admin Dashboard</a></li>
+          <li><a href="/admin/dashboard" class="premium-nav-link <%= currentPath === '/admin/dashboard' ? 'active' : '' %>">Admin Dashboard</a></li>
           <% } %>
         </ul>
 
