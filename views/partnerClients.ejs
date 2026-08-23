@@ -1,0 +1,163 @@
+<section class="section shell" style="padding-top: 2rem; padding-bottom: 4rem;">
+  <div style="margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <a href="/partner/dashboard" style="color: var(--color-brand); text-decoration: none; font-weight: 600; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 0.3rem;">
+        ‹ Back to Partner Dashboard
+      </a>
+      <h1 style="color: #fff; font-size: 2.2rem; font-family: 'Outfit', sans-serif; margin: 0.4rem 0 0;">Registered Clients Directory</h1>
+      <p style="color: var(--color-ink-light); margin: 0.3rem 0 0; font-size: 0.95rem;">
+        View client profiles, contact details, and filter by city to manage localized hiring requests.
+      </p>
+    </div>
+  </div>
+
+  <%- include("partials/notice") %>
+
+  <!-- Search & City Filter Control Panel -->
+  <div class="glass-panel" style="padding: 1.5rem 2rem; border-radius: 18px; background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(255,255,255,0.12); margin-bottom: 2rem;">
+    <form method="GET" action="/partner/clients" style="display: flex; flex-wrap: wrap; align-items: center; gap: 1.25rem; justify-content: space-between;">
+      
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; flex: 1; min-width: 280px;">
+        <!-- City Filter Dropdown -->
+        <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+          <label style="font-size: 0.8rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">Filter by City</label>
+          <select name="city" id="citySelectFilter" onchange="this.form.submit()" style="background: rgba(30, 41, 59, 0.9); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; padding: 0.7rem 1.2rem; font-size: 0.9rem; font-weight: 600; min-width: 180px; cursor: pointer;">
+            <option value="">All Cities (<%= clients ? clients.length : 0 %>)</option>
+            <% (allCities || []).forEach(function(c) { %>
+              <option value="<%= c %>" <%= (selectedCity && selectedCity.toLowerCase() === c.toLowerCase()) ? 'selected' : '' %>><%= c %></option>
+            <% }); %>
+          </select>
+        </div>
+
+        <!-- Realtime Search Bar -->
+        <div style="display: flex; flex-direction: column; gap: 0.35rem; flex: 1; min-width: 200px;">
+          <label style="font-size: 0.8rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">Instant Search</label>
+          <input type="text" id="clientSearchInput" placeholder="Search name, phone, email, or city..." style="background: rgba(30, 41, 59, 0.9); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; padding: 0.7rem 1.2rem; font-size: 0.9rem; width: 100%; box-sizing: border-box;">
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 1rem;">
+        <button type="submit" class="button button-primary" style="padding: 0.7rem 1.4rem; border-radius: 10px; font-weight: 700; background: linear-gradient(135deg, #38bdf8, #0284c7); color: #0f172a; border: none; cursor: pointer;">
+          🔍 Apply Filter
+        </button>
+        <% if (selectedCity) { %>
+          <a href="/partner/clients" style="color: #f43f5e; font-size: 0.85rem; font-weight: 600; text-decoration: none;">✕ Clear Filter</a>
+        <% } %>
+      </div>
+
+    </form>
+  </div>
+
+  <!-- Clients Count Banner -->
+  <div style="margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between;">
+    <span style="color: #cbd5e1; font-size: 0.95rem; font-weight: 600;">
+      Showing <strong style="color: #38bdf8;" id="visibleCount"><%= clients ? clients.length : 0 %></strong> Client(s) <%= selectedCity ? `in "${selectedCity}"` : '' %>
+    </span>
+  </div>
+
+  <!-- Clients Table Grid -->
+  <% if (!clients || clients.length === 0) { %>
+    <div class="glass-panel" style="padding: 3rem; text-align: center; border-radius: 18px; border: 1px dashed rgba(255,255,255,0.15);">
+      <span style="font-size: 3rem; display: block; margin-bottom: 1rem;">👥</span>
+      <h3 style="color: #fff; margin: 0 0 0.5rem;">No clients found</h3>
+      <p style="color: #94a3b8; max-width: 450px; margin: 0 auto 1.5rem; font-size: 0.9rem;">
+        <%= selectedCity ? `No registered clients currently listed under "${selectedCity}".` : 'No registered clients found in the platform database.' %>
+      </p>
+      <% if (selectedCity) { %>
+        <a href="/partner/clients" class="button button-secondary" style="padding: 0.6rem 1.2rem; border-radius: 10px; font-size: 0.85rem;">View All Cities</a>
+      <% } %>
+    </div>
+  <% } else { %>
+    <div class="glass-panel" style="padding: 0; border-radius: 18px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); background: rgba(15, 23, 42, 0.8);">
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.92rem;">
+          <thead>
+            <tr style="background: rgba(30, 41, 59, 0.9); border-bottom: 1px solid rgba(255,255,255,0.12); color: #94a3b8; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em;">
+              <th style="padding: 1.1rem 1.5rem;">Client Name</th>
+              <th style="padding: 1.1rem 1.5rem;">Email Address</th>
+              <th style="padding: 1.1rem 1.5rem;">Phone Number</th>
+              <th style="padding: 1.1rem 1.5rem;">City</th>
+              <th style="padding: 1.1rem 1.5rem; text-align: right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="clientsTableBody">
+            <% clients.forEach(function(client) { %>
+              <tr class="client-row" data-name="<%= (client.name || '').toLowerCase() %>" data-email="<%= (client.email || '').toLowerCase() %>" data-phone="<%= (client.phone || '').toLowerCase() %>" data-city="<%= (client.city || '').toLowerCase() %>" style="border-bottom: 1px solid rgba(255,255,255,0.06); transition: background 0.2s;">
+                <td style="padding: 1.2rem 1.5rem;">
+                  <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <div style="width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #0284c7, #0369a1); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1rem;">
+                      <%= (client.name || 'C').charAt(0).toUpperCase() %>
+                    </div>
+                    <div>
+                      <strong style="color: #fff; font-size: 0.98rem; display: block;"><%= client.name %></strong>
+                      <span style="font-size: 0.75rem; color: #64748b;">Member since <%= client.createdAt ? new Date(client.createdAt).toLocaleDateString() : 'Recent' %></span>
+                    </div>
+                  </div>
+                </td>
+                <td style="padding: 1.2rem 1.5rem;">
+                  <a href="mailto:<%= client.email %>" style="color: #38bdf8; text-decoration: none; font-weight: 500;">
+                    ✉️ <%= client.email %>
+                  </a>
+                </td>
+                <td style="padding: 1.2rem 1.5rem;">
+                  <% if (client.phone && client.phone !== 'N/A') { %>
+                    <a href="tel:<%= client.phone %>" style="color: #4ade80; text-decoration: none; font-weight: 600;">
+                      📞 <%= client.phone %>
+                    </a>
+                  <% } else { %>
+                    <span style="color: #64748b;">Not Provided</span>
+                  <% } %>
+                </td>
+                <td style="padding: 1.2rem 1.5rem;">
+                  <span style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; text-transform: capitalize;">
+                    📍 <%= client.city || 'Not Specified' %>
+                  </span>
+                </td>
+                <td style="padding: 1.2rem 1.5rem; text-align: right;">
+                  <% if (client.phone && client.phone !== 'N/A') { %>
+                    <a href="https://wa.me/91<%= client.phone.replace(/\D/g,'') %>" target="_blank" style="padding: 0.45rem 0.9rem; background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 8px; font-size: 0.8rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem;">
+                      💬 WhatsApp
+                    </a>
+                  <% } %>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% } %>
+
+</section>
+
+<script>
+  // Realtime Client Search & Filter Script
+  document.addEventListener("DOMContentLoaded", function() {
+    const searchInput = document.getElementById("clientSearchInput");
+    const rows = document.querySelectorAll(".client-row");
+    const visibleCount = document.getElementById("visibleCount");
+
+    if (searchInput) {
+      searchInput.addEventListener("input", function(e) {
+        const query = e.target.value.toLowerCase().trim();
+        let count = 0;
+
+        rows.forEach(function(row) {
+          const name = row.getAttribute("data-name") || "";
+          const email = row.getAttribute("data-email") || "";
+          const phone = row.getAttribute("data-phone") || "";
+          const city = row.getAttribute("data-city") || "";
+
+          if (name.includes(query) || email.includes(query) || phone.includes(query) || city.includes(query)) {
+            row.style.display = "";
+            count++;
+          } else {
+            row.style.display = "none";
+          }
+        });
+
+        if (visibleCount) visibleCount.textContent = count;
+      });
+    }
+  });
+</script>

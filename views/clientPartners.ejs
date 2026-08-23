@@ -1,0 +1,140 @@
+<section class="section shell" style="padding-top: 2.5rem; padding-bottom: 4rem;">
+  <div style="margin-bottom: 2.5rem; text-align: center;">
+    <p class="eyebrow" style="color: #38bdf8; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Verified Hiring Network</p>
+    <h1 style="color: #fff; font-size: 2.5rem; font-family: 'Outfit', sans-serif; margin: 0.5rem 0;">Authorized Partner Agencies &amp; Agents</h1>
+    <p style="color: #94a3b8; max-width: 650px; margin: 0 auto; font-size: 1.05rem;">
+      Connect directly with verified local hiring agencies and agents. Inspect agency address, contact numbers, email, and managed staff categories.
+    </p>
+  </div>
+
+  <%- include("partials/notice") %>
+
+  <!-- Instant Agent Search Bar -->
+  <div class="glass-panel" style="max-width: 800px; margin: 0 auto 3rem; padding: 1.25rem 1.75rem; border-radius: 20px; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(56, 189, 248, 0.25);">
+    <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+      <span style="font-size: 1.4rem;">🔍</span>
+      <input type="text" id="agentSearchInput" placeholder="Search by agent name, agency, city, or address..." style="flex: 1; min-width: 220px; background: transparent; border: none; color: #fff; font-size: 1rem; outline: none;">
+      <span style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 0.8rem; font-weight: 700; padding: 4px 12px; border-radius: 20px;" id="agentCountBadge">
+        <%= partners ? partners.length : 0 %> Active Agency(s)
+      </span>
+    </div>
+  </div>
+
+  <!-- Agent Cards Grid -->
+  <% if (!partners || partners.length === 0) { %>
+    <div class="glass-panel text-center" style="max-width: 600px; margin: 0 auto; padding: 3.5rem 2rem; border-radius: 24px;">
+      <span style="font-size: 3.5rem; display: block; margin-bottom: 1rem;">🏢</span>
+      <h3 style="color: #fff; font-size: 1.5rem; margin-bottom: 0.5rem;">No partner agencies currently listed</h3>
+      <p style="color: #94a3b8; margin: 0;">Our network of authorized agents is expanding. Check back soon!</p>
+    </div>
+  <% } else { %>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.75rem;" id="agentCardsContainer">
+      <% partners.forEach(function(partner) { %>
+        <div class="glass-panel agent-card animate-fade-in" data-name="<%= (partner.name || '').toLowerCase() %>" data-agency="<%= (partner.agencyName || '').toLowerCase() %>" data-city="<%= (partner.city || '').toLowerCase() %>" data-address="<%= (partner.address || '').toLowerCase() %>" style="border-radius: 20px; border: 1px solid rgba(255,255,255,0.12); padding: 1.75rem; background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.7)); display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+          
+          <div>
+            <!-- Agency Header -->
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem;">
+              <div style="display: flex; align-items: center; gap: 0.85rem;">
+                <div style="width: 48px; height: 48px; border-radius: 14px; background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 800; box-shadow: 0 4px 12px rgba(245,158,11,0.3);">
+                  🏢
+                </div>
+                <div>
+                  <h3 style="color: #fff; font-size: 1.15rem; font-weight: 800; margin: 0; line-height: 1.3;"><%= partner.agencyName %></h3>
+                  <span style="color: #94a3b8; font-size: 0.85rem;">Agent: <strong><%= partner.name %></strong></span>
+                </div>
+              </div>
+              
+              <% if (partner.isVerified) { %>
+                <span style="background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;">
+                  ✓ Verified
+                </span>
+              <% } %>
+            </div>
+
+            <!-- Address Section -->
+            <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 1rem; margin-bottom: 1.25rem; font-size: 0.88rem; line-height: 1.5;">
+              <div style="color: #cbd5e1; display: flex; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.4rem;">
+                <span style="color: #f59e0b; font-size: 1rem;">📍</span>
+                <div>
+                  <strong style="color: #fff;">Agency Address:</strong><br>
+                  <%= partner.address || 'Address on file' %>
+                  <% if (partner.city) { %>, <%= partner.city %><% } %>
+                  <% if (partner.pincode) { %> - <%= partner.pincode %><% } %>
+                </div>
+              </div>
+            </div>
+
+            <!-- Contact Details -->
+            <div style="display: flex; flex-direction: column; gap: 0.6rem; font-size: 0.88rem; margin-bottom: 1.5rem;">
+              <div style="display: flex; align-items: center; gap: 0.6rem;">
+                <span style="color: #4ade80;">📞</span>
+                <span style="color: #94a3b8;">Phone:</span>
+                <a href="tel:<%= partner.phone %>" style="color: #4ade80; font-weight: 700; text-decoration: none;">
+                  <%= partner.phone %>
+                </a>
+              </div>
+              <div style="display: flex; align-items: center; gap: 0.6rem;">
+                <span style="color: #38bdf8;">✉️</span>
+                <span style="color: #94a3b8;">Email:</span>
+                <a href="mailto:<%= partner.email %>" style="color: #38bdf8; font-weight: 600; text-decoration: none; overflow: hidden; text-overflow: ellipsis;">
+                  <%= partner.email %>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 1.25rem;">
+            <% if (partner.phone && partner.phone !== 'N/A') { %>
+              <a href="tel:<%= partner.phone %>" class="button" style="background: rgba(74, 222, 128, 0.15); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.3); border-radius: 10px; font-weight: 700; font-size: 0.85rem; text-align: center; text-decoration: none; padding: 0.65rem 0.5rem;">
+                📞 Call Agent
+              </a>
+              <a href="https://wa.me/91<%= partner.phone.replace(/\D/g,'') %>" target="_blank" class="button" style="background: rgba(34, 197, 94, 0.2); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.4); border-radius: 10px; font-weight: 700; font-size: 0.85rem; text-align: center; text-decoration: none; padding: 0.65rem 0.5rem;">
+                💬 WhatsApp
+              </a>
+            <% } else { %>
+              <a href="mailto:<%= partner.email %>" class="button" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 10px; font-weight: 700; font-size: 0.85rem; text-align: center; text-decoration: none; padding: 0.65rem 0.5rem; grid-column: span 2;">
+                ✉️ Email Agency
+              </a>
+            <% } %>
+          </div>
+
+        </div>
+      <% }); %>
+    </div>
+  <% } %>
+
+</section>
+
+<script>
+  // Realtime Agent Search
+  document.addEventListener("DOMContentLoaded", function() {
+    const input = document.getElementById("agentSearchInput");
+    const cards = document.querySelectorAll(".agent-card");
+    const badge = document.getElementById("agentCountBadge");
+
+    if (input) {
+      input.addEventListener("input", function(e) {
+        const q = e.target.value.toLowerCase().trim();
+        let count = 0;
+
+        cards.forEach(function(card) {
+          const name = card.getAttribute("data-name") || "";
+          const agency = card.getAttribute("data-agency") || "";
+          const city = card.getAttribute("data-city") || "";
+          const address = card.getAttribute("data-address") || "";
+
+          if (name.includes(q) || agency.includes(q) || city.includes(q) || address.includes(q)) {
+            card.style.display = "";
+            count++;
+          } else {
+            card.style.display = "none";
+          }
+        });
+
+        if (badge) badge.textContent = count + " Active Agency(s)";
+      });
+    }
+  });
+</script>
