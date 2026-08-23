@@ -6,7 +6,7 @@
       </a>
       <h1 style="color: #fff; font-size: 2.2rem; font-family: 'Outfit', sans-serif; margin: 0.4rem 0 0;">Registered Clients Directory</h1>
       <p style="color: var(--color-ink-light); margin: 0.3rem 0 0; font-size: 0.95rem;">
-        View client profiles, contact details, and filter by city to manage localized hiring requests.
+        🔒 Authorized Verified Agency Portal — View client profiles, track contact status, and filter by city.
       </p>
     </div>
   </div>
@@ -54,8 +54,20 @@
     </form>
   </div>
 
-  <!-- Clients Count Banner -->
-  <div style="margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between;">
+  <!-- Contact Tracking Filter Tabs & Count Banner -->
+  <div style="margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+    <div style="display: flex; align-items: center; gap: 0.5rem; background: rgba(15, 23, 42, 0.7); padding: 4px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+      <button type="button" class="status-tab-btn active" data-filter="all" style="padding: 0.5rem 1rem; border-radius: 8px; border: none; background: rgba(56, 189, 248, 0.2); color: #38bdf8; font-weight: 700; font-size: 0.85rem; cursor: pointer;">
+        All Clients (<span id="countAll"><%= clients ? clients.length : 0 %></span>)
+      </button>
+      <button type="button" class="status-tab-btn" data-filter="contacted" style="padding: 0.5rem 1rem; border-radius: 8px; border: none; background: transparent; color: #94a3b8; font-weight: 600; font-size: 0.85rem; cursor: pointer;">
+        ✅ Contacted (<span id="countContacted">0</span>)
+      </button>
+      <button type="button" class="status-tab-btn" data-filter="pending" style="padding: 0.5rem 1rem; border-radius: 8px; border: none; background: transparent; color: #94a3b8; font-weight: 600; font-size: 0.85rem; cursor: pointer;">
+        ⏳ Pending (<span id="countPending">0</span>)
+      </button>
+    </div>
+
     <span style="color: #cbd5e1; font-size: 0.95rem; font-weight: 600;">
       Showing <strong style="color: #38bdf8;" id="visibleCount"><%= clients ? clients.length : 0 %></strong> Client(s) <%= selectedCity ? `in "${selectedCity}"` : '' %>
     </span>
@@ -83,12 +95,16 @@
               <th style="padding: 1.1rem 1.5rem;">Email Address</th>
               <th style="padding: 1.1rem 1.5rem;">Phone Number</th>
               <th style="padding: 1.1rem 1.5rem;">City</th>
+              <th style="padding: 1.1rem 1.5rem;">Contact Tracking</th>
               <th style="padding: 1.1rem 1.5rem; text-align: right;">Actions</th>
             </tr>
           </thead>
           <tbody id="clientsTableBody">
-            <% clients.forEach(function(client) { %>
-              <tr class="client-row" data-name="<%= (client.name || '').toLowerCase() %>" data-email="<%= (client.email || '').toLowerCase() %>" data-phone="<%= (client.phone || '').toLowerCase() %>" data-city="<%= (client.city || '').toLowerCase() %>" style="border-bottom: 1px solid rgba(255,255,255,0.06); transition: background 0.2s;">
+            <% clients.forEach(function(client) { 
+              const contactInfo = (contactedMap && contactedMap[client.id]) ? contactedMap[client.id] : null;
+              const isContacted = Boolean(contactInfo && contactInfo.status === 'contacted');
+            %>
+              <tr class="client-row" data-id="<%= client.id %>" data-name="<%= (client.name || '').toLowerCase() %>" data-email="<%= (client.email || '').toLowerCase() %>" data-phone="<%= (client.phone || '').toLowerCase() %>" data-city="<%= (client.city || '').toLowerCase() %>" data-contacted="<%= isContacted ? 'true' : 'false' %>" style="border-bottom: 1px solid rgba(255,255,255,0.06); transition: background 0.2s;">
                 <td style="padding: 1.2rem 1.5rem;">
                   <div style="display: flex; align-items: center; gap: 0.75rem;">
                     <div style="width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #0284c7, #0369a1); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1rem;">
@@ -119,6 +135,13 @@
                     📍 <%= client.city || 'Not Specified' %>
                   </span>
                 </td>
+                <td style="padding: 1.2rem 1.5rem;">
+                  <!-- Contact Bookmark Toggle Pill -->
+                  <button type="button" class="bookmark-btn" data-client-id="<%= client.id %>" style="background: <%= isContacted ? 'rgba(34, 197, 94, 0.15)' : 'rgba(255, 255, 255, 0.05)' %>; color: <%= isContacted ? '#4ade80' : '#94a3b8' %>; border: 1px solid <%= isContacted ? 'rgba(34, 197, 94, 0.35)' : 'rgba(255, 255, 255, 0.15)' %>; padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem; transition: all 0.2s;">
+                    <span class="bookmark-icon"><%= isContacted ? '✅' : '🔖' %></span>
+                    <span class="bookmark-label"><%= isContacted ? 'Contacted' : 'Mark as Contacted' %></span>
+                  </button>
+                </td>
                 <td style="padding: 1.2rem 1.5rem; text-align: right;">
                   <% if (client.phone && client.phone !== 'N/A') { %>
                     <a href="https://wa.me/91<%= client.phone.replace(/\D/g,'') %>" target="_blank" style="padding: 0.45rem 0.9rem; background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 8px; font-size: 0.8rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem;">
@@ -137,33 +160,130 @@
 </section>
 
 <script>
-  // Realtime Client Search & Filter Script
   document.addEventListener("DOMContentLoaded", function() {
     const searchInput = document.getElementById("clientSearchInput");
     const rows = document.querySelectorAll(".client-row");
     const visibleCount = document.getElementById("visibleCount");
+    const tabBtns = document.querySelectorAll(".status-tab-btn");
+    const countAllEl = document.getElementById("countAll");
+    const countContactedEl = document.getElementById("countContacted");
+    const countPendingEl = document.getElementById("countPending");
+
+    let currentTab = "all";
+
+    function updateTabCounts() {
+      let total = rows.length;
+      let contacted = 0;
+      let pending = 0;
+
+      rows.forEach(r => {
+        if (r.getAttribute("data-contacted") === "true") contacted++;
+        else pending++;
+      });
+
+      if (countAllEl) countAllEl.textContent = total;
+      if (countContactedEl) countContactedEl.textContent = contacted;
+      if (countPendingEl) countPendingEl.textContent = pending;
+    }
+
+    function filterRows() {
+      const query = (searchInput ? searchInput.value : "").toLowerCase().trim();
+      let visible = 0;
+
+      rows.forEach(function(row) {
+        const name = row.getAttribute("data-name") || "";
+        const email = row.getAttribute("data-email") || "";
+        const phone = row.getAttribute("data-phone") || "";
+        const city = row.getAttribute("data-city") || "";
+        const isContacted = row.getAttribute("data-contacted") === "true";
+
+        let matchesTab = true;
+        if (currentTab === "contacted" && !isContacted) matchesTab = false;
+        if (currentTab === "pending" && isContacted) matchesTab = false;
+
+        let matchesSearch = !query || (name.includes(query) || email.includes(query) || phone.includes(query) || city.includes(query));
+
+        if (matchesTab && matchesSearch) {
+          row.style.display = "";
+          visible++;
+        } else {
+          row.style.display = "none";
+        }
+      });
+
+      if (visibleCount) visibleCount.textContent = visible;
+    }
+
+    updateTabCounts();
+    filterRows();
 
     if (searchInput) {
-      searchInput.addEventListener("input", function(e) {
-        const query = e.target.value.toLowerCase().trim();
-        let count = 0;
-
-        rows.forEach(function(row) {
-          const name = row.getAttribute("data-name") || "";
-          const email = row.getAttribute("data-email") || "";
-          const phone = row.getAttribute("data-phone") || "";
-          const city = row.getAttribute("data-city") || "";
-
-          if (name.includes(query) || email.includes(query) || phone.includes(query) || city.includes(query)) {
-            row.style.display = "";
-            count++;
-          } else {
-            row.style.display = "none";
-          }
-        });
-
-        if (visibleCount) visibleCount.textContent = count;
-      });
+      searchInput.addEventListener("input", filterRows);
     }
+
+    // Tab buttons handler
+    tabBtns.forEach(btn => {
+      btn.addEventListener("click", function() {
+        tabBtns.forEach(b => {
+          b.classList.remove("active");
+          b.style.background = "transparent";
+          b.style.color = "#94a3b8";
+        });
+        this.classList.add("active");
+        this.style.background = "rgba(56, 189, 248, 0.2)";
+        this.style.color = "#38bdf8";
+        currentTab = this.getAttribute("data-filter");
+        filterRows();
+      });
+    });
+
+    // Contact Bookmark Toggle Handler
+    document.querySelectorAll(".bookmark-btn").forEach(btn => {
+      btn.addEventListener("click", async function() {
+        const clientId = this.getAttribute("data-client-id");
+        const row = this.closest(".client-row");
+        const label = this.querySelector(".bookmark-label");
+        const icon = this.querySelector(".bookmark-icon");
+
+        this.style.opacity = "0.6";
+
+        try {
+          const res = await fetch(`/partner/clients/${clientId}/toggle-contact`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Accept": "application/json"
+            }
+          });
+          const data = await res.json();
+          this.style.opacity = "1";
+
+          if (data && data.success) {
+            const isContacted = data.status === "contacted";
+            row.setAttribute("data-contacted", isContacted ? "true" : "false");
+
+            if (isContacted) {
+              this.style.background = "rgba(34, 197, 94, 0.15)";
+              this.style.color = "#4ade80";
+              this.style.borderColor = "rgba(34, 197, 94, 0.35)";
+              icon.textContent = "✅";
+              label.textContent = "Contacted";
+            } else {
+              this.style.background = "rgba(255, 255, 255, 0.05)";
+              this.style.color = "#94a3b8";
+              this.style.borderColor = "rgba(255, 255, 255, 0.15)";
+              icon.textContent = "🔖";
+              label.textContent = "Mark as Contacted";
+            }
+
+            updateTabCounts();
+            filterRows();
+          }
+        } catch (err) {
+          this.style.opacity = "1";
+          console.error("Failed to toggle contact bookmark:", err);
+        }
+      });
+    });
   });
 </script>
