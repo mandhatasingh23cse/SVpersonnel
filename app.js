@@ -79,6 +79,8 @@ const {
   verifyPartner,
   getAdminWithdrawals,
   approveWithdrawal,
+  getAllClients,
+  getAllPartners,
   saveChatMessage,
   getChatHistory,
   markChatAsRead,
@@ -1914,6 +1916,50 @@ app.get("/partner/professionals", requireRole("partner"), async (req, res) => {
   } catch (err) {
     req.session.partnerDashboardNotice = createFormNotice("error", `Could not load added professionals: ${err.message}`);
     return res.redirect("/partner/dashboard");
+  }
+});
+
+app.get("/partner/clients", requireRole("partner"), async (req, res) => {
+  try {
+    const selectedCity = (req.query.city || "").trim();
+    const clients = await getAllClients(selectedCity);
+    const allClientsRaw = await getAllClients(null);
+    const citiesSet = new Set();
+    allClientsRaw.forEach(c => {
+      if (c.city && c.city !== "Not Specified" && c.city.trim().length > 0) {
+        citiesSet.add(c.city.trim());
+      }
+    });
+    const allCities = Array.from(citiesSet).sort();
+
+    return res.render("partnerClients", {
+      title: "Registered Clients Directory | Partner Agency Portal",
+      pageClass: "page-partner-clients",
+      clients,
+      selectedCity,
+      allCities,
+      user: req.session.user,
+      formNotice: consumeSessionNotice(req, "partnerDashboardNotice")
+    });
+  } catch (err) {
+    req.session.partnerDashboardNotice = createFormNotice("error", `Could not load clients directory: ${err.message}`);
+    return res.redirect("/partner/dashboard");
+  }
+});
+
+app.get(["/client/partners", "/client/agents", "/agents"], async (req, res) => {
+  try {
+    const partners = await getAllPartners();
+    return res.render("clientPartners", {
+      title: "Authorized Partner Agencies & Agents | SV Personnels",
+      pageClass: "page-client-partners",
+      partners,
+      user: req.session.user,
+      formNotice: consumeSessionNotice(req, "clientDashboardNotice")
+    });
+  } catch (err) {
+    req.session.clientDashboardNotice = createFormNotice("error", `Could not load agent directory: ${err.message}`);
+    return res.redirect("/client/dashboard");
   }
 });
 
