@@ -1365,8 +1365,9 @@ app.get('/api/check-email/:email', async (req, res) => {
   }
 });
 
-app.get("/clientlogin", (req, res) => res.redirect("/login"));
-app.get("/professionallogin", (req, res) => res.redirect("/login"));
+app.get(["/clientlogin", "/client/login"], (req, res) => res.redirect("/login"));
+app.get(["/professionallogin", "/professional/login"], (req, res) => res.redirect("/login"));
+app.get(["/partnerlogin", "/partner/login"], (req, res) => res.redirect("/login"));
 
 app.get("/login", (req, res) => {
   res.render("login", {
