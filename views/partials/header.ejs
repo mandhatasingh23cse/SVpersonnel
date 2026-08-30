@@ -25,14 +25,14 @@
         <img src="/assets/svpersonnel-logo.png" alt="SV Personnels logo">
         <span class="premium-brand-text">
           <span class="premium-brand-title"><%= brand.name %></span>
-          <span class="premium-brand-tagline"><%= brand.tagline %></span>
+          <span class="premium-brand-tagline">Govt. Authorized Hiring Agency</span>
         </span>
       </a>
 
-      <button type="button" class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="navPanel">
-        <span style="display: block; width: 20px; height: 2px; background: #fff; border-radius: 2px; transition: all 0.25s;"></span>
-        <span style="display: block; width: 20px; height: 2px; background: #fff; border-radius: 2px; transition: all 0.25s;"></span>
-        <span style="display: block; width: 20px; height: 2px; background: #fff; border-radius: 2px; transition: all 0.25s;"></span>
+      <button type="button" class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="navPanel" aria-label="Toggle navigation menu">
+        <span></span>
+        <span></span>
+        <span></span>
       </button>
 
       <div class="nav-panel" id="navPanel">
@@ -96,7 +96,7 @@
           </div>
           <% } else { %>
           <a href="/login" class="premium-btn premium-btn-secondary">Log in</a>
-          <div style="position: relative;">
+          <div style="position: relative;" class="nav-join-wrap">
             <button type="button" id="joinDropBtn" class="premium-btn premium-btn-primary">Join Us ▾</button>
             <div id="joinDropMenu" class="drop-menu-js premium-glass" style="display: none; position: absolute; right: 0; top: calc(100% + 12px); min-width: 200px; padding: 0.5rem; z-index: 2000;">
               <a href="/register/client" class="premium-nav-link" style="display: block; margin: 4px 0;">👔 As a Client</a>
@@ -121,9 +121,19 @@
   var joinMenu = document.getElementById('joinDropMenu');
 
   if (toggle && panel) {
-    toggle.addEventListener('click', function() {
+    toggle.addEventListener('click', function(e) {
+      e.stopPropagation();
       var isOpen = panel.classList.toggle('nav-open');
-      toggle.setAttribute('aria-expanded', isOpen);
+      toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    });
+
+    panel.querySelectorAll('.premium-nav-link').forEach(function(link) {
+      link.addEventListener('click', function() {
+        if (!link.closest('.drop-menu-js') || link.getAttribute('href')) {
+          panel.classList.remove('nav-open');
+          toggle.setAttribute('aria-expanded', 'false');
+        }
+      });
     });
   }
 
@@ -140,7 +150,11 @@
   toggleDrop(settingsBtn, settingsMenu);
   toggleDrop(joinBtn, joinMenu);
 
-  document.addEventListener('click', function() {
+  document.addEventListener('click', function(e) {
+    if (panel && !panel.contains(e.target) && toggle && !toggle.contains(e.target)) {
+      panel.classList.remove('nav-open');
+      toggle.setAttribute('aria-expanded', 'false');
+    }
     document.querySelectorAll('.drop-menu-js').forEach(function(m) { m.style.display = 'none'; });
   });
 })();
