@@ -618,7 +618,7 @@ select.premium-input {
    RESPONSIVE OVERRIDES
    ========================================================================== */
 
-/* Laptop / Medium Desktop (max-width: 1280px) */
+/* Medium Desktop / Small Laptop (max-width: 1280px) */
 @media (max-width: 1280px) {
   .premium-hero-grid {
     gap: 2rem;
@@ -629,8 +629,8 @@ select.premium-input {
   }
 }
 
-/* Tablet & Mobile Breakpoint (max-width: 1080px) */
-@media (max-width: 1080px) {
+/* Tablet & Mobile Breakpoint (max-width: 992px) */
+@media (max-width: 992px) {
   .premium-nav {
     height: 64px;
   }
@@ -715,54 +715,92 @@ select.premium-input {
 
   /* Hero Section Stacking for Tablet & Mobile */
   .premium-hero {
-    padding: 2rem 0 1.75rem;
+    padding: 2rem 0 1.75rem !important;
+    overflow: hidden !important;
   }
 
   .premium-hero-grid {
     grid-template-columns: 1fr !important;
     gap: 2rem !important;
     align-items: stretch !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
 
   .premium-hero-content {
-    gap: 1rem;
+    gap: 1.15rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   .premium-hero-title {
-    font-size: clamp(1.85rem, 5.5vw, 2.75rem);
-    line-height: 1.15;
+    font-size: clamp(1.75rem, 5.5vw, 2.5rem) !important;
+    line-height: 1.18 !important;
+    word-break: break-word !important;
   }
 
   .premium-hero-desc {
-    font-size: 0.96rem;
-    max-width: 100%;
+    font-size: 0.95rem !important;
+    line-height: 1.55 !important;
+    max-width: 100% !important;
+    word-break: break-word !important;
   }
 
   .premium-hero-actions {
-    width: 100%;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    gap: 0.75rem !important;
+    box-sizing: border-box !important;
   }
 
   .premium-hero-actions .premium-btn {
-    flex: 1 1 calc(50% - 0.5rem);
-    min-width: 140px;
-    text-align: center;
-    justify-content: center;
+    width: 100% !important;
+    flex: none !important;
+    display: flex !important;
+    justify-content: center !important;
+    text-align: center !important;
+    padding: 0.85rem 1.25rem !important;
+    font-size: 0.95rem !important;
+    box-sizing: border-box !important;
+  }
+
+  .premium-trust-pills {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0.45rem !important;
+    margin-top: 0.5rem !important;
+    width: 100% !important;
+  }
+
+  .premium-pill {
+    padding: 0.35rem 0.75rem !important;
+    font-size: 0.76rem !important;
   }
 
   .premium-search-card {
-    padding: 1.4rem 1.25rem;
-    border-radius: 18px;
+    padding: 1.4rem 1.25rem !important;
+    border-radius: 18px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
   }
 }
 
 /* Small Mobile Screen (max-width: 640px) */
 @media (max-width: 640px) {
   .premium-shell {
-    padding: 0 1rem;
+    padding: 0 1rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   .premium-hero {
-    padding: 1.5rem 0 1.25rem;
+    padding: 1.5rem 0 1.25rem !important;
   }
 
   .premium-hero-grid {
@@ -770,55 +808,59 @@ select.premium-input {
   }
 
   .premium-hero-title {
-    font-size: clamp(1.6rem, 6.5vw, 2.1rem);
+    font-size: clamp(1.55rem, 6vw, 2rem) !important;
+    line-height: 1.2 !important;
+  }
+
+  .premium-hero-desc {
+    font-size: 0.9rem !important;
   }
 
   .premium-hero-actions {
-    flex-direction: column;
-    gap: 0.65rem;
+    gap: 0.65rem !important;
   }
 
   .premium-hero-actions .premium-btn {
-    width: 100%;
-    flex: 1 1 100%;
+    padding: 0.8rem 1rem !important;
+    font-size: 0.92rem !important;
   }
 
   .premium-trust-pills {
-    gap: 0.4rem;
-    margin-top: 0.5rem;
+    gap: 0.35rem !important;
+    margin-top: 0.35rem !important;
   }
 
   .premium-pill {
-    padding: 0.3rem 0.65rem;
-    font-size: 0.72rem;
+    padding: 0.28rem 0.65rem !important;
+    font-size: 0.72rem !important;
   }
 
   .premium-search-card {
-    padding: 1.25rem 1rem;
-    gap: 0.85rem;
+    padding: 1.2rem 1rem !important;
+    gap: 0.85rem !important;
   }
 
   .premium-search-header h2 {
-    font-size: 1.2rem;
+    font-size: 1.2rem !important;
   }
 
   .premium-input {
-    padding: 0.65rem 0.85rem;
-    font-size: 0.9rem;
+    padding: 0.65rem 0.85rem !important;
+    font-size: 0.9rem !important;
   }
 
   .premium-stats {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.35rem;
-    padding-top: 0.65rem;
-    margin-top: 0.25rem;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 0.35rem !important;
+    padding-top: 0.65rem !important;
+    margin-top: 0.25rem !important;
   }
 
   .premium-stat-value {
-    font-size: 0.95rem;
+    font-size: 0.95rem !important;
   }
 
   .premium-stat-label {
-    font-size: 0.62rem;
+    font-size: 0.62rem !important;
   }
 }
