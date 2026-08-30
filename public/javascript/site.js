@@ -69,28 +69,27 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   const revealTargets = document.querySelectorAll("[data-reveal]");
-  if (!revealTargets.length) return;
-
-  if (!("IntersectionObserver" in window)) {
-    revealTargets.forEach((target) => target.classList.add("is-visible"));
-    return;
-  }
-
-  const revealObserver = new IntersectionObserver(
-    (entries, observer) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-        entry.target.classList.add("is-visible");
-        observer.unobserve(entry.target);
-      });
-    },
-    {
-      rootMargin: "0px 0px -80px 0px",
-      threshold: 0.15
+  if (revealTargets.length) {
+    if (!("IntersectionObserver" in window)) {
+      revealTargets.forEach((target) => target.classList.add("is-visible"));
+    } else {
+      const revealObserver = new IntersectionObserver(
+        (entries, observer) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("is-visible");
+              observer.unobserve(entry.target);
+            }
+          });
+        },
+        {
+          rootMargin: "80px",
+          threshold: 0.01
+        }
+      );
+      revealTargets.forEach((target) => revealObserver.observe(target));
     }
-  );
-
-  revealTargets.forEach((target) => revealObserver.observe(target));
+  }
 
   // Password Visibility Toggle
   document.querySelectorAll(".toggle-password-btn").forEach((btn) => {
@@ -145,115 +144,137 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // --- 3D Particle Background ---
+  // --- 3D Particle Background (Optimized & Deferred) ---
   const canvas = document.getElementById("canvas-3d-background");
-  if (canvas) {
-    const ctx = canvas.getContext("2d");
-    let width = (canvas.width = window.innerWidth);
-    let height = (canvas.height = window.innerHeight);
+  const isMobileOrReduced = window.innerWidth < 768 || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
-    window.addEventListener("resize", () => {
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
-    });
+  if (canvas && !isMobileOrReduced) {
+    const initCanvas = () => {
+      const ctx = canvas.getContext("2d", { alpha: true });
+      if (!ctx) return;
 
-    const particles = [];
-    const particleCount = 50;
-    const connectionDistance = 110;
-    let mouseX = 0;
-    let mouseY = 0;
+      let width = (canvas.width = window.innerWidth);
+      let height = (canvas.height = window.innerHeight);
 
-    window.addEventListener("mousemove", (e) => {
-      mouseX = (e.clientX - width / 2) * 0.04;
-      mouseY = (e.clientY - height / 2) * 0.04;
-    });
+      window.addEventListener("resize", () => {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+      }, { passive: true });
 
-    class Particle3D {
-      constructor() {
-        this.reset();
-        this.z = Math.random() * 800 - 400;
-      }
+      const particles = [];
+      const particleCount = Math.min(35, Math.floor(window.innerWidth / 35));
+      const connectionDistance = 90;
+      const connectionDistanceSq = connectionDistance * connectionDistance;
+      let mouseX = 0;
+      let mouseY = 0;
+      let animId = null;
 
-      reset() {
-        this.x = Math.random() * width - width / 2;
-        this.y = Math.random() * height - height / 2;
-        this.z = 400;
-        this.vx = (Math.random() - 0.5) * 0.4;
-        this.vy = (Math.random() - 0.5) * 0.4;
-        this.vz = -Math.random() * 0.6 - 0.2;
-        this.radius = Math.random() * 1.5 + 1;
-        this.color = Math.random() > 0.5 ? "rgba(139, 92, 246, 0.35)" : "rgba(6, 182, 212, 0.35)";
-      }
+      window.addEventListener("mousemove", (e) => {
+        mouseX = (e.clientX - width / 2) * 0.03;
+        mouseY = (e.clientY - height / 2) * 0.03;
+      }, { passive: true });
 
-      update() {
-        this.x += this.vx;
-        this.y += this.vy;
-        this.z += this.vz;
-
-        if (this.z < -400 || this.z > 400) {
+      class Particle3D {
+        constructor() {
           this.reset();
+          this.z = Math.random() * 600 - 300;
         }
-      }
 
-      draw() {
-        const fov = 400;
-        const scale = fov / (fov + this.z);
-        const projX = (this.x + mouseX * (this.z / 400)) * scale + width / 2;
-        const projY = (this.y + mouseY * (this.z / 400)) * scale + height / 2;
+        reset() {
+          this.x = Math.random() * width - width / 2;
+          this.y = Math.random() * height - height / 2;
+          this.z = 300;
+          this.vx = (Math.random() - 0.5) * 0.3;
+          this.vy = (Math.random() - 0.5) * 0.3;
+          this.vz = -Math.random() * 0.5 - 0.2;
+          this.radius = Math.random() * 1.4 + 0.8;
+          this.color = Math.random() > 0.5 ? "rgba(139, 92, 246, 0.3)" : "rgba(6, 182, 212, 0.3)";
+        }
 
-        if (projX < 0 || projX > width || projY < 0 || projY > height) return;
+        update() {
+          this.x += this.vx;
+          this.y += this.vy;
+          this.z += this.vz;
 
-        const size = this.radius * scale;
-        ctx.beginPath();
-        ctx.arc(projX, projY, Math.max(size, 0.1), 0, Math.PI * 2);
-        ctx.fillStyle = this.color;
-        ctx.fill();
-
-        this.projX = projX;
-        this.projY = projY;
-        this.scale = scale;
-      }
-    }
-
-    for (let i = 0; i < particleCount; i++) {
-      particles.push(new Particle3D());
-    }
-
-    function animate() {
-      ctx.clearRect(0, 0, width, height);
-
-      particles.forEach((p) => {
-        p.update();
-        p.draw();
-      });
-
-      ctx.lineWidth = 0.5;
-      for (let i = 0; i < particles.length; i++) {
-        const p1 = particles[i];
-        if (p1.z > 300) continue;
-
-        for (let j = i + 1; j < particles.length; j++) {
-          const p2 = particles[j];
-          const dx = p1.projX - p2.projX;
-          const dy = p1.projY - p2.projY;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-
-          if (dist < connectionDistance) {
-            const avgScale = (p1.scale + p2.scale) / 2;
-            const alpha = (1 - dist / connectionDistance) * 0.12 * avgScale;
-            ctx.beginPath();
-            ctx.moveTo(p1.projX, p1.projY);
-            ctx.lineTo(p2.projX, p2.projY);
-            ctx.strokeStyle = `rgba(139, 92, 246, ${alpha})`;
-            ctx.stroke();
+          if (this.z < -300 || this.z > 300) {
+            this.reset();
           }
         }
+
+        draw() {
+          const fov = 350;
+          const scale = fov / (fov + this.z);
+          const projX = (this.x + mouseX * (this.z / 350)) * scale + width / 2;
+          const projY = (this.y + mouseY * (this.z / 350)) * scale + height / 2;
+
+          if (projX < 0 || projX > width || projY < 0 || projY > height) return;
+
+          const size = Math.max(this.radius * scale, 0.1);
+          ctx.beginPath();
+          ctx.arc(projX, projY, size, 0, Math.PI * 2);
+          ctx.fillStyle = this.color;
+          ctx.fill();
+
+          this.projX = projX;
+          this.projY = projY;
+          this.scale = scale;
+        }
       }
 
-      requestAnimationFrame(animate);
-    }
+      for (let i = 0; i < particleCount; i++) {
+        particles.push(new Particle3D());
+      }
 
-    animate();
+      function animate() {
+        if (document.hidden) {
+          animId = requestAnimationFrame(animate);
+          return;
+        }
+
+        ctx.clearRect(0, 0, width, height);
+
+        for (let i = 0; i < particles.length; i++) {
+          particles[i].update();
+          particles[i].draw();
+        }
+
+        ctx.lineWidth = 0.5;
+        for (let i = 0; i < particles.length; i++) {
+          const p1 = particles[i];
+          if (!p1.projX || p1.z > 250) continue;
+
+          for (let j = i + 1; j < particles.length; j++) {
+            const p2 = particles[j];
+            if (!p2.projX) continue;
+
+            const dx = p1.projX - p2.projX;
+            const dy = p1.projY - p2.projY;
+            const distSq = dx * dx + dy * dy;
+
+            if (distSq < connectionDistanceSq) {
+              const dist = Math.sqrt(distSq);
+              const avgScale = (p1.scale + p2.scale) / 2;
+              const alpha = (1 - dist / connectionDistance) * 0.1 * avgScale;
+              ctx.beginPath();
+              ctx.moveTo(p1.projX, p1.projY);
+              ctx.lineTo(p2.projX, p2.projY);
+              ctx.strokeStyle = `rgba(139, 92, 246, ${alpha})`;
+              ctx.stroke();
+            }
+          }
+        }
+
+        animId = requestAnimationFrame(animate);
+      }
+
+      animate();
+    };
+
+    if ('requestIdleCallback' in window) {
+      window.requestIdleCallback(initCanvas, { timeout: 1500 });
+    } else {
+      setTimeout(initCanvas, 300);
+    }
   }
 
   // --- 3D Tilt Interaction ---
