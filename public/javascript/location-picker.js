@@ -88,7 +88,7 @@ function initLocationPicker() {
   const attachTargets = () => {
     const inputs = document.querySelectorAll('input#city, input[name="city"], input#locationInput, .location-input');
     inputs.forEach(inp => {
-      if (!inp.dataset.locAttached) {
+      if (!inp.hasAttribute("data-free-city") && !inp.dataset.locAttached) {
         inp.dataset.locAttached = "true";
         inp.setAttribute("readonly", "true"); // Prevent mobile keyboard clash with our clean modal
         inp.style.cursor = "pointer";

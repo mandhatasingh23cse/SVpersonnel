@@ -137,3 +137,17 @@ DATABASE_URL=postgresql://postgres.your-project-ref:password@aws-0-region.pooler
 - Role-based client and professional flows
 - Dynamic Supabase-backed search, booking, and dashboard data
 - Clean EJS structure with reusable layouts and partials
+
+## Workforce marketplace development
+Use Node.js 24 and MySQL 8.4. Set STAFFING_MYSQL_URL to the development database connection URI. From the repo run:
+```sh
+npm ci
+mysql -h "$MYSQL_HOST" -P "${MYSQL_PORT:-3306}" -u "$MYSQL_USER" -p "$MYSQL_DATABASE" < database/mysql-staffing.sql
+npm start
+```
+Use the existing Supabase configuration for accounts and bookings. Visit /discover for search and /staffing for permanent or corporate hiring intake. See ROADMAP.md for planned modules.
+
+### Deploying the current release on Render
+Use the existing render.yaml Blueprint with a single web instance. Supply a dedicated Supabase project with database/schema.sql, schema_v2.sql and migrations v3 through v6 applied in order. Supply SUPABASE_URL, SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY through Render settings. Apply database/mysql-staffing.sql to a reachable MySQL 8.4 database and set STAFFING_MYSQL_URL. Render generates SESSION_SECRET. The build installs locked production dependencies and runs npm start. The health endpoint is /ping. Test signup, login and a staffing submission after configuring the databases.
+
+Use a staging deployment first. Existing file-backed operations require durable storage for data/, sessions/ and upload directories before taking customer traffic. Review access controls for uploaded documents before importing any uploads. Production skips demo administrator creation. Rotate any existing demo administrator credentials and previously embedded PayU credentials. Payments require separately configured gateway credentials and end-to-end callback validation before launch.

@@ -1,0 +1,27 @@
+/* Navigation follows the native document lifecycle, including history and form submissions. */
+@view-transition { navigation: auto; }
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root) { animation: sv-depart 130ms ease-out both; }
+  ::view-transition-new(root) { animation: sv-arrive 220ms ease-out both; }
+  .premium-brand img { animation: sv-brand-settle 600ms cubic-bezier(.17,.75,.22,1) both; }
+  .wf-hero aside { transform-origin: left center; animation: sv-panel-settle 640ms cubic-bezier(.17,.75,.22,1) both; }
+  .workforce button { transition: transform 140ms ease-out, box-shadow 140ms ease-out; }
+  .workforce button:active { transform: translateY(1px); }
+  @media (hover:hover) {
+    .workforce button:hover { transform: translateY(-2px); box-shadow: 0 4px 0 #c79145; }
+  }
+}
+@keyframes sv-brand-settle {
+  from { transform: perspective(280px) rotateY(-50deg) scale(.94); }
+  to { transform: perspective(280px) rotateY(0) scale(1); }
+}
+@keyframes sv-panel-settle {
+  from { transform: perspective(950px) rotateY(-12deg) translateY(8px); }
+  to { transform: perspective(950px) rotateY(0) translateY(0); }
+}
+@keyframes sv-depart { to { opacity: 0; } }
+@keyframes sv-arrive { from { opacity: 0; transform: translateY(3px); } }
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+  html { scroll-behavior: auto !important; }
+}

@@ -2,8 +2,10 @@ services:
   - type: web
     name: gigconnect
     runtime: node
-    buildCommand: npm install
-    startCommand: node app.js
+    autoDeploy: false
+    healthCheckPath: /ping
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
@@ -15,7 +17,9 @@ services:
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
-      - key: NEXT_PUBLIC_SUPABASE_URL
+      - key: STAFFING_MYSQL_URL
         sync: false
-      - key: NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-        sync: false
+      - key: NODE_VERSION
+        value: 24.22.3
+      - key: PAYU_MODE
+        value: sandbox

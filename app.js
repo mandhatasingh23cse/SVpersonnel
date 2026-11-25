@@ -374,7 +374,7 @@ function cloneHomeContent() {
       stats: [...siteContent.home.hero.stats]
     },
     services: [...siteContent.home.services],
-    testimonials: [...siteContent.home.testimonials],
+    testimonials: [],
     ottCategories: siteContent.home.ottCategories ? siteContent.home.ottCategories.map(cat => ({
       ...cat,
       items: [...cat.items]
@@ -734,6 +734,52 @@ function renderBookingPage(res, overrides = {}) {
   });
 }
 
+const { submitStaffingRequest, listStaffingRequests } = require("./lib/staffingRequests");
+function staffingPage(res, form = {}, error = "", reference = "") {
+  return res.render("staffing", { title: "Staffing enquiries | SV Personnel", pageClass: "workforce-page", form, error, reference });
+}
+app.get("/discover", async (req, res) => {
+  const skill = String(req.query.skill || "").trim().slice(0, 120);
+  const city = String(req.query.city || "").trim().slice(0, 100);
+  const model = { title: "Find professionals | SV Personnel", pageClass: "workforce-page", skill, city, workers: [], error: false };
+  try {
+    model.workers = await getWorkers({ queryText: skill, cityQ: city });
+  } catch {
+    model.error = true;
+    res.status(503);
+  }
+  res.render("discover", model);
+});
+app.get("/admin/staffing", requireRole("admin"), async (req, res) => {
+  const page = Number(req.query.page || 1);
+  if (!Number.isSafeInteger(page) || page < 1 || page > 1000000) return res.sendStatus(400);
+  res.set("Cache-Control", "private, no-store");
+  const model = { title: "Staffing enquiries", pageClass: "workforce-page", rows: [], page, more: false, error: false };
+  try {
+    const rows = await listStaffingRequests(page);
+    model.rows = rows.slice(0, 25);
+    model.more = rows.length > 25;
+  } catch {
+    res.status(503);
+    model.error = true;
+  }
+  res.render("staffingInbox", model);
+});
+app.get("/staffing", (req, res) => staffingPage(res, { type: req.query.type }));
+app.post("/staffing", async (req, res) => {
+  const fields = ["type", "city", "requirement", "email"];
+  const form = Object.fromEntries(fields.map(key => [key, typeof req.body?.[key] === "string" ? req.body[key].trim() : ""]));
+  if (!["corporate", "permanent"].includes(form.type) || !form.city || form.city.length > 100 || !form.requirement || form.requirement.length > 1000 || form.email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+    return staffingPage(res.status(422), form, "Check your city, email and staffing requirements.");
+  }
+  try {
+    const reference = await submitStaffingRequest(fields.map(key => form[key]));
+    return staffingPage(res.status(201), {}, "", reference);
+  } catch {
+    return staffingPage(res.status(503), form, "Your enquiry could not be saved. Please try again later.");
+  }
+});
+
 app.get("/", async (req, res) => {
   if (req.session && req.session.user) {
     if (req.session.user.role === "client") {
@@ -920,8 +966,9 @@ app.get(["/work/pass/buy", "/client/work-bundle/payu"], async (req, res) => {
     return res.redirect("/clientlogin");
   }
 
-  const key = (process.env.PAYU_MERCHANT_KEY || "owE3c7").trim();
-  const salt = (process.env.PAYU_MERCHANT_SALT || "murK9GVdBwy1JUraIKrw7iFHfLLqiV2k").trim();
+  const key = (process.env.PAYU_MERCHANT_KEY || "").trim();
+  const salt = (process.env.PAYU_MERCHANT_SALT || "").trim();
+  if (!key || !salt) return res.status(503).send("Payments are unavailable.");
   const txnid = "WB_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
   const numericAmount = 50;
   const amount = "50.00";
@@ -939,7 +986,7 @@ app.get(["/work/pass/buy", "/client/work-bundle/payu"], async (req, res) => {
 
   req.session.workPassPending = { txnid, userId: user.id, amount: numericAmount, creditsToAdd: 5 };
 
-  const payuMode = (process.env.PAYU_MODE || "live").toLowerCase().trim();
+  const payuMode = (process.env.PAYU_MODE || "sandbox").toLowerCase().trim();
   const payuUrl = (payuMode === "test" || payuMode === "sandbox") ? "https://test.payu.in/_payment" : "https://secure.payu.in/_payment";
 
   return res.render("payuCheckout", {
@@ -3370,8 +3417,9 @@ app.post("/book-service/:professionalId/confirm", requireRole("client"), async (
   const advanceFeeOnline = platformFee + gst;
   const fullOnlineAmount = baseRate + advanceFeeOnline;
 
-  const key = (process.env.PAYU_MERCHANT_KEY || "owE3c7").trim();
-  const salt = (process.env.PAYU_MERCHANT_SALT || "murK9GVdBwy1JUraIKrw7iFHfLLqiV2k").trim();
+  const key = (process.env.PAYU_MERCHANT_KEY || "").trim();
+  const salt = (process.env.PAYU_MERCHANT_SALT || "").trim();
+  if (!key || !salt) return res.status(503).send("Payments are unavailable.");
   const txnid = "SV_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
   
   let rawAmount = fullOnlineAmount;
@@ -3410,7 +3458,7 @@ app.post("/book-service/:professionalId/confirm", requireRole("client"), async (
     baseRate
   };
 
-  const payuMode = (process.env.PAYU_MODE || "live").toLowerCase().trim();
+  const payuMode = (process.env.PAYU_MODE || "sandbox").toLowerCase().trim();
   const payuUrl = (payuMode === "test" || payuMode === "sandbox") ? "https://test.payu.in/_payment" : "https://secure.payu.in/_payment";
 
   return res.render("payuCheckout", {
@@ -3757,8 +3805,9 @@ app.post("/client/disputes", requireRole("client"), async (req, res) => {
 app.post(["/api/payu/webhook", "/payu/webhook", "/payu/callback", "/api/payments/payu/webhook"], async (req, res) => {
   try {
     const payload = req.body || {};
-    const key = (process.env.PAYU_MERCHANT_KEY || "owE3c7").trim();
-    const salt = (process.env.PAYU_MERCHANT_SALT || "murK9GVdBwy1JUraIKrw7iFHfLLqiV2k").trim();
+    const key = (process.env.PAYU_MERCHANT_KEY || "").trim();
+    const salt = (process.env.PAYU_MERCHANT_SALT || "").trim();
+    if (!key || !salt) return res.status(503).send("Payments are unavailable.");
 
     const status = (payload.status || "").toLowerCase().trim();
     const txnid = (payload.txnid || "").trim();
@@ -4845,7 +4894,7 @@ async function startServer() {
     console.log(`Server running at http://localhost:${PORT}`);
 
     // Self-ping every 10 minutes (600,000 ms) to prevent Render free tier from going to sleep
-    if (process.env.NODE_ENV === "production" || process.env.RENDER || process.env.KEEP_ALIVE === "true") {
+    if (process.env.KEEP_ALIVE === "true" && process.env.APP_URL) {
       const pingUrl = process.env.APP_URL || "https://svpersonnel.in/ping";
       console.log(`[KeepAlive] Starting self-ping scheduler targeting: ${pingUrl}`);
       setInterval(async () => {

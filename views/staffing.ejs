@@ -1,0 +1,9 @@
+<link rel="stylesheet" href="/workforce.css">
+<section class="workforce"><div class="wf-shell"><a href="/">← Home</a><h1>Staffing enquiry</h1>
+<% if(reference){ %><h2>Enquiry received</h2><p>Your reference is <%= reference %>.</p><% }else{ %>
+<p>Tell our team who you need and where they will work.</p>
+<form method="post" action="/staffing" class="wf-form"><% if(error){ %><p role="alert"><%= error %></p><% } %>
+<label>Hiring need<select name="type"><option value="permanent">Permanent staff</option><option value="corporate" <%= form.type==='corporate'?'selected':'' %>>Corporate staffing</option></select></label>
+<label>City<input required maxlength="100" data-free-city name="city" value="<%= form.city || '' %>"></label>
+<label>Contact email<input required type="email" maxlength="254" name="email" value="<%= form.email || '' %>"></label>
+<label>Role, headcount and start date<textarea required maxlength="1000" name="requirement"><%= form.requirement || '' %></textarea></label><button>Send enquiry</button></form><% } %></div></section>

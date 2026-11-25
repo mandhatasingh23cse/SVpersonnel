@@ -1,0 +1,2 @@
+# Data ownership
+MySQL owns staffing_requests. Each UUID identifies one submitted enquiry with hiring type, city, requirements, contact email and creation time. Apply database/mysql-staffing.sql before accepting submissions. Existing Supabase identities and booking records retain their identifiers. Legacy migration requires a rehearsed export, foreign-key mapping, row and balance reconciliation, and recovery rehearsal.

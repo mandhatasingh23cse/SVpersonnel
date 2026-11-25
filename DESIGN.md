@@ -1,0 +1,6 @@
+# SV Personnel design system
+Use the existing SV identity with a warm paper canvas (#f8f5ed), deep forest ink (#173c32), brass detail (#c79145), and white surfaces. Set editorial headings in Georgia and operational labels in system sans. Use 16px body copy, 1.5 line height and fluid 40–78px display type.
+Use a 4px spacing unit, 20px mobile gutters and a 1200px content limit. Stack panels below 768px. Expand navigation at 1024px. Primary actions use solid forest with white text. Secondary navigation uses underlined text. Give controls visible labels, a 44px target, keyboard focus and inline errors. Preserve entered values on failed submissions.
+Use real documented photography with rights recorded before publication. Avoid decorative stock portraits in verification contexts. Reserve motion for focus and hover feedback and respect reduced motion. Avoid gradients, glass, floating shapes, pill collections and fabricated trust signals. Dashboards should prioritize readable tables and explicit action states.
+
+Use a single perspective settle on the brand mark and homepage hiring panel. Native page crossfades can run for up to 220ms. All new motion is optional and must allow immediate input.

@@ -1,0 +1,2 @@
+# Security and privacy
+Staffing writes use parameterized statements and server-side bounds. Enquiry receipts expose only the reference. Contact emails and requirements are private business data. Scope the runtime database account to required operations, keep credentials in environment settings and agree on retention and deletion procedures before a pilot. Worker eligibility, production payment verification and location-sharing consent require separate acceptance.

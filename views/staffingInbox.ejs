@@ -1,0 +1,11 @@
+<link rel="stylesheet" href="/workforce.css">
+<div class="workforce"><section class="wf-shell"><a href="/admin/dashboard">← Dashboard</a>
+<h1>Staffing enquiries</h1>
+<% if (error) { %><p role="alert">Enquiries could not be loaded. Try again shortly.</p>
+<% } else if (!rows.length) { %><p>No enquiries on this page.</p><% } %>
+<% rows.forEach(row => { %>
+<details><summary><%= row.city %> · <%= row.hiring_type %> staffing</summary>
+<p><%= row.requirement_text %></p><p><%= row.contact_email %></p><small>Reference <%= row.id %></small></details>
+<% }) %>
+<nav aria-label="Enquiry pages"><% if (page > 1) { %><a href="?page=<%= page - 1 %>">Previous page</a><% } %> <% if (more) { %><a href="?page=<%= page + 1 %>">Next page</a><% } %></nav>
+</section></div>
